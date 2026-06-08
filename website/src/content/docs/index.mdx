@@ -6,7 +6,7 @@ hero:
   tagline: Find dead code with evidence, not guesses. A local, free, polyglot CLI that surfaces anti-pattern code and proposes LLM-assisted fixes — and refuses to guess where pure-static tools can't.
   actions:
     - text: Quickstart
-      link: /necro/guide/
+      link: /necro/guide/quickstart/
       icon: right-arrow
       variant: primary
     - text: View on GitHub
@@ -48,7 +48,7 @@ combines them with fix reasoning across languages. Necro targets that gap:
 
 ## Try it
 
-The npm package is [planned](/necro/guide/); today you install from source:
+The npm package is [planned](/necro/guide/roadmap/); today you install from source:
 
 ```bash
 # install (from source)
@@ -60,11 +60,11 @@ node dist/cli.js scan src/
 ```
 
 You'll get tiered findings, each with an evidence chain — see the
-[Quickstart](/necro/guide/) to read the output.
+[Quickstart](/necro/guide/quickstart/) to read the output.
 
 :::note[Early days]
 Necro is in active development. This first release finds **dead code** in
 TypeScript with confidence tiers, evidence chains, and the `test-only`
 verdict. Duplication, complexity, churn, and LLM fixes are on the
-[roadmap](/necro/guide/).
+[roadmap](/necro/guide/roadmap/).
 :::
