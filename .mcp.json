@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "cadence": {
+      "command": "cadence",
+      "args": [
+        "mcp",
+        "serve"
+      ]
+    }
+  }
+}

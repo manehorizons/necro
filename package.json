@@ -1,0 +1,33 @@
+{
+  "name": "@necrotool/necro",
+  "version": "0.0.0",
+  "description": "Local, free, polyglot CLI that finds anti-pattern code and proposes LLM-assisted fixes.",
+  "type": "module",
+  "bin": {
+    "necro": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "esbuild src/cli.ts --bundle --platform=node --format=esm --packages=external --banner:js='#!/usr/bin/env node' --outfile=dist/cli.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "picomatch": "^4.0.4",
+    "ts-morph": "^24.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.42",
+    "@types/picomatch": "^3.0.2",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

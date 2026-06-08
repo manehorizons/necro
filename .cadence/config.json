@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "profile": "standard",
+  "loopEnforcement": "reminder",
+  "acDiscipline": "optional",
+  "workstreamBackend": "simple",
+  "ruleProvider": "trigger-taxonomy",
+  "subagentPolicy": {
+    "contextBudgetThreshold": 0.7,
+    "largeTaskTokens": 8000,
+    "mechanicalBatchMin": 3
+  },
+  "modelPerClass": {
+    "mechanical": "claude-haiku-4-5-20251001",
+    "standard": "claude-sonnet-4-6",
+    "complex": "claude-opus-4-7",
+    "drafting": "claude-opus-4-7"
+  },
+  "commitCadence": "manual",
+  "templates": {
+    "dir": ".cadence/templates",
+    "overrides": []
+  },
+  "hooks": {
+    "sessionStart": true,
+    "stopReminder": true,
+    "preToolUseBuildGate": false,
+    "userPromptSubmit": true
+  },
+  "packs": {
+    "enabled": [],
+    "disabled": []
+  },
+  "telemetry": {
+    "tokenUtilization": true,
+    "skillInvocations": true,
+    "remoteOptIn": false
+  },
+  "skillAudit": {
+    "required": []
+  },
+  "convergence": {
+    "maxAttempts": 3
+  },
+  "specReview": {
+    "provider": "mock"
+  },
+  "tier": {
+    "quickFix": {
+      "maxTasks": 1,
+      "maxFiles": 1
+    },
+    "standard": {
+      "maxTasks": 5,
+      "maxFiles": 8
+    },
+    "complex": {
+      "maxTasks": 999,
+      "minTasks": 6
+    }
+  },
+  "verification": {
+    "testGlobs": [
+      "**/*.test.ts",
+      "**/*.test.tsx"
+    ]
+  },
+  "verifier": {
+    "provider": "mock",
+    "diffCapBytes": 262144
+  },
+  "perTaskVerifier": {
+    "provider": "mock"
+  },
+  "codeReview": {
+    "provider": "mock"
+  },
+  "planReview": {
+    "provider": "mock"
+  },
+  "securityAudit": {
+    "provider": "mock"
+  },
+  "notify": {
+    "transport": "stderr"
+  },
+  "phaseGuard": {
+    "enabled": true,
+    "integrationRef": "main"
+  },
+  "logging": {
+    "level": "silent"
+  }
+}
