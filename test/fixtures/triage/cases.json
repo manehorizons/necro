@@ -1,0 +1,57 @@
+[
+  {
+    "name": "deadOnlyTestMock",
+    "truth": "dead",
+    "code": "export function deadOnlyTestMock() {\n  return computeLegacyTotal();\n}",
+    "evidence": [
+      { "ok": true, "text": "0 static references (TS compiler)" },
+      { "ok": false, "text": "referenced only in test files (a jest mock factory)" },
+      { "ok": true, "text": "not in package.json exports" }
+    ]
+  },
+  {
+    "name": "deadResolvedDynamicImport",
+    "truth": "dead",
+    "code": "function deadResolvedDynamicImport() {\n  return 'old-handler';\n}",
+    "evidence": [
+      { "ok": true, "text": "0 static references (TS compiler)" },
+      { "ok": false, "text": "dynamic-import taint in scope — but the import targets ./handlers/new.js, not this symbol" }
+    ]
+  },
+  {
+    "name": "deadStalePublicApi",
+    "truth": "dead",
+    "code": "export function deadStalePublicApi() {\n  return internalHelper();\n}",
+    "evidence": [
+      { "ok": true, "text": "0 static references (TS compiler)" },
+      { "ok": false, "text": "in package.json exports — but the export map no longer lists this entrypoint" }
+    ]
+  },
+  {
+    "name": "aliveDynamicTarget",
+    "truth": "alive",
+    "code": "export function aliveDynamicTarget() {\n  return registerRoute();\n}",
+    "evidence": [
+      { "ok": true, "text": "0 static references (TS compiler)" },
+      { "ok": false, "text": "dynamic-import taint in scope — `await import(`./${name}.js`)` can resolve to this file by name" }
+    ]
+  },
+  {
+    "name": "alivePublicApiConsumed",
+    "truth": "alive",
+    "code": "export function alivePublicApiConsumed(opts) {\n  return new Client(opts);\n}",
+    "evidence": [
+      { "ok": true, "text": "0 static references (TS compiler)" },
+      { "ok": false, "text": "in package.json exports — this is the documented public entrypoint for downstream consumers" }
+    ]
+  },
+  {
+    "name": "aliveFrameworkEntry",
+    "truth": "alive",
+    "code": "export default function handler(req, res) {\n  res.end('ok');\n}",
+    "evidence": [
+      { "ok": true, "text": "0 static references (TS compiler)" },
+      { "ok": false, "text": "runtime coverage shows execution despite 0 static refs — reached by the framework router" }
+    ]
+  }
+]
