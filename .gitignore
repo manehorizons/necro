@@ -3,3 +3,11 @@ dist/
 *.log
 .DS_Store
 HANDOFF.md.resumed-*
+
+# Local secrets — never commit the real .env (template is .env.example)
+.env
+.env.*
+!.env.example
+
+# Local scratch (eval/run output dumps)
+dumpfile
