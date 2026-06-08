@@ -6,23 +6,36 @@ import { DEFAULT_LLM } from "../src/config.js";
 import type { RefactorClient } from "../src/refactor/client.js";
 import type { RefactorProposal } from "../src/refactor/prompt.js";
 import { runRefactor } from "../src/refactor/index.js";
-import type { VerifyRunner } from "../src/refactor/verify.js";
+import type { FileEdit, VerifyRunner } from "../src/refactor/verify.js";
 import type { ComplexityFinding, Detector } from "../src/syntactic/types.js";
 
+const REPLACEMENT = [
+  "export function big() {",
+  "  return computeBig();",
+  "}",
+  "",
+  "function computeBig() {",
+  "  return 1;",
+  "}",
+].join("\n");
+
 const PROPOSAL: RefactorProposal = {
-  summary: "split",
-  newFunctions: ["a", "b"],
-  diff: "--- a\n+++ b\n@@\n-x\n+y\n",
-  rationale: "clusters",
+  summary: "extract computeBig",
+  newFunctions: ["computeBig"],
+  replacement: REPLACEMENT,
+  rationale: "moved the body into a helper",
 };
 
 const okClient = (): RefactorClient => ({
   propose: vi.fn(async () => ({ ok: true as const, proposal: PROPOSAL })),
 });
 
+let writtenEdits: FileEdit[] = [];
 const greenRunner = (): VerifyRunner => ({
   createWorktree: async () => "/wt",
-  applyDiff: async () => true,
+  writeEdit: async (_wt, edit) => {
+    writtenEdits.push(edit);
+  },
   runCheck: async () => ({ ok: true, output: "" }),
   removeWorktree: async () => {},
 });
@@ -44,6 +57,7 @@ describe("runRefactor (AC-1, AC-4)", () => {
     dir = await mkdtemp(join(tmpdir(), "necro-refrun-"));
     file = join(dir, "svc.ts");
     await writeFile(file, "export function big() {\n  return 1;\n}\n");
+    writtenEdits = [];
   });
   afterEach(async () => {
     await rm(dir, { recursive: true, force: true });
@@ -55,7 +69,7 @@ describe("runRefactor (AC-1, AC-4)", () => {
       [finding(file, "big", "god-function"), finding(file, "tangled", "cyclomatic")],
       DEFAULT_LLM,
       client,
-      { limit: 10, verifyRunner: greenRunner() },
+      { limit: 10, verifyRunner: greenRunner(), repoRoot: dir },
     );
     expect(client.propose).toHaveBeenCalledTimes(1);
     expect(res.outcomes.map((o) => o.finding.name)).toEqual(["big"]);
@@ -66,6 +80,7 @@ describe("runRefactor (AC-1, AC-4)", () => {
     const client = okClient();
     const res = await runRefactor([finding(file, "tangled", "cyclomatic")], DEFAULT_LLM, client, {
       verifyRunner: greenRunner(),
+      repoRoot: dir,
     });
     expect(client.propose).not.toHaveBeenCalled();
     expect(res.outcomes).toEqual([]);
@@ -78,7 +93,7 @@ describe("runRefactor (AC-1, AC-4)", () => {
       [finding(file, "a"), finding(file, "b"), finding(file, "c")],
       DEFAULT_LLM,
       client,
-      { limit: 1, verifyRunner: greenRunner() },
+      { limit: 1, verifyRunner: greenRunner(), repoRoot: dir },
     );
     expect(client.propose).toHaveBeenCalledTimes(1);
     expect(res.outcomes).toHaveLength(1);
@@ -87,28 +102,45 @@ describe("runRefactor (AC-1, AC-4)", () => {
   test("does not mutate the finding (AC-4)", async () => {
     const f = finding(file, "big");
     const snapshot = structuredClone(f);
-    await runRefactor([f], DEFAULT_LLM, okClient(), { verifyRunner: greenRunner() });
+    await runRefactor([f], DEFAULT_LLM, okClient(), { verifyRunner: greenRunner(), repoRoot: dir });
     expect(f).toEqual(snapshot);
   });
 
   test("never writes to the source file — suggest-only (AC-4)", async () => {
     const before = await readFile(file, "utf8");
-    await runRefactor([finding(file, "big")], DEFAULT_LLM, okClient(), { verifyRunner: greenRunner() });
+    await runRefactor([finding(file, "big")], DEFAULT_LLM, okClient(), {
+      verifyRunner: greenRunner(),
+      repoRoot: dir,
+    });
     expect(await readFile(file, "utf8")).toBe(before);
   });
 
-  test("attaches the verification badge from the injected runner (AC-4)", async () => {
+  test("splices the replacement into full file content for verification, never a diff (AC-4)", async () => {
+    await runRefactor([finding(file, "big")], DEFAULT_LLM, okClient(), {
+      verifyRunner: greenRunner(),
+      repoRoot: dir,
+    });
+    expect(writtenEdits).toHaveLength(1);
+    expect(writtenEdits[0]?.file).toBe("svc.ts");
+    expect(writtenEdits[0]?.content).toContain("function computeBig()");
+    expect(writtenEdits[0]?.content).toContain("export function big()");
+  });
+
+  test("attaches the badge and a necro-computed diff for display (AC-4)", async () => {
     const res = await runRefactor([finding(file, "big")], DEFAULT_LLM, okClient(), {
       verifyRunner: greenRunner(),
+      repoRoot: dir,
     });
     expect(res.outcomes[0]?.badge?.status).toBe("green");
-    expect(res.outcomes[0]?.proposal?.newFunctions).toEqual(["a", "b"]);
+    expect(res.outcomes[0]?.proposal?.replacement).toContain("computeBig");
+    expect(res.outcomes[0]?.diff).toContain("computeBig"); // necro generated the diff
   });
 
   test("records a failure (no throw) when the model response can't be parsed (AC-4)", async () => {
     const client: RefactorClient = { propose: async () => ({ ok: false, reason: "unparseable" }) };
     const res = await runRefactor([finding(file, "big")], DEFAULT_LLM, client, {
       verifyRunner: greenRunner(),
+      repoRoot: dir,
     });
     expect(res.outcomes[0]?.proposal).toBeNull();
     expect(res.outcomes[0]?.failure).toMatch(/unparseable/);

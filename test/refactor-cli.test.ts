@@ -20,9 +20,10 @@ const outcome = (over: Partial<RefactorOutcome> = {}): RefactorOutcome => ({
   proposal: {
     summary: "split into validate + persist",
     newFunctions: ["validate", "persist"],
-    diff: "--- a/src/svc.ts\n+++ b/src/svc.ts\n@@\n-old\n+new\n",
+    replacement: "export function bigHandler(req, res) {\n  return persist(validate(req));\n}",
     rationale: "two distinct callee clusters",
   },
+  diff: "--- a/src/svc.ts\n+++ b/src/svc.ts\n@@\n-old\n+new\n",
   badge: { status: "green" },
   ...over,
 });
@@ -38,7 +39,7 @@ describe("renderRefactor (AC-4)", () => {
     expect(out).toContain("bigHandler");
     expect(out).toContain("split into validate + persist");
     expect(out).toContain("two distinct callee clusters");
-    expect(out).toContain("+new"); // the diff itself, for hand-application
+    expect(out).toContain("+new"); // the necro-computed diff, for hand-application
     expect(out).toMatch(/verified|typecheck.*tests|✓/i);
   });
 
@@ -53,18 +54,25 @@ describe("renderRefactor (AC-4)", () => {
   });
 
   test("surfaces the failure reason when the model response couldn't be parsed (AC-4)", () => {
-    const out = renderRefactor(result([outcome({ proposal: null, badge: null, failure: "unparseable response" })]));
+    const out = renderRefactor(
+      result([outcome({ proposal: null, diff: null, badge: null, failure: "unparseable response" })]),
+    );
     expect(out).toContain("unparseable response");
   });
 });
 
 describe("toRefactorJson (AC-4)", () => {
-  test("carries the proposal + verification per finding (AC-4)", () => {
+  test("carries the proposal + diff + verification per finding (AC-4)", () => {
     const json = JSON.parse(toRefactorJson(result([outcome()]))) as {
-      refactor: Array<{ name: string; proposal: { newFunctions: string[] }; verification: { status: string } }>;
+      refactor: Array<{
+        name: string;
+        proposal: { newFunctions: string[]; replacement: string };
+        verification: { status: string };
+      }>;
     };
     expect(json.refactor[0]?.name).toBe("bigHandler");
     expect(json.refactor[0]?.proposal.newFunctions).toEqual(["validate", "persist"]);
+    expect(json.refactor[0]?.proposal.replacement).toContain("bigHandler");
     expect(json.refactor[0]?.verification.status).toBe("green");
   });
 });

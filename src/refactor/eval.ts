@@ -1,17 +1,14 @@
-import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { readFile } from "node:fs/promises";
 import type { RefactorClient } from "./client.js";
 import type { RefactorContext } from "./context.js";
 import { buildRefactorPrompt, type RefactorProposal } from "./prompt.js";
 
 /** One reference god-function case. The source is inline so the live model can
- * be prompted from it; the structural asserts reconstruct the result by applying
- * the proposed diff. */
+ * be prompted from it; the structural asserts measure the proposed `replacement`
+ * code directly. */
 export interface RefactorEvalCase {
   name: string;
-  /** Path used for the source and in the proposed diff (e.g. `src/svc.ts`). */
+  /** Path used for the source and as the parser hint (e.g. `src/svc.ts`). */
   file: string;
   /** Original god-function source. */
   source: string;
@@ -23,11 +20,11 @@ export interface RefactorEvalCase {
 
 /** The three structural criteria a god-function split must clear. */
 export interface ProposalCriteria {
-  /** ≥1 helper extracted (so ≥2 functions result). */
+  /** ≥2 functions in the rewritten code (the original plus ≥1 helper). */
   splitsIntoMultiple: boolean;
-  /** The original public signature is not changed by the diff. */
+  /** The original public signature line is present verbatim in the replacement. */
   preservesCallSurface: boolean;
-  /** Every function in the result is under the god-function threshold. */
+  /** Every function in the replacement is under the god-function threshold. */
   reducesComplexity: boolean;
 }
 
@@ -54,66 +51,27 @@ export async function loadEvalCases(path: string): Promise<RefactorEvalCase[]> {
   return JSON.parse(await readFile(path, "utf8")) as RefactorEvalCase[];
 }
 
-/** Whether the diff leaves the public signature untouched: not preserved only
- * when the signature is on a removed line and not re-added identically. */
-export function signaturePreserved(diff: string, signature: string): boolean {
-  const lines = diff.split("\n");
-  const removed = lines.some(
-    (l) => l.startsWith("-") && !l.startsWith("---") && l.includes(signature),
-  );
-  const added = lines.some((l) => l.startsWith("+") && !l.startsWith("+++") && l.includes(signature));
-  return !removed || added;
-}
-
-/** Apply a unified diff to `source` in a scratch dir; return the result, or
- * `null` if it doesn't apply. Uses `git apply` (no repo needed). */
-export async function applyDiffToSource(
-  source: string,
-  file: string,
-  diff: string,
-): Promise<string | null> {
-  const dir = await mkdtemp(join(tmpdir(), "necro-eval-apply-"));
-  try {
-    const dest = join(dir, file);
-    await mkdir(dirname(dest), { recursive: true });
-    await writeFile(dest, source);
-    const applied = await new Promise<boolean>((resolve) => {
-      const child = execFile("git", ["apply", "--whitespace=nowarn"], { cwd: dir }, (err) =>
-        resolve(!err),
-      );
-      child.stdin?.end(diff);
-    });
-    if (!applied) return null;
-    return await readFile(dest, "utf8");
-  } finally {
-    await rm(dir, { recursive: true, force: true });
-  }
-}
-
-/** Whether every function in `source` is under `threshold` lines. */
-async function everyFunctionUnder(file: string, source: string, threshold: number): Promise<boolean> {
-  const { lowerSource } = await import("../syntactic/ir.js");
-  const units = await lowerSource(file, source);
-  if (units.length === 0) return false;
-  return units.every((u) => u.loc < threshold);
-}
-
-/** Score one proposal against the three structural criteria. */
+/**
+ * Score one proposal against the three structural criteria. Because the proposal
+ * carries the rewritten code (not a diff), this just lowers `replacement` to the
+ * syntactic IR and measures it — no patch application, no git.
+ */
 export async function evaluateProposal(
   c: RefactorEvalCase,
   proposal: RefactorProposal,
 ): Promise<ProposalCriteria> {
-  const splitsIntoMultiple = proposal.newFunctions.length >= 1;
-  const preservesCallSurface = signaturePreserved(proposal.diff, c.signature);
+  const { lowerSource } = await import("../syntactic/ir.js");
+  const units = await lowerSource(c.file, proposal.replacement);
 
-  const result = await applyDiffToSource(c.source, c.file, proposal.diff);
-  const reducesComplexity = result === null ? false : await everyFunctionUnder(c.file, result, c.threshold);
+  const splitsIntoMultiple = units.length >= 2;
+  const preservesCallSurface = proposal.replacement.includes(c.signature);
+  const reducesComplexity = units.length > 0 && units.every((u) => u.loc < c.threshold);
 
   return { splitsIntoMultiple, preservesCallSurface, reducesComplexity };
 }
 
 /** Build the model prompt for a case from its inline source. */
-function casePrompt(c: RefactorEvalCase) {
+export function buildCasePrompt(c: RefactorEvalCase) {
   const lines = c.source.split("\n");
   const numbered = lines.map((l, i) => `${i + 1}\t${l}`).join("\n");
   const context: RefactorContext = {
@@ -149,7 +107,7 @@ export async function runRefactorEval(
     while (next < cases.length) {
       const idx = next++;
       const c = cases[idx] as RefactorEvalCase;
-      const result = await client.propose(casePrompt(c));
+      const result = await client.propose(buildCasePrompt(c));
       if (!result.ok) {
         rows[idx] = { name: c.name, pass: false, criteria: null, failure: result.reason };
         continue;

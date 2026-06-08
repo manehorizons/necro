@@ -9,8 +9,6 @@ function badgeLabel(badge: VerifyBadge | null): string {
       return "✓ verified — typecheck + tests pass";
     case "red":
       return "✗ verification failed — review before applying";
-    case "skipped":
-      return `… not verified — ${badge.reason}`;
   }
 }
 
@@ -41,7 +39,8 @@ function renderOutcome(o: RefactorOutcome): string {
     `    new functions: ${o.proposal.newFunctions.join(", ")}`,
     `    ${o.proposal.rationale}`,
     "",
-    o.proposal.diff,
+    // necro-computed diff to apply by hand; fall back to the raw replacement code.
+    o.diff ?? o.proposal.replacement,
   ].join("\n");
 }
 
@@ -54,6 +53,7 @@ export function toRefactorJson(res: RefactorRunResult): string {
     detector: o.finding.detector,
     model: o.model,
     proposal: o.proposal,
+    diff: o.diff,
     verification: o.badge,
     ...(o.failure ? { failure: o.failure } : {}),
   }));

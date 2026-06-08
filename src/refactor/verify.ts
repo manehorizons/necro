@@ -1,26 +1,29 @@
 import { exec, execFile } from "node:child_process";
-import { mkdtemp, rm, symlink } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
-const GIT_TIMEOUT_MS = 30_000;
+const GIT_TIMEOUT_MS = 60_000;
 
-/** The outcome of verifying a proposal in a throwaway worktree. */
-export type VerifyBadge =
-  | { status: "green" }
-  | { status: "red"; output: string }
-  | { status: "skipped"; reason: string };
+/** A full-file replacement to verify: `file` (relative to the repo) gets `content`. */
+export interface FileEdit {
+  file: string;
+  content: string;
+}
+
+/** The outcome of verifying an edit in a throwaway worktree. */
+export type VerifyBadge = { status: "green" } | { status: "red"; output: string };
 
 /** The side-effecting steps of verification — injected so the orchestration is
  * testable with no real git or test run. */
 export interface VerifyRunner {
   /** Create an isolated worktree off HEAD; returns its path. */
   createWorktree(): Promise<string>;
-  /** Apply the unified diff in the worktree; resolve `false` if it doesn't apply. */
-  applyDiff(worktree: string, diff: string): Promise<boolean>;
+  /** Write the edit's new file content into the worktree. */
+  writeEdit(worktree: string, edit: FileEdit): Promise<void>;
   /** Run a check command in the worktree. */
   runCheck(worktree: string, command: string): Promise<{ ok: boolean; output: string }>;
   /** Tear the worktree down. */
@@ -28,21 +31,20 @@ export interface VerifyRunner {
 }
 
 /**
- * Verify a proposed diff without touching the user's tree: apply it in a
- * throwaway worktree, run each check in order, and badge the result. The
- * worktree is **always** torn down (a check failure, a non-applying diff, or a
- * thrown error all still hit the `finally`).
+ * Verify an edit without touching the user's tree: write the new file content in
+ * a throwaway worktree, run each check in order, and badge the result. The
+ * worktree is **always** torn down (a check failure or a thrown error both still
+ * hit the `finally`). Because necro supplies full file content (not a model
+ * diff), there is no "did not apply" failure mode.
  */
 export async function verifyProposal(
-  diff: string,
+  edit: FileEdit,
   checks: string[],
   runner: VerifyRunner,
 ): Promise<VerifyBadge> {
   const worktree = await runner.createWorktree();
   try {
-    const applied = await runner.applyDiff(worktree, diff);
-    if (!applied) return { status: "skipped", reason: "proposal diff did not apply cleanly" };
-
+    await runner.writeEdit(worktree, edit);
     for (const command of checks) {
       const { ok, output } = await runner.runCheck(worktree, command);
       if (!ok) return { status: "red", output: `$ ${command}\n${output}`.trim() };
@@ -73,17 +75,10 @@ export function gitWorktreeRunner(repoRoot: string): VerifyRunner {
       return wt;
     },
 
-    async applyDiff(worktree: string, diff: string): Promise<boolean> {
-      // Pipe the diff to `git apply` over stdin — resolve false if it won't apply.
-      return new Promise((resolve) => {
-        const child = execFile(
-          "git",
-          ["apply", "--whitespace=nowarn"],
-          { cwd: worktree, timeout: GIT_TIMEOUT_MS },
-          (err) => resolve(!err),
-        );
-        child.stdin?.end(diff);
-      });
+    async writeEdit(worktree: string, edit: FileEdit): Promise<void> {
+      const dest = join(worktree, edit.file);
+      await mkdir(dirname(dest), { recursive: true });
+      await writeFile(dest, edit.content);
     },
 
     async runCheck(worktree: string, command: string): Promise<{ ok: boolean; output: string }> {

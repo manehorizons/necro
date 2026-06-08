@@ -1,12 +1,14 @@
 import type { RefactorContext } from "./context.js";
 
-/** A proposed god-function split. `diff` is a unified diff the human applies by
- * hand; `newFunctions` names the extracted helpers; `rationale` explains the
- * split. necro never applies this — it is a suggestion only. */
+/** A proposed god-function split. `replacement` is the rewritten code for the
+ * function's line range — necro splices it in and computes the diff itself, so a
+ * model that writes good code but imprecise diffs can't break application.
+ * `newFunctions` names the extracted helpers; `rationale` explains the split.
+ * necro never applies this — it is a suggestion only. */
 export interface RefactorProposal {
   summary: string;
   newFunctions: string[];
-  diff: string;
+  replacement: string;
   rationale: string;
 }
 
@@ -29,18 +31,18 @@ export const PROPOSAL_SCHEMA = {
   properties: {
     summary: { type: "string" },
     newFunctions: { type: "array", items: { type: "string" } },
-    diff: { type: "string" },
+    replacement: { type: "string" },
     rationale: { type: "string" },
   },
-  required: ["summary", "newFunctions", "diff", "rationale"],
+  required: ["summary", "newFunctions", "replacement", "rationale"],
   additionalProperties: false,
 } as const;
 
 export const SYSTEM_PROMPT = [
   "You are refactoring a god function — a function flagged for being too long or",
-  "taking too many parameters. Propose a behavior-preserving split into smaller,",
-  "well-named functions by grouping related statements (callee clusters) into",
-  "extracted helpers.",
+  "taking too many parameters. Rewrite it as a behavior-preserving split into",
+  "smaller, well-named functions by grouping related statements (callee clusters)",
+  "into extracted helpers.",
   "",
   "Hard rules:",
   "  - Preserve the public call surface: the original function's name, signature,",
@@ -49,11 +51,15 @@ export const SYSTEM_PROMPT = [
   "  - Introduce new private helpers in the same file; do not invent new imports",
   "    unless they already appear in the provided context.",
   "",
-  "Return a unified diff a human can apply by hand. Your proposal is ADVISORY:",
-  "necro never applies it automatically. Give a one or two sentence rationale.",
+  "Return the full rewritten source for the requested line range as `replacement`",
+  "— plain code only, no line-number prefixes, no diff, no markdown fences. necro",
+  "splices it in and computes the diff itself. Your proposal is ADVISORY: necro",
+  "never applies it automatically. Give a one or two sentence rationale.",
 ].join("\n");
 
-/** Build the per-finding user message from the function body + preservation context. */
+/** Build the per-finding user message from the function body + preservation
+ * context. The model is asked to rewrite exactly the function's line range; necro
+ * knows that range (declaration line → matched block end) and splices the result. */
 export function buildRefactorPrompt(ctx: RefactorContext): RefactorPrompt {
   const { finding, snippet, imports } = ctx;
   const user = [
@@ -63,10 +69,13 @@ export function buildRefactorPrompt(ctx: RefactorContext): RefactorPrompt {
     "File imports (already in scope):",
     imports.length > 0 ? imports.map((i) => `  ${i}`).join("\n") : "  (none)",
     "",
-    `Source (lines ${snippet.startLine}-${snippet.endLine}):`,
+    `Source (lines ${snippet.startLine}-${snippet.endLine}, with line numbers):`,
     "```",
     snippet.code,
     "```",
+    "",
+    `Rewrite lines ${finding.line}-${snippet.endLine} (the function), returning only`,
+    "the replacement code for that range — no line numbers, no surrounding context.",
   ].join("\n");
 
   return { system: SYSTEM_PROMPT, user };
@@ -82,7 +91,7 @@ export function parseProposal(raw: unknown): ProposalResult {
     return { ok: false, reason: `unparseable model response: ${truncate(JSON.stringify(raw))}` };
   }
   const obj = raw as Record<string, unknown>;
-  const stringFields = ["summary", "diff", "rationale"] as const;
+  const stringFields = ["summary", "replacement", "rationale"] as const;
   for (const f of stringFields) {
     if (typeof obj[f] !== "string") {
       return { ok: false, reason: `invalid proposal: "${f}" is not a string` };
@@ -96,7 +105,7 @@ export function parseProposal(raw: unknown): ProposalResult {
     proposal: {
       summary: obj.summary as string,
       newFunctions: obj.newFunctions as string[],
-      diff: obj.diff as string,
+      replacement: obj.replacement as string,
       rationale: obj.rationale as string,
     },
   };
