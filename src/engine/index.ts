@@ -14,6 +14,8 @@ import { createRepoContext, detectPlugins } from "../plugins/registry.js";
 import { createTestRunnerPlugin } from "../plugins/test-runner/index.js";
 import type { FrameworkPlugin } from "../plugins/types.js";
 import { sortWorstFirst } from "../report/sort.js";
+import type { LcovReport } from "../analyze/coverage/lcov.js";
+import type { HotspotEntry } from "../analyze/hotspots.js";
 import type { ComplexityFinding } from "../syntactic/types.js";
 import { resolveProdEntries } from "./prod-entries.js";
 
@@ -24,6 +26,8 @@ export interface ScanResult {
   findings: Finding[];
   /** Syntactic-detector findings (the complexity axis), worst-first. */
   complexity: ComplexityFinding[];
+  /** Risk-ranked function hotspots (CRAP × churn), worst-first. */
+  hotspots: HotspotEntry[];
 }
 
 export interface ScanOptions {
@@ -46,7 +50,7 @@ export async function scan(
   opts: ScanOptions = {},
 ): Promise<ScanResult> {
   const files = await discoverFiles(targetPath, config);
-  if (files.length === 0) return { findings: [], complexity: [] };
+  if (files.length === 0) return { findings: [], complexity: [], hotspots: [] };
 
   const ctx = await createRepoContext(targetPath);
   const detected = detectPlugins(PLUGINS, ctx);
@@ -86,35 +90,43 @@ export async function scan(
     classify({ nodes: graph.nodes, reachability, coverage }),
   );
 
-  const complexity = opts.complexity === false ? [] : await analyzeComplexity(sources, config);
-  return { findings, complexity };
+  const heavy =
+    opts.complexity === false
+      ? { complexity: [], hotspots: [] }
+      : await analyzeHeavy(sources, config, coverageReport, targetPath);
+  return { findings, complexity: heavy.complexity, hotspots: heavy.hotspots };
 }
 
 /**
- * Run the syntactic detectors over the already-read sources. tree-sitter is
- * heavy, so the IR + detector modules are imported lazily — only when the
- * complexity axis actually runs.
+ * The tree-sitter axis: lower every source to the syntactic IR **once**, then
+ * derive both the complexity findings and the risk hotspots from those units.
+ * Heavy (tree-sitter + git), so the modules are imported lazily — the dead-code
+ * and `fix` paths never trigger this.
  */
-async function analyzeComplexity(
+async function analyzeHeavy(
   sources: Array<{ file: string; text: string }>,
   config: NecroConfig,
-): Promise<ComplexityFinding[]> {
+  coverageReport: LcovReport | null,
+  targetPath: string,
+): Promise<{ complexity: ComplexityFinding[]; hotspots: HotspotEntry[] }> {
   const { lowerSource } = await import("../syntactic/ir.js");
   const { detect } = await import("../syntactic/detectors.js");
+  const { rankHotspots } = await import("../analyze/hotspots.js");
+  const { fileChurn } = await import("../analyze/churn.js");
 
-  const out: ComplexityFinding[] = [];
-  for (const { file, text } of sources) {
-    for (const unit of await lowerSource(file, text)) {
-      out.push(...detect(unit, config.complexity));
-    }
-  }
-  // Worst-first: largest overshoot ratio, then file/line for stability.
-  return out.sort((a, b) => {
+  const units = (await Promise.all(sources.map(({ file, text }) => lowerSource(file, text)))).flat();
+
+  const complexity = units.flatMap((u) => detect(u, config.complexity)).sort((a, b) => {
+    // Worst-first: largest overshoot ratio, then file/line for stability.
     const byRatio = b.value / b.threshold - a.value / a.threshold;
     if (byRatio !== 0) return byRatio;
     const byFile = a.file.localeCompare(b.file);
     return byFile !== 0 ? byFile : a.line - b.line;
   });
+
+  const churn = await fileChurn(targetPath);
+  const hotspots = rankHotspots(units, coverageReport, churn, config.hotspots.top);
+  return { complexity, hotspots };
 }
 
 async function readSources(files: string[]): Promise<Array<{ file: string; text: string }>> {

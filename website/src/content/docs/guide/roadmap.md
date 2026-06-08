@@ -19,6 +19,7 @@ yet.
 - [Coverage ingestion](/necro/reference/cli/#coverage) (lcov) folded into the evidence chain and tiers.
 - [Safe fix](/necro/reference/cli/#necro-fix): `necro fix` removes `certain`-dead code — preview by default, `--write` to apply, with a dirty git-tree guard.
 - [Complexity detectors](/necro/guide/complexity/): nesting, cyclomatic, cognitive, and god-function (tree-sitter), with configurable thresholds.
+- [Risk hotspots](/necro/guide/hotspots/): CRAP score (complexity × coverage) weighted by git churn, ranked worst-first.
 - Output modes: default terminal, `--json`, `--top N`.
 
 ## Planned
@@ -29,7 +30,7 @@ None of the following is implemented yet.
 |---|---|
 | Accuracy | istanbul-JSON coverage (lcov ships today); cascading re-analysis after a fix |
 | Detectors | Duplication; god-function responsibility-clustering (nesting, cyclomatic, cognitive & god-function ship today) |
-| Scoring | CRAP score, complexity × churn hotspots |
+| Scoring | Per-line & recency-weighted churn, ownership weighting (CRAP + per-file churn hotspots ship today) |
 | Fixes | LLM triage on `maybe`, then LLM refactors (safe `certain`-dead removal ships today) |
 | Output | SARIF (GitHub code scanning), `--fail-on <tier>` exit gating |
 | Frameworks | Next.js, NestJS (DI decorators), template-based plugins |

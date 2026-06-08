@@ -4,7 +4,7 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 05-detectors
+**Active phase:** 06-hotspots
 **Active draft:** (none)
 **Tier:** (n/a)
 

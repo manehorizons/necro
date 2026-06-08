@@ -12,6 +12,14 @@ export interface NecroConfig {
   coveragePath?: string;
   /** Syntactic-detector thresholds (always resolved; defaults applied per key). */
   complexity: ComplexityThresholds;
+  /** Risk-hotspot ranking options. */
+  hotspots: HotspotOptions;
+}
+
+/** Risk-hotspot ranking options. */
+export interface HotspotOptions {
+  /** How many hotspots to show. */
+  top: number;
 }
 
 /** §4 default detector thresholds. */
@@ -23,18 +31,22 @@ export const DEFAULT_COMPLEXITY: ComplexityThresholds = {
   godFunctionParams: 5,
 };
 
+export const DEFAULT_HOTSPOTS: HotspotOptions = { top: 10 };
+
 export const DEFAULT_CONFIG: NecroConfig = {
   include: ["**/*.ts", "**/*.tsx"],
   ignore: ["**/node_modules/**", "**/dist/**"],
   complexity: DEFAULT_COMPLEXITY,
+  hotspots: DEFAULT_HOTSPOTS,
 };
 
-/** The on-disk shape: every field optional, `complexity` a partial override. */
+/** The on-disk shape: every field optional, nested blocks partial overrides. */
 interface RawConfig {
   include?: string[];
   ignore?: string[];
   coveragePath?: string;
   complexity?: Partial<ComplexityThresholds>;
+  hotspots?: Partial<HotspotOptions>;
 }
 
 /**
@@ -49,6 +61,7 @@ export async function loadConfig(cwd: string): Promise<NecroConfig> {
     ignore: user.ignore ?? DEFAULT_CONFIG.ignore,
     coveragePath: user.coveragePath,
     complexity: { ...DEFAULT_COMPLEXITY, ...(user.complexity ?? {}) },
+    hotspots: { ...DEFAULT_HOTSPOTS, ...(user.hotspots ?? {}) },
   };
 }
 

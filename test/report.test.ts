@@ -56,10 +56,12 @@ describe("toJson", () => {
           message: "nesting depth 4 > 3",
         },
       ],
+      hotspots: [],
     });
     const parsed = JSON.parse(json) as {
       findings: Array<Record<string, unknown>>;
       complexity: Array<Record<string, unknown>>;
+      hotspots: Array<Record<string, unknown>>;
     };
     expect(parsed.findings).toHaveLength(1);
     expect(parsed.findings[0]).toMatchObject({

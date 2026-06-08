@@ -1,38 +1,30 @@
 import type { FunctionUnit } from "./ir.js";
+import { metrics } from "./metrics.js";
 import type { ComplexityFinding, ComplexityThresholds } from "./types.js";
 
 /**
  * Run all four syntactic detectors over one function. Pure: reads the IR
  * (`FunctionUnit`) and thresholds only — never tree-sitter or TS constructs.
+ * Metric values come from the shared {@link metrics} — one definition each.
  */
 export function detect(unit: FunctionUnit, t: ComplexityThresholds): ComplexityFinding[] {
-  return [nesting(unit, t), cyclomatic(unit, t), cognitive(unit, t), godFunction(unit, t)].filter(
+  const m = metrics(unit);
+  return [nesting(unit, m.nesting, t), cyclomatic(unit, m.cyclomatic, t), cognitive(unit, m.cognitive, t), godFunction(unit, t)].filter(
     (f): f is ComplexityFinding => f !== null,
   );
 }
 
-/** Max nesting level reached (a nesting structure at `depth` sits at level `depth + 1`). */
-function nesting(unit: FunctionUnit, t: ComplexityThresholds): ComplexityFinding | null {
-  let max = 0;
-  for (const c of unit.controlNodes) {
-    if (c.nests) max = Math.max(max, c.depth + 1);
-  }
-  if (max <= t.nesting) return null;
-  return finding(unit, "nesting", max, t.nesting, `nesting depth ${max} > ${t.nesting}`);
+function nesting(unit: FunctionUnit, value: number, t: ComplexityThresholds): ComplexityFinding | null {
+  if (value <= t.nesting) return null;
+  return finding(unit, "nesting", value, t.nesting, `nesting depth ${value} > ${t.nesting}`);
 }
 
-/** Cyclomatic complexity: 1 + one per branch/loop/case/catch/ternary/boolean-op. */
-function cyclomatic(unit: FunctionUnit, t: ComplexityThresholds): ComplexityFinding | null {
-  const value = 1 + unit.controlNodes.length;
+function cyclomatic(unit: FunctionUnit, value: number, t: ComplexityThresholds): ComplexityFinding | null {
   if (value <= t.cyclomatic) return null;
   return finding(unit, "cyclomatic", value, t.cyclomatic, `cyclomatic complexity ${value} > ${t.cyclomatic}`);
 }
 
-/** Cognitive complexity (Sonar model): nesting structures cost `1 + depth`;
- * short-circuit operators cost a flat 1 — so nested code scores worse. */
-function cognitive(unit: FunctionUnit, t: ComplexityThresholds): ComplexityFinding | null {
-  let value = 0;
-  for (const c of unit.controlNodes) value += c.nests ? 1 + c.depth : 1;
+function cognitive(unit: FunctionUnit, value: number, t: ComplexityThresholds): ComplexityFinding | null {
   if (value <= t.cognitive) return null;
   return finding(unit, "cognitive", value, t.cognitive, `cognitive complexity ${value} > ${t.cognitive}`);
 }

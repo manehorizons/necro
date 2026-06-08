@@ -11,8 +11,8 @@ Necro's `--json` output makes it easy to consume in CI.
 necro scan src/ --json
 ```
 
-This prints an object with two axes — `findings` (dead code) and `complexity`
-(syntactic detectors):
+This prints an object with three axes — `findings` (dead code), `complexity`
+(syntactic detectors), and `hotspots` (risk ranking):
 
 ```json
 {
@@ -38,6 +38,18 @@ This prints an object with two axes — `findings` (dead code) and `complexity`
       "value": 4,
       "threshold": 3,
       "message": "nesting depth 4 > 3"
+    }
+  ],
+  "hotspots": [
+    {
+      "name": "tangled",
+      "file": "/repo/src/util.ts",
+      "line": 9,
+      "complexity": 12,
+      "coverage": 0.2,
+      "crap": 99.7,
+      "churn": 9,
+      "risk": 897.3
     }
   ]
 }

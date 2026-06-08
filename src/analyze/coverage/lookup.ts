@@ -25,7 +25,8 @@ export function coverageFor(report: LcovReport, node: SymbolNode): CoverageStatu
   return hits > 0 ? { kind: "hit", hits } : { kind: "miss" };
 }
 
-function findFileCoverage(report: LcovReport, file: string): LcovFileCoverage | undefined {
+/** Find a file's coverage in a report, tolerant of absolute vs. relative `SF:` paths. */
+export function findFileCoverage(report: LcovReport, file: string): LcovFileCoverage | undefined {
   const direct = report.files.get(file);
   if (direct) return direct;
   const target = norm(file);
