@@ -1,0 +1,30 @@
+[
+  {
+    "name": "processOrder",
+    "file": "src/order.ts",
+    "signature": "export function processOrder(order, db) {",
+    "threshold": 12,
+    "source": "export function processOrder(order, db) {\n  if (!order.id) throw new Error('missing id');\n  if (!order.items || order.items.length === 0) throw new Error('empty');\n  if (order.total < 0) throw new Error('negative total');\n  let subtotal = 0;\n  for (const item of order.items) {\n    subtotal += item.price * item.qty;\n  }\n  const tax = subtotal * 0.2;\n  const shipping = subtotal > 100 ? 0 : 5;\n  const total = subtotal + tax + shipping;\n  db.save({ id: order.id, subtotal, tax, shipping, total });\n  db.log('order.processed', order.id);\n  return { id: order.id, total };\n}\n"
+  },
+  {
+    "name": "renderReport",
+    "file": "src/report.ts",
+    "signature": "export function renderReport(data) {",
+    "threshold": 12,
+    "source": "export function renderReport(data) {\n  const headerLines = [];\n  headerLines.push('# ' + data.title);\n  headerLines.push('generated: ' + data.date);\n  headerLines.push('author: ' + data.author);\n  const bodyLines = [];\n  for (const section of data.sections) {\n    bodyLines.push('## ' + section.name);\n    bodyLines.push(section.text);\n  }\n  const footerLines = [];\n  footerLines.push('---');\n  footerLines.push('total sections: ' + data.sections.length);\n  footerLines.push('status: ' + (data.ok ? 'ok' : 'fail'));\n  return headerLines.join('\\n') + '\\n' + bodyLines.join('\\n') + '\\n' + footerLines.join('\\n');\n}\n"
+  },
+  {
+    "name": "setupServer",
+    "file": "src/server.ts",
+    "signature": "export function setupServer(config) {",
+    "threshold": 12,
+    "source": "export function setupServer(config) {\n  const app = createApp();\n  app.set('port', config.port || 3000);\n  app.set('host', config.host || 'localhost');\n  app.use(logger(config.logLevel || 'info'));\n  app.use(bodyParser());\n  app.use(cors(config.origins || []));\n  app.get('/health', (req, res) => res.send('ok'));\n  app.get('/version', (req, res) => res.send(config.version));\n  app.post('/data', (req, res) => res.json(req.body));\n  const conn = connect(config.dbUrl);\n  conn.on('error', (e) => app.emit('db-error', e));\n  conn.on('ready', () => app.emit('db-ready'));\n  return { app, conn };\n}\n"
+  },
+  {
+    "name": "classifyToken",
+    "file": "src/lexer.ts",
+    "signature": "export function classifyToken(ch, ctx) {",
+    "threshold": 12,
+    "source": "export function classifyToken(ch, ctx) {\n  if (ch >= '0' && ch <= '9') {\n    ctx.kind = 'digit';\n    return ctx.kind;\n  }\n  if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {\n    ctx.kind = 'alpha';\n    return ctx.kind;\n  }\n  if (ch === ' ' || ch === '\\t' || ch === '\\n') {\n    ctx.kind = 'space';\n    return ctx.kind;\n  }\n  if (ch === '+' || ch === '-' || ch === '*' || ch === '/') {\n    ctx.kind = 'operator';\n    return ctx.kind;\n  }\n  ctx.kind = 'symbol';\n  return ctx.kind;\n}\n"
+  }
+]
