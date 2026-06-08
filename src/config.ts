@@ -14,12 +14,20 @@ export interface NecroConfig {
   complexity: ComplexityThresholds;
   /** Risk-hotspot ranking options. */
   hotspots: HotspotOptions;
+  /** Duplication-detector options. */
+  duplication: DuplicationOptions;
 }
 
 /** Risk-hotspot ranking options. */
 export interface HotspotOptions {
   /** How many hotspots to show. */
   top: number;
+}
+
+/** Duplication-detector options. */
+export interface DuplicationOptions {
+  /** Minimum normalized-token length for a clone to be reported. */
+  minTokens: number;
 }
 
 /** §4 default detector thresholds. */
@@ -33,11 +41,14 @@ export const DEFAULT_COMPLEXITY: ComplexityThresholds = {
 
 export const DEFAULT_HOTSPOTS: HotspotOptions = { top: 10 };
 
+export const DEFAULT_DUPLICATION: DuplicationOptions = { minTokens: 50 };
+
 export const DEFAULT_CONFIG: NecroConfig = {
   include: ["**/*.ts", "**/*.tsx"],
   ignore: ["**/node_modules/**", "**/dist/**"],
   complexity: DEFAULT_COMPLEXITY,
   hotspots: DEFAULT_HOTSPOTS,
+  duplication: DEFAULT_DUPLICATION,
 };
 
 /** The on-disk shape: every field optional, nested blocks partial overrides. */
@@ -47,6 +58,7 @@ interface RawConfig {
   coveragePath?: string;
   complexity?: Partial<ComplexityThresholds>;
   hotspots?: Partial<HotspotOptions>;
+  duplication?: Partial<DuplicationOptions>;
 }
 
 /**
@@ -62,6 +74,7 @@ export async function loadConfig(cwd: string): Promise<NecroConfig> {
     coveragePath: user.coveragePath,
     complexity: { ...DEFAULT_COMPLEXITY, ...(user.complexity ?? {}) },
     hotspots: { ...DEFAULT_HOTSPOTS, ...(user.hotspots ?? {}) },
+    duplication: { ...DEFAULT_DUPLICATION, ...(user.duplication ?? {}) },
   };
 }
 

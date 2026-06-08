@@ -4,6 +4,7 @@ import { loadConfig } from "./config.js";
 import { scan } from "./engine/index.js";
 import { runFix } from "./fix/index.js";
 import { renderComplexity } from "./report/complexity.js";
+import { renderDuplication } from "./report/duplication.js";
 import { renderHotspots } from "./report/hotspots.js";
 import { toJson } from "./report/json.js";
 import { renderTerminal } from "./report/terminal.js";
@@ -38,18 +39,19 @@ program
     const target = resolve(process.cwd(), path);
     const config = await loadConfig(process.cwd());
     if (opts.coverage) config.coveragePath = opts.coverage;
-    const { findings, complexity, hotspots } = await scan(target, config);
+    const { findings, complexity, hotspots, duplication } = await scan(target, config);
 
     const top = opts.top ? Number.parseInt(opts.top, 10) : undefined;
     const shown = top && top > 0 ? findings.slice(0, top) : findings;
 
     if (opts.json) {
-      console.log(toJson({ findings: shown, complexity, hotspots }));
+      console.log(toJson({ findings: shown, complexity, hotspots, duplication }));
     } else {
       const sections = [
         renderTerminal(shown),
         renderComplexity(complexity),
         renderHotspots(hotspots),
+        renderDuplication(duplication),
       ].filter(Boolean);
       console.log(sections.join("\n\n"));
     }

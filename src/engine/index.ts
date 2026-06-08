@@ -16,7 +16,7 @@ import type { FrameworkPlugin } from "../plugins/types.js";
 import { sortWorstFirst } from "../report/sort.js";
 import type { LcovReport } from "../analyze/coverage/lcov.js";
 import type { HotspotEntry } from "../analyze/hotspots.js";
-import type { ComplexityFinding } from "../syntactic/types.js";
+import type { ComplexityFinding, DuplicationFinding } from "../syntactic/types.js";
 import { resolveProdEntries } from "./prod-entries.js";
 
 /** A single anti-pattern finding (a classified dead/test-only symbol). */
@@ -28,6 +28,8 @@ export interface ScanResult {
   complexity: ComplexityFinding[];
   /** Risk-ranked function hotspots (CRAP × churn), worst-first. */
   hotspots: HotspotEntry[];
+  /** Copy-paste clone groups, worst-first by token length. */
+  duplication: DuplicationFinding[];
 }
 
 export interface ScanOptions {
@@ -50,7 +52,7 @@ export async function scan(
   opts: ScanOptions = {},
 ): Promise<ScanResult> {
   const files = await discoverFiles(targetPath, config);
-  if (files.length === 0) return { findings: [], complexity: [], hotspots: [] };
+  if (files.length === 0) return { findings: [], complexity: [], hotspots: [], duplication: [] };
 
   const ctx = await createRepoContext(targetPath);
   const detected = detectPlugins(PLUGINS, ctx);
@@ -92,9 +94,14 @@ export async function scan(
 
   const heavy =
     opts.complexity === false
-      ? { complexity: [], hotspots: [] }
+      ? { complexity: [], hotspots: [], duplication: [] }
       : await analyzeHeavy(sources, config, coverageReport, targetPath);
-  return { findings, complexity: heavy.complexity, hotspots: heavy.hotspots };
+  return {
+    findings,
+    complexity: heavy.complexity,
+    hotspots: heavy.hotspots,
+    duplication: heavy.duplication,
+  };
 }
 
 /**
@@ -108,11 +115,17 @@ async function analyzeHeavy(
   config: NecroConfig,
   coverageReport: LcovReport | null,
   targetPath: string,
-): Promise<{ complexity: ComplexityFinding[]; hotspots: HotspotEntry[] }> {
+): Promise<{
+  complexity: ComplexityFinding[];
+  hotspots: HotspotEntry[];
+  duplication: DuplicationFinding[];
+}> {
   const { lowerSource } = await import("../syntactic/ir.js");
   const { detect } = await import("../syntactic/detectors.js");
   const { rankHotspots } = await import("../analyze/hotspots.js");
   const { fileChurn } = await import("../analyze/churn.js");
+  const { tokenize } = await import("../syntactic/tokens.js");
+  const { findClones } = await import("../syntactic/duplication.js");
 
   const units = (await Promise.all(sources.map(({ file, text }) => lowerSource(file, text)))).flat();
 
@@ -126,7 +139,13 @@ async function analyzeHeavy(
 
   const churn = await fileChurn(targetPath);
   const hotspots = rankHotspots(units, coverageReport, churn, config.hotspots.top);
-  return { complexity, hotspots };
+
+  const fileTokens = await Promise.all(
+    sources.map(async ({ file, text }) => ({ file, tokens: await tokenize(file, text) })),
+  );
+  const duplication = findClones(fileTokens, config.duplication.minTokens);
+
+  return { complexity, hotspots, duplication };
 }
 
 async function readSources(files: string[]): Promise<Array<{ file: string; text: string }>> {

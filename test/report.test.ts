@@ -57,12 +57,15 @@ describe("toJson", () => {
         },
       ],
       hotspots: [],
+      duplication: [{ tokens: 60, locations: [{ file: "a.ts", startLine: 1, endLine: 9 }] }],
     });
     const parsed = JSON.parse(json) as {
       findings: Array<Record<string, unknown>>;
       complexity: Array<Record<string, unknown>>;
       hotspots: Array<Record<string, unknown>>;
+      duplication: Array<Record<string, unknown>>;
     };
+    expect(parsed.duplication).toHaveLength(1);
     expect(parsed.findings).toHaveLength(1);
     expect(parsed.findings[0]).toMatchObject({
       name: "oldHelper",

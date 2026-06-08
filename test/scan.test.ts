@@ -123,8 +123,8 @@ describe("scan with coverage ingestion", () => {
   test("--json carries the coverage signal in the evidence array (AC-5)", async () => {
     await writeFixture();
     await writeLcov();
-    const { findings, complexity, hotspots } = await scan(dir, DEFAULT_CONFIG);
-    const json = JSON.parse(toJson({ findings, complexity, hotspots })) as {
+    const { findings, complexity, hotspots, duplication } = await scan(dir, DEFAULT_CONFIG);
+    const json = JSON.parse(toJson({ findings, complexity, hotspots, duplication })) as {
       findings: Array<{ name: string; evidence: { text: string }[] }>;
     };
     const dyn = json.findings.find((f) => f.name === "dynamicallyUsed");

@@ -20,6 +20,7 @@ yet.
 - [Safe fix](/necro/reference/cli/#necro-fix): `necro fix` removes `certain`-dead code — preview by default, `--write` to apply, with a dirty git-tree guard.
 - [Complexity detectors](/necro/guide/complexity/): nesting, cyclomatic, cognitive, and god-function (tree-sitter), with configurable thresholds.
 - [Risk hotspots](/necro/guide/hotspots/): CRAP score (complexity × coverage) weighted by git churn, ranked worst-first.
+- [Duplication](/necro/guide/duplication/): Type-2 (renamed) copy-paste clone detection (tree-sitter, no jscpd).
 - Output modes: default terminal, `--json`, `--top N`.
 
 ## Planned
@@ -29,7 +30,7 @@ None of the following is implemented yet.
 | Area | Planned capability |
 |---|---|
 | Accuracy | istanbul-JSON coverage (lcov ships today); cascading re-analysis after a fix |
-| Detectors | Duplication; god-function responsibility-clustering (nesting, cyclomatic, cognitive & god-function ship today) |
+| Detectors | Cross-language & fuzzy (Type-3) clones; god-function responsibility-clustering (nesting, cyclomatic, cognitive, god-function & Type-2 duplication ship today) |
 | Scoring | Per-line & recency-weighted churn, ownership weighting (CRAP + per-file churn hotspots ship today) |
 | Fixes | LLM triage on `maybe`, then LLM refactors (safe `certain`-dead removal ships today) |
 | Output | SARIF (GitHub code scanning), `--fail-on <tier>` exit gating |

@@ -15,6 +15,20 @@ export interface ComplexityFinding {
   message: string;
 }
 
+/** One code location within a clone group. */
+export interface CloneLocation {
+  file: string;
+  startLine: number;
+  endLine: number;
+}
+
+/** A clone group — a normalized token sequence shared by ≥2 locations. */
+export interface DuplicationFinding {
+  /** Length of the matched sequence, in normalized tokens. */
+  tokens: number;
+  locations: CloneLocation[];
+}
+
 /** Detector thresholds (§4 defaults live in config). */
 export interface ComplexityThresholds {
   nesting: number;

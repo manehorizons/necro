@@ -54,6 +54,14 @@ rest fall back to the defaults above.
 Options for the [risk-hotspot](/necro/guide/hotspots/) ranking. `top` sets how
 many hotspots `scan` shows.
 
+### `duplication`
+
+- **Type:** object
+- **Default:** `{ minTokens: 50 }`
+
+Options for the [duplication detector](/necro/guide/duplication/). `minTokens`
+is the smallest normalized-token sequence reported as a clone.
+
 ## Example
 
 ```json title="necro.config.json"
@@ -62,7 +70,8 @@ many hotspots `scan` shows.
   "ignore": ["**/node_modules/**", "**/dist/**", "**/*.generated.ts"],
   "coveragePath": "coverage/lcov.info",
   "complexity": { "cyclomatic": 15, "godFunctionLoc": 80 },
-  "hotspots": { "top": 20 }
+  "hotspots": { "top": 20 },
+  "duplication": { "minTokens": 80 }
 }
 ```
 
@@ -72,7 +81,7 @@ Independent of `ignore`, declaration files (`*.d.ts`) and the directories
 `node_modules`, `.git`, `dist`, `build`, and `coverage` are never analyzed.
 
 :::note[This is the full key set]
-`include`, `ignore`, `coveragePath`, `complexity`, and `hotspots` are the only
-configuration keys in this release. Entry-point overrides and tier tuning are
-[planned](/necro/guide/roadmap/).
+`include`, `ignore`, `coveragePath`, `complexity`, `hotspots`, and `duplication`
+are the only configuration keys in this release. Entry-point overrides and tier
+tuning are [planned](/necro/guide/roadmap/).
 :::

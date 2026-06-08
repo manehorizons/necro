@@ -50,4 +50,13 @@ describe("loadConfig", () => {
     expect(config.complexity.cyclomatic).toBe(DEFAULT_COMPLEXITY.cyclomatic);
     expect(config.complexity.godFunctionLoc).toBe(DEFAULT_COMPLEXITY.godFunctionLoc);
   });
+
+  test("duplication.minTokens defaults and overrides (AC-4)", async () => {
+    const def = await loadConfig(dir);
+    expect(def.duplication.minTokens).toBe(50);
+
+    await writeFile(join(dir, "necro.config.json"), JSON.stringify({ duplication: { minTokens: 30 } }));
+    const config = await loadConfig(dir);
+    expect(config.duplication.minTokens).toBe(30);
+  });
 });

@@ -1,16 +1,17 @@
 import type { ClassifiedFinding } from "../analyze/classify.js";
 import type { HotspotEntry } from "../analyze/hotspots.js";
-import type { ComplexityFinding } from "../syntactic/types.js";
+import type { ComplexityFinding, DuplicationFinding } from "../syntactic/types.js";
 
 export interface JsonInput {
   findings: ClassifiedFinding[];
   complexity: ComplexityFinding[];
   hotspots: HotspotEntry[];
+  duplication: DuplicationFinding[];
 }
 
 /**
  * Serialize a scan to a stable, multi-axis JSON shape for CI / SARIF-adjacent
- * tooling: `{ findings: [...dead code...], complexity: [...], hotspots: [...] }`.
+ * tooling: `{ findings, complexity, hotspots, duplication }`.
  */
 export function toJson(input: JsonInput): string {
   const findings = input.findings.map((f) => ({
@@ -23,7 +24,12 @@ export function toJson(input: JsonInput): string {
     evidence: f.evidence,
   }));
   return JSON.stringify(
-    { findings, complexity: input.complexity, hotspots: input.hotspots },
+    {
+      findings,
+      complexity: input.complexity,
+      hotspots: input.hotspots,
+      duplication: input.duplication,
+    },
     null,
     2,
   );

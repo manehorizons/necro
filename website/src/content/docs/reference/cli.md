@@ -68,9 +68,10 @@ By default, `scan` prints a summary line followed by one
 [evidence chain](/necro/guide/evidence-chains/) per dead-code finding, sorted
 worst-first (`certain` → `likely` → `maybe` → `test-only`), then a
 [`Complexity`](/necro/guide/complexity/) section listing over-complex functions,
-then a [`Risk hotspots`](/necro/guide/hotspots/) ranking (both omitted when
-empty). With `--json`, it prints an object with three arrays — `findings` (dead
-code), `complexity`, and `hotspots` — see
+a [`Risk hotspots`](/necro/guide/hotspots/) ranking, and a
+[`Duplication`](/necro/guide/duplication/) section of copy-paste clones (each
+omitted when empty). With `--json`, it prints an object with four arrays —
+`findings` (dead code), `complexity`, `hotspots`, and `duplication` — see
 [CI integration](/necro/guide/ci-integration/) for the shape. `--top N` caps the
 dead-code findings; the other sections follow their own limits.
 
