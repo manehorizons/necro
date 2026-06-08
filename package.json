@@ -2,6 +2,7 @@
   "name": "@necrotool/necro",
   "version": "0.0.0",
   "description": "Local, free, polyglot CLI that finds anti-pattern code and proposes LLM-assisted fixes.",
+  "license": "MIT",
   "type": "module",
   "bin": {
     "necro": "./dist/cli.js"
