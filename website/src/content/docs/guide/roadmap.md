@@ -18,6 +18,7 @@ yet.
 - [Test-runner awareness](/necro/guide/framework-awareness/) (jest / vitest).
 - [Coverage ingestion](/necro/reference/cli/#coverage) (lcov) folded into the evidence chain and tiers.
 - [Safe fix](/necro/reference/cli/#necro-fix): `necro fix` removes `certain`-dead code — preview by default, `--write` to apply, with a dirty git-tree guard.
+- [Complexity detectors](/necro/guide/complexity/): nesting, cyclomatic, cognitive, and god-function (tree-sitter), with configurable thresholds.
 - Output modes: default terminal, `--json`, `--top N`.
 
 ## Planned
@@ -27,7 +28,7 @@ None of the following is implemented yet.
 | Area | Planned capability |
 |---|---|
 | Accuracy | istanbul-JSON coverage (lcov ships today); cascading re-analysis after a fix |
-| Detectors | Duplication, nesting, cyclomatic & cognitive complexity, god-function/file |
+| Detectors | Duplication; god-function responsibility-clustering (nesting, cyclomatic, cognitive & god-function ship today) |
 | Scoring | CRAP score, complexity × churn hotspots |
 | Fixes | LLM triage on `maybe`, then LLM refactors (safe `certain`-dead removal ships today) |
 | Output | SARIF (GitHub code scanning), `--fail-on <tier>` exit gating |

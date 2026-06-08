@@ -1,8 +1,17 @@
 import type { ClassifiedFinding } from "../analyze/classify.js";
+import type { ComplexityFinding } from "../syntactic/types.js";
 
-/** Serialize findings to a flat, stable JSON shape for CI / SARIF-adjacent tooling. */
-export function toJson(findings: ClassifiedFinding[]): string {
-  const serializable = findings.map((f) => ({
+export interface JsonInput {
+  findings: ClassifiedFinding[];
+  complexity: ComplexityFinding[];
+}
+
+/**
+ * Serialize a scan to a stable, multi-axis JSON shape for CI / SARIF-adjacent
+ * tooling: `{ findings: [...dead code...], complexity: [...detectors...] }`.
+ */
+export function toJson(input: JsonInput): string {
+  const findings = input.findings.map((f) => ({
     name: f.node.name,
     file: f.node.file,
     line: f.node.line,
@@ -11,5 +20,5 @@ export function toJson(findings: ClassifiedFinding[]): string {
     autoFixEligible: f.autoFixEligible,
     evidence: f.evidence,
   }));
-  return JSON.stringify(serializable, null, 2);
+  return JSON.stringify({ findings, complexity: input.complexity }, null, 2);
 }

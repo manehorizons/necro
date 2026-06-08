@@ -11,22 +11,36 @@ Necro's `--json` output makes it easy to consume in CI.
 necro scan src/ --json
 ```
 
-This prints an array of findings:
+This prints an object with two axes — `findings` (dead code) and `complexity`
+(syntactic detectors):
 
 ```json
-[
-  {
-    "name": "deadFn",
-    "file": "/repo/src/util.ts",
-    "line": 2,
-    "tier": "certain",
-    "verdict": "dead",
-    "autoFixEligible": true,
-    "evidence": [
-      { "ok": true, "text": "0 static references (TS compiler)" }
-    ]
-  }
-]
+{
+  "findings": [
+    {
+      "name": "deadFn",
+      "file": "/repo/src/util.ts",
+      "line": 2,
+      "tier": "certain",
+      "verdict": "dead",
+      "autoFixEligible": true,
+      "evidence": [
+        { "ok": true, "text": "0 static references (TS compiler)" }
+      ]
+    }
+  ],
+  "complexity": [
+    {
+      "detector": "nesting",
+      "file": "/repo/src/util.ts",
+      "line": 9,
+      "name": "tangled",
+      "value": 4,
+      "threshold": 3,
+      "message": "nesting depth 4 > 3"
+    }
+  ]
+}
 ```
 
 ## Gating a build
@@ -42,7 +56,7 @@ Example — fail when any `certain`-dead code is found:
 
 ```bash
 count=$(necro scan src/ --json | node -e \
-  'const f=JSON.parse(require("fs").readFileSync(0));process.stdout.write(String(f.filter(x=>x.tier==="certain").length))')
+  'const o=JSON.parse(require("fs").readFileSync(0));process.stdout.write(String(o.findings.filter(x=>x.tier==="certain").length))')
 if [ "$count" -gt 0 ]; then
   echo "::error::$count certain-dead symbols found"
   exit 1

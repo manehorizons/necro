@@ -30,7 +30,8 @@ export async function runFix(
   config: NecroConfig,
   opts: FixOptions,
 ): Promise<FixResult> {
-  const { findings } = await scan(targetPath, config);
+  // fix only needs dead-code findings — skip the complexity (tree-sitter) axis.
+  const { findings } = await scan(targetPath, config, { complexity: false });
   const edits = planRemovals(findings);
   if (edits.length === 0) return { status: "nothing-to-fix" };
 

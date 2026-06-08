@@ -37,13 +37,23 @@ coverage into each finding — see [`scan` → Coverage](/necro/reference/cli/#c
 necro reads the report only; it never runs your tests. The `--coverage` flag
 overrides this key.
 
+### `complexity`
+
+- **Type:** object (partial — unset keys keep their default)
+- **Defaults:** `{ nesting: 3, cyclomatic: 10, cognitive: 15, godFunctionLoc: 50, godFunctionParams: 5 }`
+
+Thresholds for the [complexity detectors](/necro/guide/complexity/). A function
+is flagged when it exceeds a threshold. Override only the keys you want; the
+rest fall back to the defaults above.
+
 ## Example
 
 ```json title="necro.config.json"
 {
   "include": ["**/*.ts", "**/*.tsx"],
   "ignore": ["**/node_modules/**", "**/dist/**", "**/*.generated.ts"],
-  "coveragePath": "coverage/lcov.info"
+  "coveragePath": "coverage/lcov.info",
+  "complexity": { "cyclomatic": 15, "godFunctionLoc": 80 }
 }
 ```
 
@@ -53,7 +63,7 @@ Independent of `ignore`, declaration files (`*.d.ts`) and the directories
 `node_modules`, `.git`, `dist`, `build`, and `coverage` are never analyzed.
 
 :::note[This is the full key set]
-`include`, `ignore`, and `coveragePath` are the only configuration keys in this
-release. Entry-point overrides, detector thresholds, and tier tuning are
+`include`, `ignore`, `coveragePath`, and `complexity` are the only configuration
+keys in this release. Entry-point overrides and tier tuning are
 [planned](/necro/guide/roadmap/).
 :::

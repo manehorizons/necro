@@ -42,11 +42,27 @@ describe("sortWorstFirst", () => {
 });
 
 describe("toJson", () => {
-  test("emits valid JSON with a stable finding shape", () => {
-    const json = toJson([finding("oldHelper", "certain")]);
-    const parsed = JSON.parse(json) as Array<Record<string, unknown>>;
-    expect(parsed).toHaveLength(1);
-    expect(parsed[0]).toMatchObject({
+  test("emits valid JSON with findings and complexity axes (AC-6)", () => {
+    const json = toJson({
+      findings: [finding("oldHelper", "certain")],
+      complexity: [
+        {
+          detector: "nesting",
+          file: "src/deep.ts",
+          line: 3,
+          name: "tangled",
+          value: 4,
+          threshold: 3,
+          message: "nesting depth 4 > 3",
+        },
+      ],
+    });
+    const parsed = JSON.parse(json) as {
+      findings: Array<Record<string, unknown>>;
+      complexity: Array<Record<string, unknown>>;
+    };
+    expect(parsed.findings).toHaveLength(1);
+    expect(parsed.findings[0]).toMatchObject({
       name: "oldHelper",
       file: "src/oldHelper.ts",
       line: 1,
@@ -54,6 +70,8 @@ describe("toJson", () => {
       verdict: "dead",
       autoFixEligible: true,
     });
+    expect(parsed.complexity).toHaveLength(1);
+    expect(parsed.complexity[0]).toMatchObject({ detector: "nesting", name: "tangled", value: 4 });
   });
 });
 

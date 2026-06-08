@@ -2,7 +2,7 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { DEFAULT_CONFIG, loadConfig } from "../src/config.js";
+import { DEFAULT_COMPLEXITY, DEFAULT_CONFIG, loadConfig } from "../src/config.js";
 
 let dir: string;
 
@@ -32,5 +32,22 @@ describe("loadConfig", () => {
     expect(config.ignore).toEqual(["**/build/**"]);
     // untouched key keeps its default
     expect(config.include).toEqual(DEFAULT_CONFIG.include);
+  });
+
+  test("complexity thresholds default when unset (AC-2, AC-3, AC-4, AC-5)", async () => {
+    const config = await loadConfig(dir);
+    expect(config.complexity).toEqual(DEFAULT_COMPLEXITY);
+  });
+
+  test("a partial complexity block overrides only the keys it sets (AC-2, AC-3, AC-4, AC-5)", async () => {
+    await writeFile(
+      join(dir, "necro.config.json"),
+      JSON.stringify({ complexity: { nesting: 5 } }),
+    );
+
+    const config = await loadConfig(dir);
+    expect(config.complexity.nesting).toBe(5);
+    expect(config.complexity.cyclomatic).toBe(DEFAULT_COMPLEXITY.cyclomatic);
+    expect(config.complexity.godFunctionLoc).toBe(DEFAULT_COMPLEXITY.godFunctionLoc);
   });
 });

@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { loadConfig } from "./config.js";
 import { scan } from "./engine/index.js";
 import { runFix } from "./fix/index.js";
+import { renderComplexity } from "./report/complexity.js";
 import { toJson } from "./report/json.js";
 import { renderTerminal } from "./report/terminal.js";
 
@@ -36,12 +37,17 @@ program
     const target = resolve(process.cwd(), path);
     const config = await loadConfig(process.cwd());
     if (opts.coverage) config.coveragePath = opts.coverage;
-    const { findings } = await scan(target, config);
+    const { findings, complexity } = await scan(target, config);
 
     const top = opts.top ? Number.parseInt(opts.top, 10) : undefined;
     const shown = top && top > 0 ? findings.slice(0, top) : findings;
 
-    console.log(opts.json ? toJson(shown) : renderTerminal(shown));
+    if (opts.json) {
+      console.log(toJson({ findings: shown, complexity }));
+    } else {
+      const sections = [renderTerminal(shown), renderComplexity(complexity)].filter(Boolean);
+      console.log(sections.join("\n\n"));
+    }
   });
 
 program

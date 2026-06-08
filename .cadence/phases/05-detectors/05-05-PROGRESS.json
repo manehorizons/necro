@@ -1,0 +1,41 @@
+{
+  "draftId": "05-05",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-08T16:28:50.317Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-08T16:29:47.950Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-08T16:30:53.893Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-08T16:32:39.990Z"
+    },
+    "T5": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-08T16:35:13.316Z"
+    },
+    "T6": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-08T16:37:10.016Z"
+    }
+  }
+}

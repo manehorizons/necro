@@ -65,10 +65,13 @@ is purely additive and never changes behavior when absent.
 ### Output
 
 By default, `scan` prints a summary line followed by one
-[evidence chain](/necro/guide/evidence-chains/) per finding, sorted worst-first
-(`certain` → `likely` → `maybe` → `test-only`). With `--json`, it prints an
-array of finding objects — see [CI integration](/necro/guide/ci-integration/)
-for the shape.
+[evidence chain](/necro/guide/evidence-chains/) per dead-code finding, sorted
+worst-first (`certain` → `likely` → `maybe` → `test-only`), then a
+[`Complexity`](/necro/guide/complexity/) section listing over-complex functions
+(omitted when there are none). With `--json`, it prints an object with two
+arrays — `findings` (dead code) and `complexity` — see
+[CI integration](/necro/guide/ci-integration/) for the shape. `--top N` caps the
+dead-code findings; the complexity section is shown in full.
 
 ### Exit code
 
