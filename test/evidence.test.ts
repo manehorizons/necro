@@ -42,6 +42,9 @@ describe("renderEvidenceChain", () => {
     expect(text).toContain("✗");
     expect(text).toMatch(/dynamic-import taint/i);
     expect(text).toMatch(/→ .*NOT auto-removed/i);
+    // Must not advertise unbuilt features (LLM triage is not implemented).
+    expect(text).not.toMatch(/LLM triage/i);
+    expect(text).toMatch(/needs (human )?review/i);
   });
 });
 

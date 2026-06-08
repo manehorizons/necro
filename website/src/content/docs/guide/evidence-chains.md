@@ -15,7 +15,7 @@ formatPayload  src/api/fmt.ts:88   tier: maybe
   • coverage: not available
   ✗ in package.json exports — external consumers invisible
   ✗ dynamic-import taint in scope — target unresolvable
-  → NOT auto-removed; LLM triage available
+  → NOT auto-removed — needs human review
 ```
 
 ## The glyphs
@@ -44,11 +44,9 @@ For a dead-code finding, Necro reports:
 For a [`test-only`](/necro/guide/test-only/) finding the signals are framed in
 terms of production vs. test references instead.
 
-:::note[About "LLM triage available"]
-The verdict line for a `maybe` finding currently ends with
-"LLM triage available". LLM triage is [planned](/necro/guide/roadmap/), not yet
-implemented — read that line as *"this needs human/LLM judgement"*, not as a
-feature you can invoke today.
+:::note
+A `maybe` finding is quarantined for human review — it's never auto-removed.
+[LLM triage](/necro/guide/roadmap/) to help resolve the `maybe` tier is planned.
 :::
 
 ## Why it matters

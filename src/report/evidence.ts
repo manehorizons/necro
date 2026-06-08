@@ -37,6 +37,6 @@ function verdictLine(finding: ClassifiedFinding): string {
     case "likely":
       return "exported but unused — confirm no external use, then remove";
     case "maybe":
-      return "NOT auto-removed; LLM triage available";
+      return "NOT auto-removed — needs human review";
   }
 }
