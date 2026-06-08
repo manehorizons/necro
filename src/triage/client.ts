@@ -2,14 +2,30 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { LlmOptions } from "../config.js";
 import { parseVerdict, VERDICT_SCHEMA, type TriagePrompt, type TriageResult } from "./prompt.js";
 
-/** Thrown — before any SDK import or network call — when no API key is available. */
+/** Thrown — before any SDK import or network call — when no API key is available.
+ * `command` names the entry point (e.g. `triage`, `refactor`) for the message. */
 export class MissingApiKeyError extends Error {
-  constructor() {
+  constructor(command = "triage") {
     super(
-      "necro triage needs an Anthropic API key. Set ANTHROPIC_API_KEY (or llm.apiKey in necro.config.json). No request was made.",
+      `necro ${command} needs an Anthropic API key. Set ANTHROPIC_API_KEY (or llm.apiKey in necro.config.json). No request was made.`,
     );
     this.name = "MissingApiKeyError";
   }
+}
+
+/**
+ * A memoized factory for the runtime SDK client. `@anthropic-ai/sdk` is loaded
+ * via dynamic `import()` on first use only, so importing this helper never
+ * pulls the SDK into `scan`/`fix`. Shared by every LLM-backed command.
+ */
+export function lazyAnthropic(apiKey: string): () => Promise<Anthropic> {
+  let clientPromise: Promise<Anthropic> | undefined;
+  return () => {
+    if (!clientPromise) {
+      clientPromise = import("@anthropic-ai/sdk").then((m) => new m.default({ apiKey }));
+    }
+    return clientPromise;
+  };
 }
 
 /** The one capability triage needs from a model backend — injectable so tests
@@ -39,13 +55,7 @@ export function createTriageClient(llm: LlmOptions): TriageClient {
   const apiKey = resolveApiKey(llm);
   if (!apiKey) throw new MissingApiKeyError();
 
-  let clientPromise: Promise<Anthropic> | undefined;
-  const getClient = (): Promise<Anthropic> => {
-    if (!clientPromise) {
-      clientPromise = import("@anthropic-ai/sdk").then((m) => new m.default({ apiKey }));
-    }
-    return clientPromise;
-  };
+  const getClient = lazyAnthropic(apiKey);
 
   return {
     async classify(prompt: TriagePrompt): Promise<TriageResult> {
