@@ -33,7 +33,8 @@ runs it in [two colors](/necro/guide/reachability/) (prod, then prod+test).
 
 The confidence level of a dead-code finding:
 [`certain` / `likely` / `maybe`](/necro/guide/understanding-results/). Only
-`certain` is auto-fix eligible.
+`certain` is flagged auto-fix eligible (for the [planned](/necro/guide/roadmap/)
+`--fix`).
 
 ## Verdict
 

@@ -44,6 +44,13 @@ For a dead-code finding, Necro reports:
 For a [`test-only`](/necro/guide/test-only/) finding the signals are framed in
 terms of production vs. test references instead.
 
+:::note[About "LLM triage available"]
+The verdict line for a `maybe` finding currently ends with
+"LLM triage available". LLM triage is [planned](/necro/guide/roadmap/), not yet
+implemented — read that line as *"this needs human/LLM judgement"*, not as a
+feature you can invoke today.
+:::
+
 ## Why it matters
 
 A pure-static tool flags `formatPayload` as dead and burns you. Necro shows the
