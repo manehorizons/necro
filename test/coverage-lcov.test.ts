@@ -19,7 +19,7 @@ const SAMPLE = [
   "end_of_record",
 ].join("\n");
 
-describe("parseLcov", () => {
+describe("parseLcov (AC-1)", () => {
   test("parses SF/FN/FNDA/DA records grouped by file", () => {
     const report = parseLcov(SAMPLE);
 

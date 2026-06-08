@@ -21,7 +21,7 @@ const report = parseLcov(
   ].join("\n"),
 );
 
-describe("coverageFor", () => {
+describe("coverageFor (AC-2, AC-3, AC-4)", () => {
   test("FN match with 0 hits → miss", () => {
     expect(coverageFor(report, node("/repo/src/util.ts", 10, "deadFn"))).toEqual({ kind: "miss" });
   });

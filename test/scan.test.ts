@@ -101,7 +101,7 @@ describe("scan with coverage ingestion", () => {
     );
   }
 
-  test("runtime-hit-but-unreferenced symbol is downgraded to maybe with evidence", async () => {
+  test("runtime-hit-but-unreferenced symbol is downgraded to maybe with evidence (AC-3, AC-5)", async () => {
     await writeFixture();
     await writeLcov();
 
@@ -120,7 +120,7 @@ describe("scan with coverage ingestion", () => {
     expect(dead?.evidence).toContainEqual({ ok: true, text: "0 coverage hits (lcov)" });
   });
 
-  test("--json carries the coverage signal in the evidence array", async () => {
+  test("--json carries the coverage signal in the evidence array (AC-5)", async () => {
     await writeFixture();
     await writeLcov();
     const { findings } = await scan(dir, DEFAULT_CONFIG);
@@ -129,7 +129,7 @@ describe("scan with coverage ingestion", () => {
     expect(dyn?.evidence.some((e) => e.text.startsWith("executed at runtime"))).toBe(true);
   });
 
-  test("no coverage report → byte-identical to phase 01", async () => {
+  test("no coverage report → byte-identical to phase 01 (AC-1, AC-6)", async () => {
     await writeFixture();
     const { findings } = await scan(dir, DEFAULT_CONFIG);
 

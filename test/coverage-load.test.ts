@@ -16,7 +16,7 @@ afterEach(async () => {
 
 const LCOV = ["SF:/x.ts", "FN:1,f", "FNDA:3,f", "DA:1,3", "end_of_record"].join("\n");
 
-describe("loadCoverage", () => {
+describe("loadCoverage (AC-1, AC-4)", () => {
   test("no report at default path → null, no warning", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const report = await loadCoverage(dir, {});

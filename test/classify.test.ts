@@ -75,7 +75,7 @@ describe("classify", () => {
 describe("classify with coverage", () => {
   const evidenceText = (f: { evidence: { text: string }[] }) => f.evidence.map((e) => e.text);
 
-  test("coverage miss keeps a private dead candidate certain + auto-fixable", () => {
+  test("coverage miss keeps a private dead candidate certain + auto-fixable (AC-2)", () => {
     const [f] = classify({
       nodes: [node("a", false)],
       reachability: [reach("a", "dead")],
@@ -86,7 +86,7 @@ describe("classify with coverage", () => {
     expect(f?.evidence).toContainEqual({ ok: true, text: "0 coverage hits (lcov)" });
   });
 
-  test("runtime hits force a dead candidate to maybe, never auto-fixed", () => {
+  test("runtime hits force a dead candidate to maybe, never auto-fixed (AC-3)", () => {
     const [f] = classify({
       nodes: [node("a", false)],
       reachability: [reach("a", "dead")],
@@ -99,7 +99,7 @@ describe("classify with coverage", () => {
     );
   });
 
-  test("coverage unavailable for a symbol leaves phase-01 behavior intact", () => {
+  test("coverage unavailable for a symbol leaves phase-01 behavior intact (AC-4)", () => {
     const [f] = classify({
       nodes: [node("a", false)],
       reachability: [reach("a", "dead")],
@@ -109,7 +109,7 @@ describe("classify with coverage", () => {
     expect(f?.evidence).toContainEqual({ ok: null, text: "coverage: not available" });
   });
 
-  test("no coverage fn supplied → byte-identical to phase 01 (coverage: not available)", () => {
+  test("no coverage fn supplied → byte-identical to phase 01 (coverage: not available) (AC-6)", () => {
     const [withFn] = classify({
       nodes: [node("a", false)],
       reachability: [reach("a", "dead")],
