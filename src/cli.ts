@@ -21,6 +21,12 @@ interface FixOptions {
   coverage?: string;
 }
 
+interface TriageOptions {
+  json?: boolean;
+  /** Triage a prior `necro scan --json` document instead of re-scanning. */
+  input?: string;
+}
+
 const program = new Command();
 
 program
@@ -89,6 +95,46 @@ program
         console.log(`Removed ${result.count} symbol(s) across ${result.files.length} file(s).`);
         break;
     }
+  });
+
+program
+  .command("triage")
+  .description("LLM-resolve the quarantined `maybe` findings (advisory; opt-in; uses the Anthropic API)")
+  .argument("[path]", "directory or file to scan, then triage", ".")
+  .option("--input <file>", "triage a prior `necro scan --json` document instead of re-scanning")
+  .option("--json", "emit triaged findings as JSON")
+  .action(async (path: string, opts: TriageOptions) => {
+    const config = await loadConfig(process.cwd());
+
+    // Lazy: only loaded on the triage path, never by scan/fix.
+    const { createTriageClient, MissingApiKeyError } = await import("./triage/client.js");
+    const { runTriage } = await import("./triage/index.js");
+    const { renderTriage, toTriageJson } = await import("./report/triage.js");
+
+    let client: import("./triage/client.js").TriageClient;
+    try {
+      client = createTriageClient(config.llm); // throws before any network call if no key
+    } catch (err) {
+      if (err instanceof MissingApiKeyError) {
+        console.error(err.message);
+        process.exitCode = 1;
+        return;
+      }
+      throw err;
+    }
+
+    let findings;
+    if (opts.input) {
+      const { loadScanJson } = await import("./triage/load.js");
+      findings = await loadScanJson(resolve(process.cwd(), opts.input));
+    } else {
+      // Triage only needs dead-code findings — skip the tree-sitter axis.
+      const result = await scan(resolve(process.cwd(), path), config, { complexity: false });
+      findings = result.findings;
+    }
+
+    const res = await runTriage(findings, config.llm, client);
+    console.log(opts.json ? toTriageJson(res) : renderTriage(res));
   });
 
 program.parseAsync().catch((err: unknown) => {
