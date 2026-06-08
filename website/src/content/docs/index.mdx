@@ -1,0 +1,70 @@
+---
+title: Necro
+description: Local, free, polyglot CLI that finds anti-pattern code across multiple axes and proposes LLM-assisted fixes.
+template: splash
+hero:
+  tagline: Find dead code with evidence, not guesses. A local, free, polyglot CLI that surfaces anti-pattern code and proposes LLM-assisted fixes — and refuses to guess where pure-static tools can't.
+  actions:
+    - text: Quickstart
+      link: /necro/guide/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/manehorizons/necro
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## The empty cell
+
+Every analysis axis already has a strong incumbent — but no free, local tool
+combines them with fix reasoning across languages. Necro targets that gap:
+
+**free + local + multi-axis + LLM-assisted-fix + polyglot.**
+
+## What makes Necro different
+
+<CardGrid>
+  <Card title="Refuses to guess" icon="approve-check">
+    Pure-static tools must make a binary alive/dead call and eat the false
+    positive when unsure. Necro adds a third **`maybe`** tier and quarantines
+    ambiguous code with reasons instead of falsely killing it.
+  </Card>
+  <Card title="Evidence chains" icon="list-format">
+    Every finding ships its reasoning — static references, package exports,
+    dynamic-import taint — so you audit the verdict instead of trusting blind.
+  </Card>
+  <Card title="The `test-only` verdict" icon="puzzle">
+    Code that's production-dead but kept warm by tests gets its own verdict —
+    a signal no incumbent surfaces cleanly.
+  </Card>
+  <Card title="Semantic, not textual" icon="seti:typescript">
+    Dead-code detection runs on the TypeScript compiler API (via ts-morph),
+    following re-exports, type-only imports, and barrel files.
+  </Card>
+</CardGrid>
+
+## Try it
+
+The npm package is [planned](/necro/guide/); today you install from source:
+
+```bash
+# install (from source)
+git clone https://github.com/manehorizons/necro
+cd necro && npm install && npm run build
+
+# scan your project
+node dist/cli.js scan src/
+```
+
+You'll get tiered findings, each with an evidence chain — see the
+[Quickstart](/necro/guide/) to read the output.
+
+:::note[Early days]
+Necro is in active development. This first release finds **dead code** in
+TypeScript with confidence tiers, evidence chains, and the `test-only`
+verdict. Duplication, complexity, churn, and LLM fixes are on the
+[roadmap](/necro/guide/).
+:::
