@@ -3,10 +3,10 @@
 > Derived view. Do not edit by hand — regenerated on every state.json write.
 
 **Project:** necro
-**Loop position:** BUILD
+**Loop position:** IDLE
 **Active phase:** 02-docs
-**Active draft:** 02-02
-**Tier:** complex
+**Active draft:** (none)
+**Tier:** (n/a)
 
 ## Telemetry
 - Token utilization: 0%
@@ -14,14 +14,10 @@
 - Last handoff: (none)
 
 ## Counts
-- Open drafts: 1
+- Open drafts: 0
 - Decisions: 0
 - Deferred items: 0
 
 ## Skill audit
 - Required: (none)
 - Invoked: (none)
-
-## Active task
-- ID: T7
-- Status: DONE
