@@ -4,7 +4,7 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 03-coverage
+**Active phase:** 04-fix-safe
 **Active draft:** (none)
 **Tier:** (n/a)
 

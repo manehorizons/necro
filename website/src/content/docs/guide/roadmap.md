@@ -16,6 +16,8 @@ yet.
 - [Evidence chains](/necro/guide/evidence-chains/) on every finding.
 - The [`test-only`](/necro/guide/test-only/) verdict.
 - [Test-runner awareness](/necro/guide/framework-awareness/) (jest / vitest).
+- [Coverage ingestion](/necro/reference/cli/#coverage) (lcov) folded into the evidence chain and tiers.
+- [Safe fix](/necro/reference/cli/#necro-fix): `necro fix` removes `certain`-dead code — preview by default, `--write` to apply, with a dirty git-tree guard.
 - Output modes: default terminal, `--json`, `--top N`.
 
 ## Planned
@@ -24,10 +26,10 @@ None of the following is implemented yet.
 
 | Area | Planned capability |
 |---|---|
-| Accuracy | Coverage ingestion (lcov/c8) to confirm runtime-dead symbols |
+| Accuracy | istanbul-JSON coverage (lcov ships today); cascading re-analysis after a fix |
 | Detectors | Duplication, nesting, cyclomatic & cognitive complexity, god-function/file |
 | Scoring | CRAP score, complexity × churn hotspots |
-| Fixes | `--fix-safe` (remove `certain`-dead), then LLM triage on `maybe`, then LLM refactors |
+| Fixes | LLM triage on `maybe`, then LLM refactors (safe `certain`-dead removal ships today) |
 | Output | SARIF (GitHub code scanning), `--fail-on <tier>` exit gating |
 | Frameworks | Next.js, NestJS (DI decorators), template-based plugins |
 | Languages | Python (the polyglot bet — detectors reused, new symbol-graph adapter) |

@@ -2,12 +2,19 @@ import { resolve } from "node:path";
 import { Command } from "commander";
 import { loadConfig } from "./config.js";
 import { scan } from "./engine/index.js";
+import { runFix } from "./fix/index.js";
 import { toJson } from "./report/json.js";
 import { renderTerminal } from "./report/terminal.js";
 
 interface ScanOptions {
   json?: boolean;
   top?: string;
+  coverage?: string;
+}
+
+interface FixOptions {
+  write?: boolean;
+  force?: boolean;
   coverage?: string;
 }
 
@@ -35,6 +42,40 @@ program
     const shown = top && top > 0 ? findings.slice(0, top) : findings;
 
     console.log(opts.json ? toJson(shown) : renderTerminal(shown));
+  });
+
+program
+  .command("fix")
+  .description("Safely remove certain-dead code (preview by default)")
+  .argument("[path]", "directory or file to fix", ".")
+  .option("--write", "apply the removals to disk (default: preview only)")
+  .option("--force", "bypass the dirty git-tree guard")
+  .option("--coverage <path>", "path to an lcov report (default: coverage/lcov.info)")
+  .action(async (path: string, opts: FixOptions) => {
+    const target = resolve(process.cwd(), path);
+    const config = await loadConfig(process.cwd());
+    if (opts.coverage) config.coveragePath = opts.coverage;
+
+    const result = await runFix(target, config, { write: opts.write, force: opts.force });
+    switch (result.status) {
+      case "nothing-to-fix":
+        console.log("Nothing to fix — no certain-dead code found.");
+        break;
+      case "preview":
+        console.log(result.diff);
+        console.log(
+          `\n${result.count} symbol(s) would be removed. Re-run with --write to apply.`,
+        );
+        break;
+      case "refused-dirty":
+        console.error(
+          "Refused: the git working tree has uncommitted changes. Commit or stash first, or pass --force.",
+        );
+        break;
+      case "written":
+        console.log(`Removed ${result.count} symbol(s) across ${result.files.length} file(s).`);
+        break;
+    }
   });
 
 program.parseAsync().catch((err: unknown) => {

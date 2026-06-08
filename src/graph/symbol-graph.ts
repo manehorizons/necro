@@ -8,7 +8,7 @@ export interface BuildOptions {
   isTestFile?: (filePath: string) => boolean;
 }
 
-interface Declaration {
+export interface Declaration {
   name: string;
   nameNode: Node;
   declNode: Node;
@@ -64,7 +64,7 @@ export function buildSymbolGraph(
   return { nodes, edges };
 }
 
-function collectDeclarations(sf: import("ts-morph").SourceFile): Declaration[] {
+export function collectDeclarations(sf: import("ts-morph").SourceFile): Declaration[] {
   const out: Declaration[] = [];
   const push = (declNode: Node, nameNode: Node | undefined, exported: boolean) => {
     if (!nameNode) return;

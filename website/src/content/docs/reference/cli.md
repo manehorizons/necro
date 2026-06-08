@@ -76,7 +76,43 @@ for the shape.
 returned only on an internal error. A `--fail-on <tier>` flag for gating builds
 is [planned](/necro/guide/roadmap/).
 
+## `necro fix`
+
+Safely remove `certain`-dead code. `fix` reuses the same detection as `scan`,
+then removes **only** `certain`-tier (auto-fix-eligible) symbols — `likely`,
+`maybe`, and `test-only` findings are never touched. Removals go through the TS
+compiler API (ts-morph), not text editing, so the edited file stays valid.
+
+```
+necro fix [path] [options]
+```
+
+### Arguments
+
+| Argument | Default | Description |
+|---|---|---|
+| `[path]` | `.` | Directory or file to fix. |
+
+### Options
+
+| Option | Description |
+|---|---|
+| `--write` | Apply the removals to disk. **Without it, `fix` only previews** a unified diff and changes nothing. |
+| `--force` | Bypass the dirty git-tree guard. |
+| `--coverage <path>` | Path to an lcov report, same as `scan` — keeps tiers consistent between the two. |
+| `-h`, `--help` | Show help for `fix`. |
+
+### Safety model
+
+- **Preview by default.** `necro fix` prints the diff of what *would* be removed and writes nothing until you add `--write`.
+- **Dirty-tree guard.** With `--write`, `fix` refuses if the git working tree has uncommitted changes (git is your undo) — commit/stash first, or pass `--force`. If the target isn't a git repo, it warns that there's no undo and proceeds.
+- **Single pass.** `fix` removes what's `certain`-dead in one scan; it does not re-analyze to chase code that becomes dead *after* a removal. Re-run `fix` to catch the next layer. Cascading re-analysis is [planned](/necro/guide/roadmap/).
+
+### Exit code
+
+`fix` exits `0` on every successful run (preview, write, or nothing-to-fix).
+
 :::note[This is the full surface]
-`scan` is the only command in this release. Additional commands (`fix`,
-`explain`) are [planned](/necro/guide/roadmap/).
+`scan` and `fix` are the commands in this release. An `explain` command and
+LLM-assisted refactors are [planned](/necro/guide/roadmap/).
 :::
