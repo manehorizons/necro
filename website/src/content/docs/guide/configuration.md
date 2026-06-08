@@ -40,5 +40,5 @@ Entry-point overrides, per-detector thresholds, and tier tuning are
 [planned](/necro/guide/roadmap/). Today, entry points are resolved
 automatically from `package.json` and your test-runner config.
 
-See the full [configuration reference](/necro/reference/) for the
+See the full [configuration reference](/necro/reference/configuration/) for the
 authoritative key list.
