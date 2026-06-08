@@ -8,6 +8,7 @@ import { renderTerminal } from "./report/terminal.js";
 interface ScanOptions {
   json?: boolean;
   top?: string;
+  coverage?: string;
 }
 
 const program = new Command();
@@ -23,9 +24,11 @@ program
   .argument("[path]", "directory or file to scan", ".")
   .option("--json", "emit findings as JSON")
   .option("--top <n>", "show only the worst N findings")
+  .option("--coverage <path>", "path to an lcov report (default: coverage/lcov.info)")
   .action(async (path: string, opts: ScanOptions) => {
     const target = resolve(process.cwd(), path);
     const config = await loadConfig(process.cwd());
+    if (opts.coverage) config.coveragePath = opts.coverage;
     const { findings } = await scan(target, config);
 
     const top = opts.top ? Number.parseInt(opts.top, 10) : undefined;

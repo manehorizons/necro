@@ -39,7 +39,28 @@ necro scan [path] [options]
 |---|---|
 | `--json` | Emit findings as JSON instead of the terminal report. |
 | `--top <n>` | Show only the worst `N` findings (after worst-first sort). |
+| `--coverage <path>` | Path to an lcov report. Defaults to `coverage/lcov.info`; overrides the `coveragePath` config key. |
 | `-h`, `--help` | Show help for `scan`. |
+
+### Coverage
+
+When an [lcov](https://github.com/linux-test-project/lcov) report is present,
+`scan` folds runtime coverage into each finding's evidence chain. necro **reads
+an existing report only** — it never runs your test suite. Discovery order:
+`--coverage <path>` → the `coveragePath` config key → the default
+`coverage/lcov.info`. A missing report is silently ignored; an unreadable one
+prints a warning and the scan proceeds without coverage.
+
+Each finding then shows one of three coverage states:
+
+| State | Evidence line | Effect |
+|---|---|---|
+| Miss | `✓ 0 coverage hits (lcov)` | Strengthens the dead verdict; a private, untainted candidate stays `certain`. |
+| Runtime hit | `✗ executed at runtime (N hits) despite 0 static refs — reached dynamically` | A 0-static-ref symbol that ran is downgraded to `maybe` and never auto-removed. |
+| Not available | `• coverage: not available` | The symbol's file or line isn't in the report; tiers are unaffected. |
+
+With no report at all, every finding renders `coverage: not available` — coverage
+is purely additive and never changes behavior when absent.
 
 ### Output
 

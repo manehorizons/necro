@@ -1,12 +1,14 @@
 import { readFile } from "node:fs/promises";
 import { relative } from "node:path";
 import { classify, type ClassifiedFinding } from "../analyze/classify.js";
+import { loadCoverage } from "../analyze/coverage/load.js";
+import { coverageFor } from "../analyze/coverage/lookup.js";
 import { computeReachability, findTaintedFiles } from "../analyze/reachability.js";
 import type { NecroConfig } from "../config.js";
 import { discoverFiles } from "../discover.js";
 import { globMatcher } from "../glob.js";
 import { buildSymbolGraph } from "../graph/symbol-graph.js";
-import type { SymbolEdge } from "../graph/types.js";
+import type { SymbolEdge, SymbolNode } from "../graph/types.js";
 import { resolveEntries } from "../plugins/entry-resolver.js";
 import { createRepoContext, detectPlugins } from "../plugins/registry.js";
 import { createTestRunnerPlugin } from "../plugins/test-runner/index.js";
@@ -62,7 +64,15 @@ export async function scan(
     taintedFiles,
   });
 
-  const findings = sortWorstFirst(classify({ nodes: graph.nodes, reachability }));
+  // Coverage is an optional, path-based signal (never runs the test suite).
+  const coverageReport = await loadCoverage(targetPath, config);
+  const coverage = coverageReport
+    ? (node: SymbolNode) => coverageFor(coverageReport, node)
+    : undefined;
+
+  const findings = sortWorstFirst(
+    classify({ nodes: graph.nodes, reachability, coverage }),
+  );
   return { findings };
 }
 

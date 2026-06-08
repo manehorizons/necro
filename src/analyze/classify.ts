@@ -1,4 +1,5 @@
 import type { SymbolNode } from "../graph/types.js";
+import type { CoverageStatus } from "./coverage/lookup.js";
 import type { ReachabilityResult } from "./reachability.js";
 
 /** Confidence tier for a dead-code finding (§5). */
@@ -31,6 +32,11 @@ export interface ClassifyInput {
   reachability: ReachabilityResult[];
   /** Symbols exported as package public API — quarantined to `maybe` (external consumers invisible). */
   publicApiIds?: Set<string>;
+  /**
+   * Optional per-symbol coverage resolver. When absent, every finding renders
+   * `coverage: not available` and tiers are unaffected — identical to phase 01.
+   */
+  coverage?: (node: SymbolNode) => CoverageStatus;
 }
 
 /**
@@ -43,6 +49,8 @@ export interface ClassifyInput {
  */
 export function classify(input: ClassifyInput): ClassifiedFinding[] {
   const publicApiIds = input.publicApiIds ?? new Set<string>();
+  const coverageOf = (node: SymbolNode): CoverageStatus =>
+    input.coverage ? input.coverage(node) : { kind: "unavailable" };
   const nodeById = new Map(input.nodes.map((n) => [n.id, n]));
   const findings: ClassifiedFinding[] = [];
 
@@ -56,19 +64,20 @@ export function classify(input: ClassifyInput): ClassifiedFinding[] {
         verdict: "test-only",
         tier: "maybe",
         autoFixEligible: false,
-        evidence: testOnlyEvidence(),
+        evidence: testOnlyEvidence(coverageOf(node)),
       });
       continue;
     }
 
+    const cov = coverageOf(node);
     const isPublicApi = publicApiIds.has(node.id);
-    const tier = deadTier(node, result, isPublicApi);
+    const tier = deadTier(node, result, isPublicApi, cov);
     findings.push({
       node,
       verdict: "dead",
       tier,
       autoFixEligible: tier === "certain",
-      evidence: deadEvidence(node, result, isPublicApi),
+      evidence: deadEvidence(node, result, isPublicApi, cov),
     });
   }
 
@@ -80,14 +89,49 @@ const COVERAGE_UNAVAILABLE: EvidenceSignal = {
   text: "coverage: not available",
 };
 
+/**
+ * The coverage signal for a dead candidate. A runtime hit on a 0-static-ref
+ * symbol is a contradiction (✗) — it was reached dynamically; a coverage-miss
+ * supports the dead verdict (✓); no record degrades to "not available".
+ */
+function deadCoverageSignal(cov: CoverageStatus): EvidenceSignal {
+  switch (cov.kind) {
+    case "hit":
+      return {
+        ok: false,
+        text: `executed at runtime (${cov.hits} hits) despite 0 static refs — reached dynamically`,
+      };
+    case "miss":
+      return { ok: true, text: "0 coverage hits (lcov)" };
+    case "unavailable":
+      return COVERAGE_UNAVAILABLE;
+  }
+}
+
+/**
+ * The coverage signal for a `test-only` finding. Hits here are expected (the
+ * tests exercise it), so they are neutral information, not a dynamic-reach flag.
+ */
+function testOnlyCoverageSignal(cov: CoverageStatus): EvidenceSignal {
+  switch (cov.kind) {
+    case "hit":
+      return { ok: null, text: `${cov.hits} coverage hits (lcov)` };
+    case "miss":
+      return { ok: true, text: "0 coverage hits (lcov)" };
+    case "unavailable":
+      return COVERAGE_UNAVAILABLE;
+  }
+}
+
 function deadEvidence(
   node: SymbolNode,
   result: ReachabilityResult,
   isPublicApi: boolean,
+  cov: CoverageStatus,
 ): EvidenceSignal[] {
   return [
     { ok: true, text: "0 static references (TS compiler)" },
-    COVERAGE_UNAVAILABLE,
+    deadCoverageSignal(cov),
     isPublicApi
       ? { ok: false, text: "in package.json exports — external consumers invisible" }
       : { ok: true, text: "not in package.json exports" },
@@ -97,11 +141,11 @@ function deadEvidence(
   ];
 }
 
-function testOnlyEvidence(): EvidenceSignal[] {
+function testOnlyEvidence(cov: CoverageStatus): EvidenceSignal[] {
   return [
     { ok: true, text: "0 production references" },
     { ok: false, text: "referenced only in test files" },
-    COVERAGE_UNAVAILABLE,
+    testOnlyCoverageSignal(cov),
   ];
 }
 
@@ -109,7 +153,10 @@ function deadTier(
   node: SymbolNode,
   result: ReachabilityResult,
   isPublicApi: boolean,
+  cov: CoverageStatus,
 ): Tier {
+  // Runtime execution despite 0 static refs = dynamic reach → never `certain`.
+  if (cov.kind === "hit") return "maybe";
   if (result.tainted || isPublicApi) return "maybe";
   if (node.exported) return "likely";
   return "certain";

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import type { ClassifiedFinding } from "../src/analyze/classify.js";
 import { DEFAULT_CONFIG } from "../src/config.js";
 import { scan } from "../src/engine/index.js";
+import { toJson } from "../src/report/json.js";
 
 let dir: string;
 
@@ -66,5 +67,76 @@ describe("scan (end-to-end)", () => {
     const { findings } = await scan(dir, DEFAULT_CONFIG);
     const tiers = findings.map((f) => (f.verdict === "test-only" ? "test-only" : f.tier));
     expect(tiers.indexOf("certain")).toBeLessThan(tiers.indexOf("test-only"));
+  });
+});
+
+describe("scan with coverage ingestion", () => {
+  // `dynamicallyUsed` has 0 static references but the lcov report shows runtime
+  // hits — a real dynamic-reach case. `deadFn` has 0 refs and 0 hits.
+  async function writeFixture(): Promise<void> {
+    await write("package.json", JSON.stringify({ name: "fx" }));
+    await write("src/index.ts", `import { liveUtil } from "./util.js";\nliveUtil();\n`);
+    await write(
+      "src/util.ts",
+      `export function liveUtil() {}\nfunction dynamicallyUsed() {}\nfunction deadFn() {}\n`,
+    );
+  }
+
+  async function writeLcov(): Promise<void> {
+    await write(
+      "coverage/lcov.info",
+      [
+        "SF:src/util.ts",
+        "FN:1,liveUtil",
+        "FN:2,dynamicallyUsed",
+        "FN:3,deadFn",
+        "FNDA:9,liveUtil",
+        "FNDA:4,dynamicallyUsed",
+        "FNDA:0,deadFn",
+        "DA:1,9",
+        "DA:2,4",
+        "DA:3,0",
+        "end_of_record",
+      ].join("\n"),
+    );
+  }
+
+  test("runtime-hit-but-unreferenced symbol is downgraded to maybe with evidence", async () => {
+    await writeFixture();
+    await writeLcov();
+
+    const { findings } = await scan(dir, DEFAULT_CONFIG);
+
+    const dyn = byName(findings, "dynamicallyUsed");
+    expect(dyn?.tier).toBe("maybe");
+    expect(dyn?.autoFixEligible).toBe(false);
+    expect(dyn?.evidence.map((e) => e.text)).toContainEqual(
+      "executed at runtime (4 hits) despite 0 static refs — reached dynamically",
+    );
+
+    // A genuinely-dead, uncovered symbol stays certain and now shows the miss.
+    const dead = byName(findings, "deadFn");
+    expect(dead?.tier).toBe("certain");
+    expect(dead?.evidence).toContainEqual({ ok: true, text: "0 coverage hits (lcov)" });
+  });
+
+  test("--json carries the coverage signal in the evidence array", async () => {
+    await writeFixture();
+    await writeLcov();
+    const { findings } = await scan(dir, DEFAULT_CONFIG);
+    const json = JSON.parse(toJson(findings)) as Array<{ name: string; evidence: { text: string }[] }>;
+    const dyn = json.find((f) => f.name === "dynamicallyUsed");
+    expect(dyn?.evidence.some((e) => e.text.startsWith("executed at runtime"))).toBe(true);
+  });
+
+  test("no coverage report → byte-identical to phase 01", async () => {
+    await writeFixture();
+    const { findings } = await scan(dir, DEFAULT_CONFIG);
+
+    const dead = byName(findings, "deadFn");
+    expect(dead?.tier).toBe("certain");
+    expect(dead?.evidence).toContainEqual({ ok: null, text: "coverage: not available" });
+    // Without coverage, the dynamic-reach symbol is indistinguishable → certain.
+    expect(byName(findings, "dynamicallyUsed")?.tier).toBe("certain");
   });
 });

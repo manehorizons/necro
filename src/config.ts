@@ -7,6 +7,8 @@ export interface NecroConfig {
   include: string[];
   /** Globs to exclude from analysis. */
   ignore: string[];
+  /** Path to an lcov coverage report (relative to scan target or absolute). */
+  coveragePath?: string;
 }
 
 export const DEFAULT_CONFIG: NecroConfig = {

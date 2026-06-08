@@ -71,3 +71,54 @@ describe("classify", () => {
     expect(findings).toEqual([]);
   });
 });
+
+describe("classify with coverage", () => {
+  const evidenceText = (f: { evidence: { text: string }[] }) => f.evidence.map((e) => e.text);
+
+  test("coverage miss keeps a private dead candidate certain + auto-fixable", () => {
+    const [f] = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead")],
+      coverage: () => ({ kind: "miss" }),
+    });
+    expect(f?.tier).toBe("certain");
+    expect(f?.autoFixEligible).toBe(true);
+    expect(f?.evidence).toContainEqual({ ok: true, text: "0 coverage hits (lcov)" });
+  });
+
+  test("runtime hits force a dead candidate to maybe, never auto-fixed", () => {
+    const [f] = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead")],
+      coverage: () => ({ kind: "hit", hits: 3 }),
+    });
+    expect(f?.tier).toBe("maybe");
+    expect(f?.autoFixEligible).toBe(false);
+    expect(evidenceText(f!)).toContainEqual(
+      "executed at runtime (3 hits) despite 0 static refs — reached dynamically",
+    );
+  });
+
+  test("coverage unavailable for a symbol leaves phase-01 behavior intact", () => {
+    const [f] = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead")],
+      coverage: () => ({ kind: "unavailable" }),
+    });
+    expect(f?.tier).toBe("certain");
+    expect(f?.evidence).toContainEqual({ ok: null, text: "coverage: not available" });
+  });
+
+  test("no coverage fn supplied → byte-identical to phase 01 (coverage: not available)", () => {
+    const [withFn] = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead")],
+      coverage: () => ({ kind: "unavailable" }),
+    });
+    const [without] = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead")],
+    });
+    expect(without).toEqual(withFn);
+  });
+});
