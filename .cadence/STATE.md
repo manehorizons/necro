@@ -4,14 +4,14 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 07-duplication
+**Active phase:** 08-llm-triage
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
 - Token utilization: 0%
 - Subagent spawns this session: 0
-- Last handoff: SESSION-2026-06-08.md
+- Last handoff: SESSION-2026-06-08-phases-03-07.md
 
 ## Counts
 - Open drafts: 0
