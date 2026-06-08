@@ -16,6 +16,22 @@ export interface NecroConfig {
   hotspots: HotspotOptions;
   /** Duplication-detector options. */
   duplication: DuplicationOptions;
+  /** LLM-triage options (the `necro triage` command). */
+  llm: LlmOptions;
+}
+
+/** LLM-triage options (used only by the opt-in `necro triage` command). */
+export interface LlmOptions {
+  /** Claude model id. Defaults to `claude-opus-4-8`. */
+  model: string;
+  /** Lines of source context to extract on each side of a finding when the
+   * enclosing declaration can't be resolved. */
+  snippetRadius: number;
+  /** Cap on how many `maybe` findings to triage in one run (spend guard).
+   * Unset = no cap. */
+  maxFindings?: number;
+  /** Optional API-key override; `ANTHROPIC_API_KEY` (env) takes precedence. */
+  apiKey?: string;
 }
 
 /** Risk-hotspot ranking options. */
@@ -43,12 +59,19 @@ export const DEFAULT_HOTSPOTS: HotspotOptions = { top: 10 };
 
 export const DEFAULT_DUPLICATION: DuplicationOptions = { minTokens: 50 };
 
+/** Default LLM-triage options (§ build-order step 12). */
+export const DEFAULT_LLM: LlmOptions = {
+  model: "claude-opus-4-8",
+  snippetRadius: 20,
+};
+
 export const DEFAULT_CONFIG: NecroConfig = {
   include: ["**/*.ts", "**/*.tsx"],
   ignore: ["**/node_modules/**", "**/dist/**"],
   complexity: DEFAULT_COMPLEXITY,
   hotspots: DEFAULT_HOTSPOTS,
   duplication: DEFAULT_DUPLICATION,
+  llm: DEFAULT_LLM,
 };
 
 /** The on-disk shape: every field optional, nested blocks partial overrides. */
@@ -59,6 +82,7 @@ interface RawConfig {
   complexity?: Partial<ComplexityThresholds>;
   hotspots?: Partial<HotspotOptions>;
   duplication?: Partial<DuplicationOptions>;
+  llm?: Partial<LlmOptions>;
 }
 
 /**
@@ -75,6 +99,7 @@ export async function loadConfig(cwd: string): Promise<NecroConfig> {
     complexity: { ...DEFAULT_COMPLEXITY, ...(user.complexity ?? {}) },
     hotspots: { ...DEFAULT_HOTSPOTS, ...(user.hotspots ?? {}) },
     duplication: { ...DEFAULT_DUPLICATION, ...(user.duplication ?? {}) },
+    llm: { ...DEFAULT_LLM, ...(user.llm ?? {}) },
   };
 }
 

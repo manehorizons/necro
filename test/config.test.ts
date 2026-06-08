@@ -2,7 +2,7 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { DEFAULT_COMPLEXITY, DEFAULT_CONFIG, loadConfig } from "../src/config.js";
+import { DEFAULT_COMPLEXITY, DEFAULT_CONFIG, DEFAULT_LLM, loadConfig } from "../src/config.js";
 
 let dir: string;
 
@@ -58,5 +58,27 @@ describe("loadConfig", () => {
     await writeFile(join(dir, "necro.config.json"), JSON.stringify({ duplication: { minTokens: 30 } }));
     const config = await loadConfig(dir);
     expect(config.duplication.minTokens).toBe(30);
+  });
+
+  test("llm block defaults to opus + radius, no cap (AC-5)", async () => {
+    const config = await loadConfig(dir);
+    expect(config.llm).toEqual(DEFAULT_LLM);
+    expect(config.llm.model).toBe("claude-opus-4-8");
+    expect(config.llm.snippetRadius).toBe(20);
+    expect(config.llm.maxFindings).toBeUndefined();
+  });
+
+  test("a partial llm block overrides only the keys it sets, including apiKey (AC-5)", async () => {
+    await writeFile(
+      join(dir, "necro.config.json"),
+      JSON.stringify({ llm: { maxFindings: 5, apiKey: "sk-test-override" } }),
+    );
+
+    const config = await loadConfig(dir);
+    expect(config.llm.maxFindings).toBe(5);
+    expect(config.llm.apiKey).toBe("sk-test-override");
+    // untouched keys keep defaults
+    expect(config.llm.model).toBe(DEFAULT_LLM.model);
+    expect(config.llm.snippetRadius).toBe(DEFAULT_LLM.snippetRadius);
   });
 });
