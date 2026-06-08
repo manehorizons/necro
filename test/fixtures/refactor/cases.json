@@ -26,5 +26,47 @@
     "signature": "export function classifyToken(ch, ctx) {",
     "threshold": 12,
     "source": "export function classifyToken(ch, ctx) {\n  if (ch >= '0' && ch <= '9') {\n    ctx.kind = 'digit';\n    return ctx.kind;\n  }\n  if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {\n    ctx.kind = 'alpha';\n    return ctx.kind;\n  }\n  if (ch === ' ' || ch === '\\t' || ch === '\\n') {\n    ctx.kind = 'space';\n    return ctx.kind;\n  }\n  if (ch === '+' || ch === '-' || ch === '*' || ch === '/') {\n    ctx.kind = 'operator';\n    return ctx.kind;\n  }\n  ctx.kind = 'symbol';\n  return ctx.kind;\n}\n"
+  },
+  {
+    "name": "validateForm",
+    "file": "src/form.ts",
+    "signature": "export function validateForm(form, errors) {",
+    "threshold": 12,
+    "source": "export function validateForm(form, errors) {\n  if (!form.name) errors.push('name required');\n  if (form.name && form.name.length > 50) errors.push('name too long');\n  if (!form.email) errors.push('email required');\n  if (form.email && !form.email.includes('@')) errors.push('email invalid');\n  if (!form.age) errors.push('age required');\n  if (form.age && form.age < 0) errors.push('age negative');\n  if (form.age && form.age > 150) errors.push('age too large');\n  if (!form.country) errors.push('country required');\n  if (form.password && form.password.length < 8) errors.push('password short');\n  if (form.password !== form.confirm) errors.push('password mismatch');\n  return errors.length === 0;\n}\n"
+  },
+  {
+    "name": "buildQuery",
+    "file": "src/query.ts",
+    "signature": "export function buildQuery(opts) {",
+    "threshold": 12,
+    "source": "export function buildQuery(opts) {\n  let sql = 'SELECT ';\n  sql += opts.columns ? opts.columns.join(', ') : '*';\n  sql += ' FROM ' + opts.table;\n  if (opts.where) {\n    const clauses = [];\n    for (const key of Object.keys(opts.where)) {\n      clauses.push(key + ' = ' + JSON.stringify(opts.where[key]));\n    }\n    sql += ' WHERE ' + clauses.join(' AND ');\n  }\n  if (opts.orderBy) sql += ' ORDER BY ' + opts.orderBy;\n  if (opts.limit) sql += ' LIMIT ' + opts.limit;\n  return sql;\n}\n"
+  },
+  {
+    "name": "dispatchEvent",
+    "file": "src/events.ts",
+    "signature": "export function dispatchEvent(event, handlers) {",
+    "threshold": 12,
+    "source": "export function dispatchEvent(event, handlers) {\n  if (event.type === 'click') {\n    handlers.onClick && handlers.onClick(event);\n    return 'click';\n  }\n  if (event.type === 'hover') {\n    handlers.onHover && handlers.onHover(event);\n    return 'hover';\n  }\n  if (event.type === 'key') {\n    handlers.onKey && handlers.onKey(event);\n    return 'key';\n  }\n  handlers.onDefault && handlers.onDefault(event);\n  return 'default';\n}\n"
+  },
+  {
+    "name": "normalizeConfig",
+    "file": "src/config-norm.ts",
+    "signature": "export function normalizeConfig(raw) {",
+    "threshold": 12,
+    "source": "export function normalizeConfig(raw) {\n  const config = {};\n  config.host = raw.host || 'localhost';\n  config.port = raw.port || 8080;\n  config.timeout = raw.timeout || 30000;\n  config.retries = raw.retries || 3;\n  config.verbose = raw.verbose === true;\n  config.headers = raw.headers || {};\n  config.auth = raw.auth ? { user: raw.auth.user, pass: raw.auth.pass } : null;\n  config.proxy = raw.proxy || null;\n  config.tags = Array.isArray(raw.tags) ? raw.tags : [];\n  return config;\n}\n"
+  },
+  {
+    "name": "summarize",
+    "file": "src/stats.ts",
+    "signature": "export function summarize(records) {",
+    "threshold": 12,
+    "source": "export function summarize(records) {\n  let total = 0;\n  let max = -Infinity;\n  let min = Infinity;\n  const byType = {};\n  for (const r of records) {\n    total += r.value;\n    if (r.value > max) max = r.value;\n    if (r.value < min) min = r.value;\n    byType[r.type] = (byType[r.type] || 0) + 1;\n  }\n  const avg = records.length ? total / records.length : 0;\n  return { total, max, min, avg, byType, count: records.length };\n}\n"
+  },
+  {
+    "name": "transformUser",
+    "file": "src/user.ts",
+    "signature": "export function transformUser(user) {",
+    "threshold": 12,
+    "source": "export function transformUser(user) {\n  const out = {};\n  out.id = String(user.id);\n  out.name = (user.firstName + ' ' + user.lastName).trim();\n  out.email = user.email ? user.email.toLowerCase() : null;\n  out.active = user.status === 'active';\n  out.roles = user.roles ? user.roles.map((r) => r.name) : [];\n  out.createdAt = new Date(user.created).toISOString();\n  out.avatar = user.avatar || '/default.png';\n  out.locale = user.locale || 'en-US';\n  return out;\n}\n"
   }
 ]
