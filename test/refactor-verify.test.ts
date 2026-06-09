@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { gitWorktreeRunner, verifyProposal, type FileEdit, type VerifyRunner } from "../src/refactor/verify.js";
+import { gitWorktreeRunner, verifyEdits, verifyProposal, type FileEdit, type VerifyRunner } from "../src/refactor/verify.js";
 
 const exec = promisify(execFile);
 
@@ -66,6 +66,52 @@ describe("verifyProposal orchestration (AC-5)", () => {
   });
 });
 
+describe("verifyEdits — multi-file orchestration (AC-5)", () => {
+  const EDITS: FileEdit[] = [
+    { file: "shared.ts", content: "export const x = 1;\n" },
+    { file: "sub/a.ts", content: "import { x } from '../shared.js';\n" },
+    { file: "sub/b.ts", content: "import { x } from '../shared.js';\n" },
+  ];
+
+  test("writes every edit into one worktree before checks, badges green (AC-5)", async () => {
+    const written: FileEdit[] = [];
+    const runCheck = vi.fn(async () => ({ ok: true, output: "" }));
+    const badge = await verifyEdits(EDITS, ["typecheck"], mockRunner({
+      writeEdit: async (_wt, edit) => {
+        written.push(edit);
+      },
+      runCheck,
+    }));
+    expect(badge.status).toBe("green");
+    expect(written.map((e) => e.file)).toEqual(["shared.ts", "sub/a.ts", "sub/b.ts"]);
+    // all three writes precede the first check
+    const lastWrite = Math.max(...written.map((_, i) => i));
+    expect(written).toHaveLength(3);
+    expect(lastWrite).toBe(2);
+  });
+
+  test("red when a check fails across the multi-file set (AC-5)", async () => {
+    const badge = await verifyEdits(EDITS, ["typecheck"], mockRunner({
+      runCheck: async () => ({ ok: false, output: "type error in sub/a.ts" }),
+    }));
+    expect(badge.status).toBe("red");
+    if (badge.status === "red") expect(badge.output).toContain("type error in sub/a.ts");
+  });
+
+  test("always removes the worktree even when a check throws (AC-5)", async () => {
+    const removeWorktree = vi.fn(async () => {});
+    await expect(
+      verifyEdits(EDITS, ["typecheck"], mockRunner({
+        runCheck: async () => {
+          throw new Error("boom");
+        },
+        removeWorktree,
+      })),
+    ).rejects.toThrow("boom");
+    expect(removeWorktree).toHaveBeenCalledWith("/tmp/wt");
+  });
+});
+
 describe("gitWorktreeRunner integration (AC-5)", () => {
   let repo: string;
   beforeEach(async () => {
@@ -98,5 +144,23 @@ describe("gitWorktreeRunner integration (AC-5)", () => {
     const runner = gitWorktreeRunner(repo);
     const badge = await verifyProposal({ file: "val.txt", content: "new\n" }, ["grep -q nope val.txt"], runner);
     expect(badge.status).toBe("red");
+  });
+
+  test("writes a multi-file edit set into one worktree, main tree untouched (AC-5)", async () => {
+    const runner = gitWorktreeRunner(repo);
+    const badge = await verifyEdits(
+      [
+        { file: "val.txt", content: "new\n" },
+        { file: "added.txt", content: "fresh\n" },
+      ],
+      ["grep -q new val.txt", "grep -q fresh added.txt"],
+      runner,
+    );
+    expect(badge.status).toBe("green");
+    // neither the edited file nor the new file appears in the main tree
+    expect(await readFile(join(repo, "val.txt"), "utf8")).toBe("old\n");
+    await expect(readFile(join(repo, "added.txt"), "utf8")).rejects.toThrow();
+    const list = (await exec("git", ["worktree", "list"], { cwd: repo })).stdout;
+    expect(list.split("\n").filter(Boolean)).toHaveLength(1);
   });
 });
