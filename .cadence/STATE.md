@@ -4,7 +4,7 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 12-triage-prompt-tuning
+**Active phase:** 13-expand-triage-corpus
 **Active draft:** (none)
 **Tier:** (n/a)
 
