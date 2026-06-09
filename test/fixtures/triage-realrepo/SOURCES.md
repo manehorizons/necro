@@ -15,9 +15,16 @@ hand-verified ground truth. Only `truth` and `rationale` are human-applied;
 hono yields 20 genuinely-ambiguous `maybe` findings with **discriminating**
 evidence: `0 static references (TS compiler)` + `not in package.json exports` +
 an **unresolvable dynamic-import taint** (which is *why* necro is uncertain
-rather than `certain`). 18 of the 20 were labeled with high confidence; 2
-(`Runtime`, `cloneRawRequest`) were excluded because their usage could not be
-confirmed unambiguously.
+rather than `certain`). 19 of the 20 were labeled with high confidence; 1
+(`cloneRawRequest`) was excluded as genuinely ambiguous — it is an exported,
+JSDoc-documented public helper with **no internal production caller** (only a
+doc example + tests reference it), so "dead" vs "alive" depends on whether you
+count external consumers, and a corpus should not ship a coin-flip label.
+
+> Deviation from the phase plan: the DRAFT targeted ≥20 cases. The confident,
+> defensible set from hono's `maybe` findings is **19** (one ambiguous exclusion
+> above). Rather than pad to 20 with a questionable label, the corpus stays at
+> 19 high-confidence cases. The corpus-integrity test asserts ≥18.
 
 ## Why not necro itself, or a clean library?
 

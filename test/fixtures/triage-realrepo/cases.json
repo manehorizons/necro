@@ -310,6 +310,37 @@
     "rationale": "called in src/client/fetch-result-please.ts (detectResponseType(_fetchRes))"
   },
   {
+    "name": "Runtime",
+    "truth": "alive",
+    "code": "1\t/**\n2\t * @module\n3\t * Adapter Helper for Hono.\n4\t */\n5\t\n6\timport type { Context } from '../../context'\n7\t\n8\texport type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'other'\n9\t\n10\texport const env = <\n11\t  T extends Record<string, unknown>,\n12\t  C extends Context = Context<{\n13\t    Bindings: T\n14\t  }>,",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/helper/adapter/index.ts",
+      "line": 8,
+      "symbol": "Runtime"
+    },
+    "rationale": "core adapter union type — getRuntimeKey's return type, knownUserAgents' Record key, and the runtime param in src/helper/adapter/index.ts"
+  },
+  {
     "name": "env",
     "truth": "alive",
     "code": "1\t/**\n2\t * @module\n3\t * Adapter Helper for Hono.\n4\t */\n5\t\n6\timport type { Context } from '../../context'\n7\t\n8\texport type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'other'\n9\t\n10\texport const env = <\n11\t  T extends Record<string, unknown>,\n12\t  C extends Context = Context<{\n13\t    Bindings: T\n14\t  }>,",
