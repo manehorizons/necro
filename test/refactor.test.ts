@@ -28,6 +28,7 @@ const PROPOSAL: RefactorProposal = {
 
 const okClient = (): RefactorClient => ({
   propose: vi.fn(async () => ({ ok: true as const, proposal: PROPOSAL })),
+  proposeDuplicate: vi.fn(async () => ({ ok: false as const, reason: "not exercised here" })),
 });
 
 let writtenEdits: FileEdit[] = [];
@@ -137,7 +138,10 @@ describe("runRefactor (AC-1, AC-4)", () => {
   });
 
   test("records a failure (no throw) when the model response can't be parsed (AC-4)", async () => {
-    const client: RefactorClient = { propose: async () => ({ ok: false, reason: "unparseable" }) };
+    const client: RefactorClient = {
+      propose: async () => ({ ok: false, reason: "unparseable" }),
+      proposeDuplicate: async () => ({ ok: false, reason: "n/a" }),
+    };
     const res = await runRefactor([finding(file, "big")], DEFAULT_LLM, client, {
       verifyRunner: greenRunner(),
       repoRoot: dir,

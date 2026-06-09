@@ -42,9 +42,25 @@ export async function verifyProposal(
   checks: string[],
   runner: VerifyRunner,
 ): Promise<VerifyBadge> {
+  return verifyEdits([edit], checks, runner);
+}
+
+/**
+ * Verify a multi-file edit set (an extract-duplicate proposal: a shared-function
+ * file plus call-site rewrites in others) without touching the user's tree:
+ * write **every** edit's new content into one throwaway worktree, run each check
+ * once over the combined result, and badge it. Same always-torn-down guarantee
+ * as {@link verifyProposal} — a check failure or a thrown error both still hit
+ * the `finally`.
+ */
+export async function verifyEdits(
+  edits: FileEdit[],
+  checks: string[],
+  runner: VerifyRunner,
+): Promise<VerifyBadge> {
   const worktree = await runner.createWorktree();
   try {
-    await runner.writeEdit(worktree, edit);
+    for (const edit of edits) await runner.writeEdit(worktree, edit);
     for (const command of checks) {
       const { ok, output } = await runner.runCheck(worktree, command);
       if (!ok) return { status: "red", output: `$ ${command}\n${output}`.trim() };

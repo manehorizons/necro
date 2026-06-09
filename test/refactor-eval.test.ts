@@ -86,6 +86,7 @@ describe("runRefactorEval gate against a mock client (AC-7)", () => {
   test("a good mock clears the 0.8 pass-rate gate (AC-7)", async () => {
     const client: RefactorClient = {
       propose: async () => ({ ok: true as const, proposal: proposal(GOOD, ["computeParts"]) }),
+      proposeDuplicate: async () => ({ ok: false as const, reason: "n/a" }),
     };
     const m = await runRefactorEval([theCase()], client);
     expect(m.passRate).toBe(1);
@@ -95,6 +96,7 @@ describe("runRefactorEval gate against a mock client (AC-7)", () => {
   test("a deliberately bad mock fails the gate (AC-7)", async () => {
     const client: RefactorClient = {
       propose: async () => ({ ok: true as const, proposal: proposal(SINGLE_FN, []) }),
+      proposeDuplicate: async () => ({ ok: false as const, reason: "n/a" }),
     };
     const m = await runRefactorEval([theCase()], client);
     expect(m.passRate).toBe(0);
@@ -102,7 +104,10 @@ describe("runRefactorEval gate against a mock client (AC-7)", () => {
   });
 
   test("an unparseable response counts as a failed case, never throws (AC-7)", async () => {
-    const client: RefactorClient = { propose: async () => ({ ok: false, reason: "unparseable" }) };
+    const client: RefactorClient = {
+      propose: async () => ({ ok: false, reason: "unparseable" }),
+      proposeDuplicate: async () => ({ ok: false, reason: "n/a" }),
+    };
     const m = await runRefactorEval([theCase()], client);
     expect(m.passRate).toBe(0);
     expect(m.rows[0]?.pass).toBe(false);
