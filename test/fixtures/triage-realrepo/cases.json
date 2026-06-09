@@ -1,0 +1,560 @@
+[
+  {
+    "name": "SafeBigInt",
+    "truth": "dead",
+    "code": "1\t/* eslint-disable @typescript-eslint/no-unused-vars */\n2\t\n3\t/* eslint-disable @typescript-eslint/ban-ts-comment */\n4\timport { HttpResponse, http } from 'msw'\n5\timport { setupServer } from 'msw/node'\n6\timport { expectTypeOf, vi } from 'vitest'\n7\timport { upgradeWebSocket } from '../adapter/deno/websocket'\n8\timport { Hono } from '../hono'\n9\timport { parse } from '../utils/cookie'\n10\timport type { Equal, Expect, JSONValue, SimplifyDeepArray } from '../utils/types'\n11\timport { validator } from '../validator'\n12\timport { hc } from './client'\n13\timport type {\n14\t  ClientResponse,\n15\t  InferRequestType,\n16\t  InferResponseType,\n17\t  ApplyGlobalResponse,\n18\t  PickResponseByStatusCode,\n19\t} from './types'\n20\t\n21\tclass SafeBigInt {\n22\t  unsafe = BigInt(42)\n23\t\n24\t  toJSON() {\n25\t    return {\n26\t      value: '42n',\n27\t    }\n28\t  }\n29\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/client/client.test.ts",
+      "line": 21,
+      "symbol": "SafeBigInt"
+    },
+    "rationale": "test-only type in src/client/client.test.ts; referenced only within that test, no production references"
+  },
+  {
+    "name": "pathname",
+    "truth": "dead",
+    "code": "1104\t        title: 'hello',\n1105\t      },\n1106\t    })\n1107\t\n1108\t    if (req.status === 200) {\n1109\t      const data = await req.json()\n1110\t\n1111\t      expectTypeOf(data).toEqualTypeOf<{ title: string }>()\n1112\t    } else if (req.status === 400) {\n1113\t      const data = await req.json()\n1114\t\n1115\t      expectTypeOf(data).toEqualTypeOf<{ error: 'Bad request' }>()\n1116\t    } else if (req.status === 401) {\n1117\t      const data = await req.json()\n1118\t\n1119\t      expectTypeOf(data).toEqualTypeOf<{ error: 'Unauthorized' }>()\n1120\t    }\n1121\t  })\n1122\t})\n1123\t\n1124\tconst pathname = <T extends URL | string>(value: T): string =>\n1125\t  value instanceof URL ? value.pathname : value\n1126\t\n1127\tdescribe.each(['$path', '$url'] as const)('%s() with a param option', (cmd) => {\n1128\t  const app = new Hono()\n1129\t    .get('/posts/:id/comments', (c) => c.json({ ok: true }))\n1130\t    .get('/something/:firstId/:secondId/:version?', (c) => c.json({ ok: true }))\n1131\t  type AppType = typeof app\n1132\t  const client = hc<AppType>('http://localhost')\n1133\t\n1134\t  it('Should return the correct url path - /posts/123/comments', async () => {\n1135\t    const value = client.posts[':id'].comments[cmd]({\n1136\t      param: {\n1137\t        id: '123',\n1138\t      },\n1139\t    })\n1140\t    expect(pathname(value)).toBe('/posts/123/comments')\n1141\t  })\n1142\t\n1143\t  it('Should return the correct path - /posts/:id/comments', async () => {\n1144\t    const value = client.posts[':id'].comments[cmd]()\n1145\t    expect(pathname(value)).toBe('/posts/:id/comments')\n1146\t  })\n1147\t\n1148\t  it('Should return the correct path - /something/123/456', async () => {\n1149\t    const value = client.something[':firstId'][':secondId'][':version?'][cmd]({\n1150\t      param: {\n1151\t        firstId: '123',\n1152\t        secondId: '456',\n1153\t        version: undefined,\n1154\t      },\n1155\t    })\n1156\t    expect(pathname(value)).toBe('/something/123/456')\n1157\t  })\n1158\t})",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/client/client.test.ts",
+      "line": 1124,
+      "symbol": "pathname"
+    },
+    "rationale": "test-local URL→string helper in src/client/client.test.ts; used only inside its test, no production references"
+  },
+  {
+    "name": "InferValidatorResponse",
+    "truth": "dead",
+    "code": "3\timport type { Context } from '../context'\n4\timport { Hono } from '../hono'\n5\timport { HTTPException } from '../http-exception'\n6\timport { cloneRawRequest } from '../request'\n7\timport type {\n8\t  ErrorHandler,\n9\t  ExtractSchema,\n10\t  ExtractSchemaForStatusCode,\n11\t  FormValue,\n12\t  MiddlewareHandler,\n13\t  TypedResponse,\n14\t  ValidationTargets,\n15\t} from '../types'\n16\timport type { ContentfulStatusCode, StatusCode } from '../utils/http-status'\n17\timport type { Equal, Expect } from '../utils/types'\n18\timport type { ValidationFunction } from './validator'\n19\timport { validator } from './validator'\n20\t\n21\t// Helper type to extract the response type from the validation function\n22\t// eslint-disable-next-line @typescript-eslint/no-explicit-any\n23\ttype InferValidatorResponse<VF> = VF extends (value: any, c: any) => infer R\n24\t  ? R extends Promise<infer PR>\n25\t    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any\n26\t      PR extends Response | TypedResponse<any, any, any>\n27\t      ? PR\n28\t      : never\n29\t    : // eslint-disable-next-line @typescript-eslint/no-explicit-any\n30\t      R extends Response | TypedResponse<any, any, any>\n31\t      ? R\n32\t      : never\n33\t  : never\n34\t\n35\t// Reference implementation for only testing\n36\tconst zodValidator = <\n37\t  T extends z.ZodSchema,\n38\t  E extends {},",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/validator/validator.test.ts",
+      "line": 23,
+      "symbol": "InferValidatorResponse"
+    },
+    "rationale": "test-only type in src/validator/validator.test.ts; referenced only within the test"
+  },
+  {
+    "name": "zodValidator",
+    "truth": "dead",
+    "code": "16\timport type { ContentfulStatusCode, StatusCode } from '../utils/http-status'\n17\timport type { Equal, Expect } from '../utils/types'\n18\timport type { ValidationFunction } from './validator'\n19\timport { validator } from './validator'\n20\t\n21\t// Helper type to extract the response type from the validation function\n22\t// eslint-disable-next-line @typescript-eslint/no-explicit-any\n23\ttype InferValidatorResponse<VF> = VF extends (value: any, c: any) => infer R\n24\t  ? R extends Promise<infer PR>\n25\t    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any\n26\t      PR extends Response | TypedResponse<any, any, any>\n27\t      ? PR\n28\t      : never\n29\t    : // eslint-disable-next-line @typescript-eslint/no-explicit-any\n30\t      R extends Response | TypedResponse<any, any, any>\n31\t      ? R\n32\t      : never\n33\t  : never\n34\t\n35\t// Reference implementation for only testing\n36\tconst zodValidator = <\n37\t  T extends z.ZodSchema,\n38\t  E extends {},",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/validator/validator.test.ts",
+      "line": 36,
+      "symbol": "zodValidator"
+    },
+    "rationale": "test fixture validator in src/validator/validator.test.ts; used only by its own test assertions"
+  },
+  {
+    "name": "onErrorHandler",
+    "truth": "dead",
+    "code": "99\t            status: 200\n100\t          }\n101\t    }\n102\t  }\n103\t\n104\t  type Actual = ExtractSchema<typeof route>\n105\t\n106\t  type verify = Expect<Equal<Expected, Actual>>\n107\t\n108\t  it('Should return 200 response', async () => {\n109\t    const res = await app.request('http://localhost/search?q=foo')\n110\t    expect(res.status).toBe(200)\n111\t  })\n112\t\n113\t  it('Should return 400 response', async () => {\n114\t    const res = await app.request('http://localhost/search')\n115\t    expect(res.status).toBe(400)\n116\t  })\n117\t})\n118\t\n119\tconst onErrorHandler: ErrorHandler = (e, c) => {\n120\t  if (e instanceof HTTPException) {\n121\t    return c.json({ message: e.message, success: false }, e.status)\n122\t  }\n123\t  return c.json({ message: e.message }, 500)\n124\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/validator/validator.test.ts",
+      "line": 119,
+      "symbol": "onErrorHandler"
+    },
+    "rationale": "test-only handler in src/validator/validator.test.ts; referenced only within the test"
+  },
+  {
+    "name": "nullBodyResponses",
+    "truth": "alive",
+    "code": "1\t/**\n2\t * @description This file is a modified version of `fetch-result-please` (`ofetch`), minimalized and adapted to Hono's custom needs.\n3\t *\n4\t * @link https://www.npmjs.com/package/fetch-result-please\n5\t */\n6\t\n7\tconst nullBodyResponses = new Set([101, 204, 205, 304])\n8\t\n9\t/**\n10\t * Smartly parses and return the consumable result from a fetch `Response`.\n11\t *\n12\t * Throwing a structured error if the response is not `ok`. ({@link DetailedError})",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/client/fetch-result-please.ts",
+      "line": 7,
+      "symbol": "nullBodyResponses"
+    },
+    "rationale": "used (.has) in src/client/fetch-result-please.ts"
+  },
+  {
+    "name": "fetchRP",
+    "truth": "alive",
+    "code": "1\t/**\n2\t * @description This file is a modified version of `fetch-result-please` (`ofetch`), minimalized and adapted to Hono's custom needs.\n3\t *\n4\t * @link https://www.npmjs.com/package/fetch-result-please\n5\t */\n6\t\n7\tconst nullBodyResponses = new Set([101, 204, 205, 304])\n8\t\n9\t/**\n10\t * Smartly parses and return the consumable result from a fetch `Response`.\n11\t *\n12\t * Throwing a structured error if the response is not `ok`. ({@link DetailedError})\n13\t */\n14\texport async function fetchRP(fetchRes: Response | Promise<Response>): Promise<any> {\n15\t  const _fetchRes = (await fetchRes) as unknown as Response & {\n16\t    _data: any\n17\t    /**\n18\t     * @description BodyInit property from whatwg-fetch polyfill\n19\t     *\n20\t     * @link https://github.com/JakeChampion/fetch/blob/main/fetch.js#L238\n21\t     */\n22\t    _bodyInit?: any\n23\t  }\n24\t\n25\t  const hasBody =\n26\t    (_fetchRes.body || _fetchRes._bodyInit) && !nullBodyResponses.has(_fetchRes.status)\n27\t\n28\t  if (hasBody) {\n29\t    const responseType = detectResponseType(_fetchRes)\n30\t    _fetchRes._data = await _fetchRes[responseType]()\n31\t  }\n32\t\n33\t  if (!_fetchRes.ok) {\n34\t    throw new DetailedError(`${_fetchRes.status} ${_fetchRes.statusText}`, {\n35\t      statusCode: _fetchRes?.status,\n36\t      detail: {\n37\t        data: _fetchRes?._data,\n38\t        statusText: _fetchRes?.statusText,\n39\t      },\n40\t    })\n41\t  }\n42\t\n43\t  return _fetchRes._data\n44\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/client/fetch-result-please.ts",
+      "line": 14,
+      "symbol": "fetchRP"
+    },
+    "rationale": "imported and called in src/client/utils.ts (return fetchRP(fetchRes))"
+  },
+  {
+    "name": "DetailedError",
+    "truth": "alive",
+    "code": "26\t    (_fetchRes.body || _fetchRes._bodyInit) && !nullBodyResponses.has(_fetchRes.status)\n27\t\n28\t  if (hasBody) {\n29\t    const responseType = detectResponseType(_fetchRes)\n30\t    _fetchRes._data = await _fetchRes[responseType]()\n31\t  }\n32\t\n33\t  if (!_fetchRes.ok) {\n34\t    throw new DetailedError(`${_fetchRes.status} ${_fetchRes.statusText}`, {\n35\t      statusCode: _fetchRes?.status,\n36\t      detail: {\n37\t        data: _fetchRes?._data,\n38\t        statusText: _fetchRes?.statusText,\n39\t      },\n40\t    })\n41\t  }\n42\t\n43\t  return _fetchRes._data\n44\t}\n45\t\n46\texport class DetailedError extends Error {\n47\t  /**\n48\t   * Additional `message` that will be logged AND returned to client\n49\t   */\n50\t  public detail?: any\n51\t  /**\n52\t   * Additional `code` that will be logged AND returned to client\n53\t   */\n54\t  public code?: any\n55\t  /**\n56\t   * Additional value that will be logged AND NOT returned to client\n57\t   */\n58\t  public log?: any\n59\t  /**\n60\t   * Optionally set the status code to return, in a web server context\n61\t   */\n62\t  public statusCode?: any\n63\t\n64\t  constructor(\n65\t    message: string,\n66\t    options: { detail?: any; code?: any; statusCode?: number; log?: any } = {}\n67\t  ) {\n68\t    super(message)\n69\t    this.name = 'DetailedError'\n70\t    this.log = options.log\n71\t    this.detail = options.detail\n72\t    this.code = options.code\n73\t    this.statusCode = options.statusCode\n74\t  }\n75\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/client/fetch-result-please.ts",
+      "line": 46,
+      "symbol": "DetailedError"
+    },
+    "rationale": "live error class — thrown in fetch-result-please.ts and re-exported via client/utils.ts + client/index.ts"
+  },
+  {
+    "name": "jsonRegex",
+    "truth": "alive",
+    "code": "58\t  public log?: any\n59\t  /**\n60\t   * Optionally set the status code to return, in a web server context\n61\t   */\n62\t  public statusCode?: any\n63\t\n64\t  constructor(\n65\t    message: string,\n66\t    options: { detail?: any; code?: any; statusCode?: number; log?: any } = {}\n67\t  ) {\n68\t    super(message)\n69\t    this.name = 'DetailedError'\n70\t    this.log = options.log\n71\t    this.detail = options.detail\n72\t    this.code = options.code\n73\t    this.statusCode = options.statusCode\n74\t  }\n75\t}\n76\t\n77\t// This is used to match the content-type header for 'json'\n78\tconst jsonRegex = /^application\\/(?:[\\w!#$%&*.^`~-]*\\+)?json(?:;.+)?$/i\n79\t\n80\tfunction detectResponseType(response: Response): 'json' | 'text' {\n81\t  const _contentType = response.headers.get('content-type')\n82\t\n83\t  if (!_contentType) {\n84\t    return 'text'\n85\t  }\n86\t\n87\t  // `_contentType` might look like: `application/json; charset=utf-8`, `text/plain`, so we get the first part before `;`\n88\t  const contentType = _contentType.split(';').shift()!\n89\t\n90\t  if (jsonRegex.test(contentType)) {\n91\t    return 'json'\n92\t  }\n93\t\n94\t  return 'text'\n95\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/client/fetch-result-please.ts",
+      "line": 78,
+      "symbol": "jsonRegex"
+    },
+    "rationale": "used via .test() in src/client/fetch-result-please.ts (the local const it declares)"
+  },
+  {
+    "name": "detectResponseType",
+    "truth": "alive",
+    "code": "60\t   * Optionally set the status code to return, in a web server context\n61\t   */\n62\t  public statusCode?: any\n63\t\n64\t  constructor(\n65\t    message: string,\n66\t    options: { detail?: any; code?: any; statusCode?: number; log?: any } = {}\n67\t  ) {\n68\t    super(message)\n69\t    this.name = 'DetailedError'\n70\t    this.log = options.log\n71\t    this.detail = options.detail\n72\t    this.code = options.code\n73\t    this.statusCode = options.statusCode\n74\t  }\n75\t}\n76\t\n77\t// This is used to match the content-type header for 'json'\n78\tconst jsonRegex = /^application\\/(?:[\\w!#$%&*.^`~-]*\\+)?json(?:;.+)?$/i\n79\t\n80\tfunction detectResponseType(response: Response): 'json' | 'text' {\n81\t  const _contentType = response.headers.get('content-type')\n82\t\n83\t  if (!_contentType) {\n84\t    return 'text'\n85\t  }\n86\t\n87\t  // `_contentType` might look like: `application/json; charset=utf-8`, `text/plain`, so we get the first part before `;`\n88\t  const contentType = _contentType.split(';').shift()!\n89\t\n90\t  if (jsonRegex.test(contentType)) {\n91\t    return 'json'\n92\t  }\n93\t\n94\t  return 'text'\n95\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/client/fetch-result-please.ts",
+      "line": 80,
+      "symbol": "detectResponseType"
+    },
+    "rationale": "called in src/client/fetch-result-please.ts (detectResponseType(_fetchRes))"
+  },
+  {
+    "name": "env",
+    "truth": "alive",
+    "code": "1\t/**\n2\t * @module\n3\t * Adapter Helper for Hono.\n4\t */\n5\t\n6\timport type { Context } from '../../context'\n7\t\n8\texport type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'other'\n9\t\n10\texport const env = <\n11\t  T extends Record<string, unknown>,\n12\t  C extends Context = Context<{\n13\t    Bindings: T\n14\t  }>,",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/helper/adapter/index.ts",
+      "line": 10,
+      "symbol": "env"
+    },
+    "rationale": "hono's env() context helper, referenced across adapters and context.ts"
+  },
+  {
+    "name": "knownUserAgents",
+    "truth": "alive",
+    "code": "23\t  runtime ??= getRuntimeKey()\n24\t\n25\t  const runtimeEnvHandlers: Record<string, () => T> = {\n26\t    bun: () => globalEnv,\n27\t    node: () => globalEnv,\n28\t    'edge-light': () => globalEnv,\n29\t    deno: () => {\n30\t      // eslint-disable-next-line @typescript-eslint/ban-ts-comment\n31\t      // @ts-ignore\n32\t      return Deno.env.toObject() as T\n33\t    },\n34\t    workerd: () => c.env,\n35\t    // On Fastly Compute, you can use the ConfigStore to manage user-defined data.\n36\t    fastly: () => ({}) as T,\n37\t    other: () => ({}) as T,\n38\t  }\n39\t\n40\t  return runtimeEnvHandlers[runtime]()\n41\t}\n42\t\n43\texport const knownUserAgents: Partial<Record<Runtime, string>> = {\n44\t  deno: 'Deno',\n45\t  bun: 'Bun',\n46\t  workerd: 'Cloudflare-Workers',\n47\t  node: 'Node.js',\n48\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/helper/adapter/index.ts",
+      "line": 43,
+      "symbol": "knownUserAgents"
+    },
+    "rationale": "iterated (Object.entries) by getRuntimeKey in src/helper/adapter/index.ts"
+  },
+  {
+    "name": "getRuntimeKey",
+    "truth": "alive",
+    "code": "30\t      // eslint-disable-next-line @typescript-eslint/ban-ts-comment\n31\t      // @ts-ignore\n32\t      return Deno.env.toObject() as T\n33\t    },\n34\t    workerd: () => c.env,\n35\t    // On Fastly Compute, you can use the ConfigStore to manage user-defined data.\n36\t    fastly: () => ({}) as T,\n37\t    other: () => ({}) as T,\n38\t  }\n39\t\n40\t  return runtimeEnvHandlers[runtime]()\n41\t}\n42\t\n43\texport const knownUserAgents: Partial<Record<Runtime, string>> = {\n44\t  deno: 'Deno',\n45\t  bun: 'Bun',\n46\t  workerd: 'Cloudflare-Workers',\n47\t  node: 'Node.js',\n48\t}\n49\t\n50\texport const getRuntimeKey = (): Runtime => {\n51\t  // eslint-disable-next-line @typescript-eslint/no-explicit-any\n52\t  const global = globalThis as any\n53\t\n54\t  // check if the current runtime supports navigator.userAgent\n55\t  const userAgentSupported =\n56\t    typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string'\n57\t\n58\t  // if supported, check the user agent\n59\t  if (userAgentSupported) {\n60\t    for (const [runtimeKey, userAgent] of Object.entries(knownUserAgents)) {\n61\t      if (checkUserAgentEquals(userAgent)) {\n62\t        return runtimeKey as Runtime\n63\t      }\n64\t    }\n65\t  }\n66\t\n67\t  // check if running on Edge Runtime\n68\t  if (typeof global?.EdgeRuntime === 'string') {\n69\t    return 'edge-light'\n70\t  }\n71\t\n72\t  // check if running on Fastly\n73\t  if (global?.fastly !== undefined) {\n74\t    return 'fastly'\n75\t  }\n76\t\n77\t  // userAgent isn't supported before Node v21.1.0; so fallback to the old way\n78\t  if (global?.process?.release?.name === 'node') {\n79\t    return 'node'\n80\t  }\n81\t\n82\t  // couldn't detect the runtime\n83\t  return 'other'\n84\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/helper/adapter/index.ts",
+      "line": 50,
+      "symbol": "getRuntimeKey"
+    },
+    "rationale": "live public helper — called in helper/adapter/index.ts and imported+called in src/utils/jwt/jws.ts"
+  },
+  {
+    "name": "checkUserAgentEquals",
+    "truth": "alive",
+    "code": "66\t\n67\t  // check if running on Edge Runtime\n68\t  if (typeof global?.EdgeRuntime === 'string') {\n69\t    return 'edge-light'\n70\t  }\n71\t\n72\t  // check if running on Fastly\n73\t  if (global?.fastly !== undefined) {\n74\t    return 'fastly'\n75\t  }\n76\t\n77\t  // userAgent isn't supported before Node v21.1.0; so fallback to the old way\n78\t  if (global?.process?.release?.name === 'node') {\n79\t    return 'node'\n80\t  }\n81\t\n82\t  // couldn't detect the runtime\n83\t  return 'other'\n84\t}\n85\t\n86\texport const checkUserAgentEquals = (platform: string): boolean => {\n87\t  const userAgent = navigator.userAgent\n88\t\n89\t  return userAgent.startsWith(platform)\n90\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/helper/adapter/index.ts",
+      "line": 86,
+      "symbol": "checkUserAgentEquals"
+    },
+    "rationale": "called within getRuntimeKey in src/helper/adapter/index.ts"
+  },
+  {
+    "name": "OptionalRequestInitProperties",
+    "truth": "alive",
+    "code": "9\t  ParamKeys,\n10\t  RemoveQuestion,\n11\t  RouterRoute,\n12\t  ValidationTargets,\n13\t} from './types'\n14\timport { parseBody } from './utils/body'\n15\timport type { BodyData, ParseBodyOptions } from './utils/body'\n16\timport type { CustomHeader, RequestHeader } from './utils/headers'\n17\timport type { Simplify, UnionToIntersection } from './utils/types'\n18\timport { decodeURIComponent_, getQueryParam, getQueryParams, tryDecode } from './utils/url'\n19\t\n20\ttype Body = {\n21\t  json: any\n22\t  text: string\n23\t  arrayBuffer: ArrayBuffer\n24\t  blob: Blob\n25\t  formData: FormData\n26\t}\n27\ttype BodyCache = Partial<Body>\n28\t\n29\ttype OptionalRequestInitProperties = 'window' | 'priority'\n30\ttype RequiredRequestInit = Required<Omit<RequestInit, OptionalRequestInitProperties>> & {\n31\t  [Key in OptionalRequestInitProperties]?: RequestInit[Key]\n32\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/request.ts",
+      "line": 29,
+      "symbol": "OptionalRequestInitProperties"
+    },
+    "rationale": "used in the RequiredRequestInit type in src/request.ts"
+  },
+  {
+    "name": "RequiredRequestInit",
+    "truth": "alive",
+    "code": "10\t  RemoveQuestion,\n11\t  RouterRoute,\n12\t  ValidationTargets,\n13\t} from './types'\n14\timport { parseBody } from './utils/body'\n15\timport type { BodyData, ParseBodyOptions } from './utils/body'\n16\timport type { CustomHeader, RequestHeader } from './utils/headers'\n17\timport type { Simplify, UnionToIntersection } from './utils/types'\n18\timport { decodeURIComponent_, getQueryParam, getQueryParams, tryDecode } from './utils/url'\n19\t\n20\ttype Body = {\n21\t  json: any\n22\t  text: string\n23\t  arrayBuffer: ArrayBuffer\n24\t  blob: Blob\n25\t  formData: FormData\n26\t}\n27\ttype BodyCache = Partial<Body>\n28\t\n29\ttype OptionalRequestInitProperties = 'window' | 'priority'\n30\ttype RequiredRequestInit = Required<Omit<RequestInit, OptionalRequestInitProperties>> & {\n31\t  [Key in OptionalRequestInitProperties]?: RequestInit[Key]\n32\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/request.ts",
+      "line": 30,
+      "symbol": "RequiredRequestInit"
+    },
+    "rationale": "the requestInit type annotation in src/request.ts:489"
+  },
+  {
+    "name": "getColorEnabled",
+    "truth": "alive",
+    "code": "1\t/**\n2\t * @module\n3\t * Color utility.\n4\t */\n5\t\n6\t/**\n7\t * Get whether color change on terminal is enabled or disabled.\n8\t * If `NO_COLOR` environment variable is set, this function returns `false`.\n9\t * Unlike getColorEnabledAsync(), this cannot check Cloudflare environment variables.\n10\t * @see {@link https://no-color.org/}\n11\t *\n12\t * @returns {boolean}\n13\t */\n14\texport function getColorEnabled(): boolean {\n15\t  // eslint-disable-next-line @typescript-eslint/no-explicit-any\n16\t  const { process, Deno } = globalThis as any\n17\t\n18\t  const isNoColor =\n19\t    typeof Deno?.noColor === 'boolean'\n20\t      ? (Deno.noColor as boolean)\n21\t      : process !== undefined\n22\t        ? // eslint-disable-next-line no-unsafe-optional-chaining\n23\t          'NO_COLOR' in process?.env\n24\t        : false\n25\t\n26\t  return !isNoColor\n27\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/utils/color.ts",
+      "line": 14,
+      "symbol": "getColorEnabled"
+    },
+    "rationale": "imported and called in src/helper/dev/index.ts and src/utils/color.ts"
+  },
+  {
+    "name": "getColorEnabledAsync",
+    "truth": "alive",
+    "code": "16\t  const { process, Deno } = globalThis as any\n17\t\n18\t  const isNoColor =\n19\t    typeof Deno?.noColor === 'boolean'\n20\t      ? (Deno.noColor as boolean)\n21\t      : process !== undefined\n22\t        ? // eslint-disable-next-line no-unsafe-optional-chaining\n23\t          'NO_COLOR' in process?.env\n24\t        : false\n25\t\n26\t  return !isNoColor\n27\t}\n28\t\n29\t/**\n30\t * Get whether color change on terminal is enabled or disabled.\n31\t * If `NO_COLOR` environment variable is set, this function returns `false`.\n32\t * @see {@link https://no-color.org/}\n33\t *\n34\t * @returns {boolean}\n35\t */\n36\texport async function getColorEnabledAsync(): Promise<boolean> {\n37\t  // eslint-disable-next-line @typescript-eslint/no-explicit-any\n38\t  const { navigator } = globalThis as any\n39\t  // Avoid analysis of cloudflare scheme by bundlers\n40\t  const cfWorkers = 'cloudflare:workers'\n41\t\n42\t  const isNoColor =\n43\t    navigator !== undefined && navigator.userAgent === 'Cloudflare-Workers'\n44\t      ? await (async () => {\n45\t          try {\n46\t            // eslint-disable-next-line @typescript-eslint/ban-ts-comment\n47\t            // @ts-ignore\n48\t            return 'NO_COLOR' in ((await import(cfWorkers)).env ?? {}) // {} is for backward compat\n49\t          } catch {\n50\t            return false\n51\t          }\n52\t        })()\n53\t      : !getColorEnabled()\n54\t\n55\t  return !isNoColor\n56\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+      "file": "src/utils/color.ts",
+      "line": 36,
+      "symbol": "getColorEnabledAsync"
+    },
+    "rationale": "imported and awaited in src/middleware/logger/index.ts"
+  }
+]
