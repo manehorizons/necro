@@ -35,36 +35,45 @@ describe("live triage eval — synthetic smoke set (AC-4)", () => {
  * The real accuracy gate: hono-derived `maybe` findings with authentic evidence
  * and hand-verified truth (see fixtures/triage-realrepo/SOURCES.md).
  *
- * MEASURED BASELINE (claude-opus-4-8, two live runs): precision 0.50–0.75,
- * recall 0.40–0.60 — a mediocre, variable baseline that the synthetic eval
- * (near-perfect) completely masked. This is the milestone's payoff: on real
- * findings the model trusts misleading "0 static references" evidence and flags
- * live code dead (e.g. RequiredRequestInit, detectResponseType — the
- * trust-killer). Raising accuracy is a separate TUNING phase (out of scope here
- * per the phase boundary: this phase measures triage, it does not tune it).
+ * PRE-TUNING BASELINE (claude-opus-4-8): precision 0.50–0.75, recall 0.40–0.60 —
+ * the model trusted misleading "0 static references" evidence and flagged live
+ * production code dead (RequiredRequestInit, detectResponseType — the trust-killer).
  *
- * The gate below is a REGRESSION FLOOR set under the observed minima (not a
- * pass-cherry-picked target): it catches a collapse without flaking on the
- * model's run-to-run variance. PRECISION is the headline — the alive class (14)
- * is solid and precision is the trust-critical metric; RECALL is floored loosely
- * because the dead class (5) is small and its "production-dead" labels are
- * definitionally debatable (test-local helpers). The aspirational target is
- * precision ≥ 0.85.
+ * POST-TUNING (phase 12, location-weighted SYSTEM_PROMPT, 3 live runs):
+ * precision 1.00/1.00/1.00, recall 0.40/0.60/0.40 — zero alive→likely-dead FPs.
+ *
+ * The gates below are REGRESSION FLOORS set under the observed post-tuning minima
+ * (not pass-cherry-picked): they catch a collapse without flaking on the model's
+ * run-to-run variance. PRECISION is the headline — the alive class (14) is solid
+ * and precision is the trust-critical metric; the floor is raised to 0.70 (the
+ * tuned baseline; aspirational ≥ 0.85). RECALL is floored loosely because the
+ * dead class (5) is small and its "production-dead" labels are definitionally
+ * debatable (test-local helpers).
  */
-const PRECISION_GATE = 0.4;
+const PRECISION_GATE = 0.7;
 const RECALL_GATE = 0.3;
 
-describe("live triage eval — real-repo accuracy gate (AC-4)", () => {
+/** The two production-source symbols the tuning targeted: genuinely alive, but
+ * called `likely-dead` pre-tuning on misleading "0 static references" evidence. */
+const TUNED_FALSE_POSITIVES = ["RequiredRequestInit", "detectResponseType"];
+
+describe("live triage eval — real-repo accuracy gate (AC-2, AC-3)", () => {
   test.runIf(process.env.ANTHROPIC_API_KEY)(
-    "real model clears the precision/recall gate on the real-repo corpus (AC-4)",
+    "tuned prompt clears the raised precision floor and no longer calls the two FPs dead (AC-2, AC-3)",
     async () => {
       const cases = await loadEvalCases(realRepo);
       const client = createTriageClient(DEFAULT_LLM);
       const m = await runEval(cases, client, { concurrency: 4 });
       // biome-ignore lint/suspicious/noConsole: eval output is the point of the live run
       console.log(`live real-repo eval\n${formatBreakdown(m)}`);
+      // AC-3: precision clears the raised floor (tuned baseline ≥ 0.70).
       expect(m.precision).toBeGreaterThanOrEqual(PRECISION_GATE);
       expect(m.recall).toBeGreaterThanOrEqual(RECALL_GATE);
+      // AC-2: the two persistent production-source false positives are no longer dead.
+      const verdictByName = new Map(m.rows.map((r) => [r.name, r.verdict]));
+      for (const name of TUNED_FALSE_POSITIVES) {
+        expect(verdictByName.get(name), `${name} should not be likely-dead`).not.toBe("likely-dead");
+      }
     },
     180_000,
   );
