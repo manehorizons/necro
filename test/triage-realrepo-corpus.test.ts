@@ -84,3 +84,28 @@ describe("real-repo corpus integrity (AC-6)", () => {
     expect(bad.evidence.length).toBe(0); // the integrity test above would reject this
   });
 });
+
+describe("eval prompt matches production triage (AC-3)", () => {
+  test("a corpus case is sent through the production buildPrompt with its authentic evidence (AC-3)", async () => {
+    const cases = await loadEvalCases(corpusPath);
+    const target = cases.find((c) => c.evidence.some((e) => /static references/.test(e.text))) ?? cases[0]!;
+
+    // a client that captures the prompt the eval actually sends to the model
+    let captured = "";
+    const capturing: TriageClient = {
+      async classify(prompt) {
+        if (prompt.user.includes(`Symbol: ${target.name}`)) captured = prompt.user;
+        return { verdict: "unsure", reasoning: "mock" };
+      },
+    };
+    await runEval([target], capturing, { concurrency: 1 });
+
+    // production prompt markers (same buildPrompt necro triage uses)
+    expect(captured).toContain(`Symbol: ${target.name}`);
+    expect(captured).toContain("Analyzer evidence:");
+    // the case's AUTHENTIC captured evidence reaches the model verbatim
+    for (const e of target.evidence) {
+      expect(captured).toContain(e.text);
+    }
+  });
+});
