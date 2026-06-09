@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { ClassifiedFinding } from "../src/analyze/classify.js";
-import { buildPrompt, parseVerdict, VERDICT_SCHEMA } from "../src/triage/prompt.js";
+import { buildPrompt, parseVerdict, SYSTEM_PROMPT, VERDICT_SCHEMA } from "../src/triage/prompt.js";
 import type { Snippet } from "../src/triage/snippet.js";
 
 const finding: ClassifiedFinding = {
@@ -20,6 +20,21 @@ const snippet: Snippet = {
   endLine: 44,
   code: "41\texport function formatPayload() {\n42\t  return 1;\n43\t}",
 };
+
+describe("SYSTEM_PROMPT discount guidance (AC-1)", () => {
+  // On real repos, "zero static references" + an unresolvable dynamic-import taint
+  // is the REASON a symbol was quarantined as `maybe` — not evidence it is dead.
+  // The prompt must tell the model to discount that combination, or it over-calls dead.
+  test("instructs the model to discount zero-static-refs + dynamic-taint as a death signal (AC-1)", () => {
+    const p = SYSTEM_PROMPT.toLowerCase().replace(/\s+/g, " ");
+    // explicit discount/negation instruction…
+    expect(p).toMatch(/discount|do not treat|is not (a )?(death )?(signal|evidence)|not evidence of death/);
+    // …that the absence/dynamic-import combination is not a death signal…
+    expect(p).toMatch(/not .*(evidence|signal).*(dead|death)/);
+    // …specifically tied to the unresolvable dynamic import being the reason for the quarantine.
+    expect(p).toContain("dynamic import");
+  });
+});
 
 describe("buildPrompt (AC-3)", () => {
   test("payload carries the symbol, location, evidence chain, and snippet (AC-3)", () => {
