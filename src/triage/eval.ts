@@ -27,6 +27,19 @@ export interface EvalResultRow {
   name: string;
   truth: GroundTruth;
   verdict: TriageVerdict;
+  /** The prediction disagrees with truth on the positive ("dead") class. */
+  misclassified: boolean;
+  /** Carried through for diagnosis on real-repo cases. */
+  provenance?: CaseProvenance;
+  /** The evidence the model saw — surfaced so a miss is diagnosable. */
+  evidence: EvidenceSignal[];
+}
+
+/** A diagnostic view of an eval run: class balance + every misclassified case,
+ * so a failing gate points to which cases / evidence patterns were missed. */
+export interface EvalBreakdown {
+  byTruth: { dead: number; alive: number };
+  misclassified: EvalResultRow[];
 }
 
 export interface EvalMetrics {
@@ -38,6 +51,7 @@ export interface EvalMetrics {
   precision: number;
   recall: number;
   rows: EvalResultRow[];
+  breakdown: EvalBreakdown;
 }
 
 /** Load the labeled reference set (a JSON array of {@link EvalCase}). */
@@ -77,7 +91,9 @@ export async function runEval(
       const idx = next++;
       const c = cases[idx] as EvalCase;
       const { verdict } = await client.classify(caseToPrompt(c));
-      rows[idx] = { name: c.name, truth: c.truth, verdict };
+      const predictedDead = verdict === "likely-dead";
+      const misclassified = predictedDead !== (c.truth === "dead");
+      rows[idx] = { name: c.name, truth: c.truth, verdict, misclassified, provenance: c.provenance, evidence: c.evidence };
     }
   });
   await Promise.all(workers);
@@ -95,7 +111,27 @@ export async function runEval(
   // positives ⇒ recall 1. Avoids 0/0.
   const precision = tp + fp === 0 ? 1 : tp / (tp + fp);
   const recall = tp + fn === 0 ? 1 : tp / (tp + fn);
-  return { total: cases.length, truePositives: tp, falsePositives: fp, falseNegatives: fn, precision, recall, rows };
+  const breakdown: EvalBreakdown = {
+    byTruth: {
+      dead: rows.filter((r) => r.truth === "dead").length,
+      alive: rows.filter((r) => r.truth === "alive").length,
+    },
+    misclassified: rows.filter((r) => r.misclassified),
+  };
+  return { total: cases.length, truePositives: tp, falsePositives: fp, falseNegatives: fn, precision, recall, rows, breakdown };
+}
+
+/** A compact, human-readable breakdown for eval logs: class balance plus each
+ * missed case with its provenance and the evidence the model saw. */
+export function formatBreakdown(m: EvalMetrics): string {
+  const head = `dead=${m.breakdown.byTruth.dead} alive=${m.breakdown.byTruth.alive}  precision=${m.precision.toFixed(2)} recall=${m.recall.toFixed(2)}`;
+  if (m.breakdown.misclassified.length === 0) return `${head}\n  (no misclassifications)`;
+  const lines = m.breakdown.misclassified.map((r) => {
+    const where = r.provenance ? `${r.provenance.repo}@${r.provenance.sha} ${r.provenance.file}:${r.provenance.line}` : "(synthetic)";
+    const ev = r.evidence.map((e) => `${e.ok === true ? "✓" : e.ok === false ? "✗" : "•"} ${e.text}`).join("; ");
+    return `  ✗ ${r.name} truth=${r.truth} got=${r.verdict}  [${where}]\n      evidence: ${ev || "(none)"}`;
+  });
+  return [head, ...lines].join("\n");
 }
 
 /** The accuracy gate: both precision and recall must clear `threshold`. */

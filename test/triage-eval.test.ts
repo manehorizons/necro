@@ -2,7 +2,14 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "vitest";
 import type { TriageClient } from "../src/triage/client.js";
-import { type EvalCase, loadEvalCases, meetsThreshold, runEval, type GroundTruth } from "../src/triage/eval.js";
+import {
+  type EvalCase,
+  formatBreakdown,
+  loadEvalCases,
+  meetsThreshold,
+  runEval,
+  type GroundTruth,
+} from "../src/triage/eval.js";
 import type { TriageVerdict } from "../src/triage/prompt.js";
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), "fixtures/triage/cases.json");
@@ -82,5 +89,57 @@ describe("EvalCase carries optional provenance + rationale (AC-2)", () => {
     expect(m.total).toBe(2);
     expect(m.precision).toBe(1);
     expect(m.recall).toBe(1);
+  });
+});
+
+describe("diagnostic breakdown (AC-5)", () => {
+  const corpus = (): EvalCase[] => [
+    {
+      name: "actuallyDead",
+      truth: "dead",
+      code: "function actuallyDead() {}",
+      evidence: [{ ok: true, text: "0 static references" }],
+      provenance: { repo: "acme/widgets", sha: "abc1234", file: "src/a.ts", line: 5, symbol: "actuallyDead" },
+      rationale: "no references in repo",
+    },
+    {
+      name: "actuallyAlive",
+      truth: "alive",
+      code: "function actuallyAlive() {}",
+      evidence: [{ ok: false, text: "referenced by src/main.ts" }],
+      provenance: { repo: "acme/widgets", sha: "abc1234", file: "src/b.ts", line: 9, symbol: "actuallyAlive" },
+      rationale: "called from main",
+    },
+  ];
+
+  test("surfaces exactly the misclassified cases with provenance + evidence (AC-5)", async () => {
+    // model wrongly calls the alive symbol dead → one false positive
+    const client = oracleClient((name) => (name === "actuallyAlive" ? "likely-dead" : "likely-dead"));
+    const m = await runEval(corpus(), client);
+
+    expect(m.breakdown.byTruth).toEqual({ dead: 1, alive: 1 });
+    expect(m.breakdown.misclassified).toHaveLength(1);
+    const missed = m.breakdown.misclassified[0]!;
+    expect(missed.name).toBe("actuallyAlive");
+    expect(missed.provenance?.file).toBe("src/b.ts");
+    expect(missed.evidence[0]?.text).toContain("referenced by src/main.ts");
+    expect(m.rows.find((r) => r.name === "actuallyDead")?.misclassified).toBe(false);
+  });
+
+  test("a perfect oracle yields an empty misclassified list (AC-5)", async () => {
+    const byName = new Map(corpus().map((c) => [c.name, c.truth]));
+    const client = oracleClient((name) => truthVerdict[byName.get(name) ?? "alive"]);
+    const m = await runEval(corpus(), client);
+    expect(m.breakdown.misclassified).toHaveLength(0);
+    expect(formatBreakdown(m)).toMatch(/no misclassifications/);
+  });
+
+  test("formatBreakdown renders each miss with where + evidence (AC-5)", async () => {
+    const client = oracleClient(() => "likely-dead");
+    const m = await runEval(corpus(), client);
+    const out = formatBreakdown(m);
+    expect(out).toContain("actuallyAlive");
+    expect(out).toContain("acme/widgets@abc1234 src/b.ts:9");
+    expect(out).toContain("referenced by src/main.ts");
   });
 });
