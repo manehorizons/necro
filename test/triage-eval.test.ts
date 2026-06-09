@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { describe, expect, test } from "vitest";
 import type { TriageClient } from "../src/triage/client.js";
-import { loadEvalCases, meetsThreshold, runEval, type GroundTruth } from "../src/triage/eval.js";
+import { type EvalCase, loadEvalCases, meetsThreshold, runEval, type GroundTruth } from "../src/triage/eval.js";
 import type { TriageVerdict } from "../src/triage/prompt.js";
 
 const fixtures = join(dirname(fileURLToPath(import.meta.url)), "fixtures/triage/cases.json");
@@ -59,5 +59,28 @@ describe("runEval (AC-7)", () => {
     const m = await runEval(cases, client);
     expect(m.recall).toBe(0); // every real dead missed
     expect(meetsThreshold(m, 0.9)).toBe(false);
+  });
+});
+
+describe("EvalCase carries optional provenance + rationale (AC-2)", () => {
+  test("a real-repo case (provenance + rationale) scores identically to a bare case (AC-2)", async () => {
+    const bare = { name: "bareDead", truth: "dead" as const, code: "function bareDead() {}", evidence: [] };
+    const enriched: EvalCase = {
+      name: "richDead",
+      truth: "dead",
+      code: "function richDead() {}",
+      evidence: [{ ok: true, text: "0 static references" }],
+      provenance: { repo: "acme/widgets", sha: "abc1234", file: "src/x.ts", line: 9, symbol: "richDead" },
+      rationale: "no references anywhere in the repo; not a public export",
+    };
+    const cases: EvalCase[] = [bare, enriched];
+    const byName = new Map(cases.map((c) => [c.name, c.truth]));
+    const client = oracleClient((name) => truthVerdict[byName.get(name) ?? "alive"]);
+
+    const m = await runEval(cases, client);
+    // the enriched case participates in scoring exactly like the bare one
+    expect(m.total).toBe(2);
+    expect(m.precision).toBe(1);
+    expect(m.recall).toBe(1);
   });
 });

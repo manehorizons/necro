@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import type { ClassifiedFinding, EvidenceSignal } from "../analyze/classify.js";
 import type { TriageClient } from "./client.js";
+import type { CaseProvenance } from "./eval-capture.js";
 import { buildPrompt, type TriageVerdict } from "./prompt.js";
 import type { Snippet } from "./snippet.js";
 
@@ -8,12 +9,18 @@ import type { Snippet } from "./snippet.js";
 export type GroundTruth = "dead" | "alive";
 
 /** One hand-labeled reference case: a `maybe`-style finding with known truth.
- * The snippet is inline so the harness needs no source files on disk. */
+ * The snippet is inline so the harness needs no source files on disk.
+ * `provenance` + `rationale` are present on real-repo-derived cases (the
+ * captured evidence is verbatim necro output); synthetic cases omit them. */
 export interface EvalCase {
   name: string;
   truth: GroundTruth;
   code: string;
   evidence: EvidenceSignal[];
+  /** Where a real-repo case came from; absent for synthetic cases. */
+  provenance?: CaseProvenance;
+  /** Why the ground-truth label was chosen; present on real-repo cases. */
+  rationale?: string;
 }
 
 export interface EvalResultRow {
