@@ -4,18 +4,18 @@
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
-  "activePhase": "11-real-repo-triage-eval",
+  "activePhase": "12-triage-prompt-tuning",
   "activeDraft": null,
   "activeSpec": null,
   "loopPosition": "IDLE",
   "tier": null,
-  "draftReadAt": "2026-06-09T02:25:26.180Z",
+  "draftReadAt": "2026-06-09T18:48:13.856Z",
   "openDrafts": [],
   "decisions": [],
   "deferred": [],
   "session": {
     "tokenUtilization": 0,
-    "lastHandoff": "SESSION-2026-06-08-phase-09-llm-refactor-shipped.md",
+    "lastHandoff": "SESSION-2026-06-09-phase-12-settled.md",
     "subagentSpawns": 0
   },
   "skillAudit": {

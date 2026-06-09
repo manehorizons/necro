@@ -4,14 +4,14 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 11-real-repo-triage-eval
+**Active phase:** 12-triage-prompt-tuning
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
 - Token utilization: 0%
 - Subagent spawns this session: 0
-- Last handoff: SESSION-2026-06-08-phase-09-llm-refactor-shipped.md
+- Last handoff: SESSION-2026-06-09-phase-12-settled.md
 
 ## Counts
 - Open drafts: 0
