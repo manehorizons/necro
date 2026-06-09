@@ -1,6 +1,16 @@
 import { describe, expect, test } from "vitest";
-import type { RefactorOutcome, RefactorRunResult } from "../src/refactor/index.js";
-import { renderRefactor, toRefactorJson } from "../src/report/refactor.js";
+import type {
+  ExtractDuplicateOutcome,
+  ExtractDuplicateRunResult,
+  RefactorOutcome,
+  RefactorRunResult,
+} from "../src/refactor/index.js";
+import {
+  renderExtractDuplicate,
+  renderRefactor,
+  toExtractDuplicateJson,
+  toRefactorJson,
+} from "../src/report/refactor.js";
 import { toJson } from "../src/report/json.js";
 import type { ComplexityFinding } from "../src/syntactic/types.js";
 
@@ -84,5 +94,86 @@ describe("scan/fix JSON unchanged (AC-4)", () => {
     ) as Record<string, unknown>;
     expect(Object.keys(out)).toEqual(["findings", "complexity", "hotspots", "duplication"]);
     expect(out).not.toHaveProperty("refactor");
+  });
+});
+
+// ── extract-duplicate ───────────────────────────────────────────────────────
+
+const dupOutcome = (over: Partial<ExtractDuplicateOutcome> = {}): ExtractDuplicateOutcome => ({
+  finding: {
+    tokens: 30,
+    locations: [
+      { file: "src/a.ts", startLine: 3, endLine: 4 },
+      { file: "src/b.ts", startLine: 3, endLine: 4 },
+    ],
+  },
+  model: "claude-opus-4-8",
+  proposal: {
+    summary: "extract loadId",
+    sharedFunction: "export function loadId(key) {\n  return db.query(key).id;\n}",
+    sharedFunctionFile: "src/a.ts",
+    edits: [
+      { file: "src/a.ts", startLine: 3, endLine: 4, replacement: "  return loadId('a');" },
+      { file: "src/b.ts", startLine: 3, endLine: 4, replacement: "  return loadId('b');" },
+    ],
+    rationale: "shared the query in one place",
+  },
+  files: [
+    { file: "src/a.ts", newContent: "…", diff: "--- a/src/a.ts\n+++ b/src/a.ts\n@@\n+loadId\n" },
+    { file: "src/b.ts", newContent: "…", diff: "--- a/src/b.ts\n+++ b/src/b.ts\n@@\n+import\n" },
+  ],
+  badge: { status: "green" },
+  ...over,
+});
+
+const dupResult = (
+  outcomes: ExtractDuplicateOutcome[],
+  considered = outcomes.length,
+): ExtractDuplicateRunResult => ({ outcomes, consideredCloneGroups: considered });
+
+describe("renderExtractDuplicate (AC-4)", () => {
+  test("shows each file's diff, rationale, summary and a verified badge (AC-4)", () => {
+    const out = renderExtractDuplicate(dupResult([dupOutcome()]));
+    expect(out).toContain("extract loadId");
+    expect(out).toContain("shared the query in one place");
+    expect(out).toContain("src/a.ts:3-4");
+    expect(out).toContain("+loadId"); // diff for file a
+    expect(out).toContain("+import"); // diff for file b
+    expect(out).toMatch(/verified|✓/i);
+  });
+
+  test("zero clone groups → a clear no-op message (AC-4)", () => {
+    expect(renderExtractDuplicate(dupResult([], 0))).toBe("no duplication findings to refactor");
+  });
+
+  test("marks a failed verification clearly, not as success (AC-4)", () => {
+    const out = renderExtractDuplicate(dupResult([dupOutcome({ badge: { status: "red", output: "1 test failed" } })]));
+    expect(out).toMatch(/fail|✗/i);
+    expect(out).not.toMatch(/✓ verified/);
+  });
+
+  test("surfaces the failure reason when the proposal couldn't be produced (AC-4)", () => {
+    const out = renderExtractDuplicate(
+      dupResult([dupOutcome({ proposal: null, files: null, badge: null, failure: "overlapping edits" })]),
+    );
+    expect(out).toContain("overlapping edits");
+  });
+});
+
+describe("toExtractDuplicateJson (AC-4)", () => {
+  test("carries the proposal + per-file diffs + verification per clone group (AC-4)", () => {
+    const json = JSON.parse(toExtractDuplicateJson(dupResult([dupOutcome()]))) as {
+      extractDuplicate: Array<{
+        tokens: number;
+        proposal: { sharedFunctionFile: string; edits: unknown[] };
+        files: Array<{ file: string }>;
+        verification: { status: string };
+      }>;
+    };
+    expect(json.extractDuplicate[0]?.tokens).toBe(30);
+    expect(json.extractDuplicate[0]?.proposal.sharedFunctionFile).toBe("src/a.ts");
+    expect(json.extractDuplicate[0]?.proposal.edits).toHaveLength(2);
+    expect(json.extractDuplicate[0]?.files.map((f) => f.file)).toEqual(["src/a.ts", "src/b.ts"]);
+    expect(json.extractDuplicate[0]?.verification.status).toBe("green");
   });
 });

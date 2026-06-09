@@ -29,7 +29,9 @@ interface TriageOptions {
 
 interface RefactorOptions {
   json?: boolean;
-  /** Max god functions to propose splits for (default 1). */
+  /** Which refactor type to suggest (default `god-function`). */
+  type?: string;
+  /** Max findings to propose refactors for (default 1). */
   limit?: string;
   /** `--no-verify` sets this false; default runs scratch-worktree verification. */
   verify?: boolean;
@@ -148,21 +150,27 @@ program
 program
   .command("refactor")
   .description(
-    "Suggest LLM-assisted god-function splits (advisory; opt-in; uses the Anthropic API). Prints proposals — never edits your files.",
+    "Suggest LLM-assisted refactors — god-function splits or extract-duplicate (advisory; opt-in; uses the Anthropic API). Prints proposals — never edits your files.",
   )
   .argument("[path]", "directory or file to scan, then refactor", ".")
+  .option("--type <type>", "refactor type: god-function | extract-duplicate (default god-function)", "god-function")
   .option("--json", "emit proposals as JSON")
-  .option("--limit <n>", "max god functions to propose splits for (default 1)")
+  .option("--limit <n>", "max findings to propose refactors for (default 1)")
   .option("--no-verify", "skip scratch-worktree verification (typecheck + tests)")
   .action(async (path: string, opts: RefactorOptions) => {
     const target = resolve(process.cwd(), path);
     const config = await loadConfig(process.cwd());
 
+    const type = opts.type ?? "god-function";
+    if (type !== "god-function" && type !== "extract-duplicate") {
+      console.error(`unknown --type "${type}" (expected god-function | extract-duplicate)`);
+      process.exitCode = 1;
+      return;
+    }
+
     // Lazy: only loaded on the refactor path, never by scan/fix.
     const { createRefactorClient } = await import("./refactor/client.js");
     const { MissingApiKeyError } = await import("./triage/client.js");
-    const { runRefactor } = await import("./refactor/index.js");
-    const { renderRefactor, toRefactorJson } = await import("./report/refactor.js");
 
     let client: import("./refactor/client.js").RefactorClient;
     try {
@@ -176,7 +184,7 @@ program
       throw err;
     }
 
-    const { complexity } = await scan(target, config);
+    const scanResult = await scan(target, config);
 
     let verifyRunner: import("./refactor/verify.js").VerifyRunner | undefined;
     if (opts.verify !== false) {
@@ -190,7 +198,18 @@ program
     }
 
     const limit = opts.limit ? Number.parseInt(opts.limit, 10) : undefined;
-    const res = await runRefactor(complexity, config.llm, client, { limit, verifyRunner });
+
+    if (type === "extract-duplicate") {
+      const { runExtractDuplicate } = await import("./refactor/index.js");
+      const { renderExtractDuplicate, toExtractDuplicateJson } = await import("./report/refactor.js");
+      const res = await runExtractDuplicate(scanResult.duplication, config.llm, client, { limit, verifyRunner });
+      console.log(opts.json ? toExtractDuplicateJson(res) : renderExtractDuplicate(res));
+      return;
+    }
+
+    const { runRefactor } = await import("./refactor/index.js");
+    const { renderRefactor, toRefactorJson } = await import("./report/refactor.js");
+    const res = await runRefactor(scanResult.complexity, config.llm, client, { limit, verifyRunner });
     console.log(opts.json ? toRefactorJson(res) : renderRefactor(res));
   });
 
