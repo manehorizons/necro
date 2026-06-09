@@ -4,7 +4,7 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 10-extract-duplicate
+**Active phase:** 11-real-repo-triage-eval
 **Active draft:** (none)
 **Tier:** (n/a)
 
