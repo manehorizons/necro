@@ -1,0 +1,38 @@
+[
+  {
+    "name": "report-mean-same-file",
+    "files": [
+      {
+        "path": "src/metrics.ts",
+        "source": "import { round } from \"./math.js\";\nexport function reportA(values) {\n  const total = values.reduce((s, v) => s + v, 0);\n  const mean = total / values.length;\n  return round(mean, 2);\n}\nexport function reportB(values) {\n  const total = values.reduce((s, v) => s + v, 0);\n  const mean = total / values.length;\n  return round(mean, 2);\n}\n"
+      }
+    ],
+    "locations": [
+      { "file": "src/metrics.ts", "startLine": 3, "endLine": 5 },
+      { "file": "src/metrics.ts", "startLine": 8, "endLine": 10 }
+    ],
+    "tokens": 18,
+    "minTokens": 10,
+    "signatures": ["export function reportA(values) {", "export function reportB(values) {"]
+  },
+  {
+    "name": "load-value-cross-file",
+    "files": [
+      {
+        "path": "src/load-a.ts",
+        "source": "import { db } from \"./db.js\";\nexport function loadUser(id) {\n  const row = db.query(\"user\", id);\n  if (!row) throw new Error(\"not found\");\n  return row.value;\n}\n"
+      },
+      {
+        "path": "src/load-b.ts",
+        "source": "import { db } from \"./db.js\";\nexport function loadOrder(id) {\n  const row = db.query(\"order\", id);\n  if (!row) throw new Error(\"not found\");\n  return row.value;\n}\n"
+      }
+    ],
+    "locations": [
+      { "file": "src/load-a.ts", "startLine": 3, "endLine": 5 },
+      { "file": "src/load-b.ts", "startLine": 3, "endLine": 5 }
+    ],
+    "tokens": 20,
+    "minTokens": 10,
+    "signatures": ["export function loadUser(id) {", "export function loadOrder(id) {"]
+  }
+]
