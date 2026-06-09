@@ -40,6 +40,27 @@ export function extractSnippet(text: string, line: number, radius: number): Omit
 }
 
 /**
+ * Extract an exact 1-based line range `[startLine, endLine]` from `text`, each
+ * line prefixed with its 1-based number and a tab (same shape as
+ * {@link extractSnippet}). Unlike `extractSnippet` this does no brace matching —
+ * it slices precisely the requested range, which is what a clone location gives
+ * us. The range is clamped into the file and to {@link MAX_SPAN} lines.
+ */
+export function extractRange(text: string, startLine: number, endLine: number): Omit<Snippet, "file"> {
+  const lines = text.split("\n");
+  const total = lines.length;
+  if (total === 0) return { startLine: 1, endLine: 1, code: "" };
+
+  const start = Math.min(Math.max(startLine, 1), total);
+  const end = Math.min(Math.max(endLine, start), Math.min(total, start + MAX_SPAN - 1));
+  const code = lines
+    .slice(start - 1, end)
+    .map((l, i) => `${start + i}\t${l}`)
+    .join("\n");
+  return { startLine: start, endLine: end, code };
+}
+
+/**
  * Lines below the declaration to include: the enclosing block's extent via
  * brace matching, else `radius`. Returns an offset from `decl`.
  */
