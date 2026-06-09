@@ -1,16 +1,12 @@
-import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
-import { promisify } from "node:util";
+import { readFile } from "node:fs/promises";
+import { relative } from "node:path";
 import type { LlmOptions } from "../config.js";
 import type { ComplexityFinding } from "../syntactic/types.js";
 import type { RefactorClient } from "./client.js";
 import { contextForFinding } from "./context.js";
 import { buildRefactorPrompt, type RefactorProposal } from "./prompt.js";
+import { computeUnifiedDiff, spliceLines } from "./splice.js";
 import { verifyProposal, type VerifyBadge, type VerifyRunner } from "./verify.js";
-
-const execFileAsync = promisify(execFile);
 
 /** The default checks run against a proposal in the scratch worktree. */
 export const DEFAULT_CHECKS = ["npm run typecheck", "npx vitest run"];
@@ -92,34 +88,4 @@ export async function runRefactor(
   }
 
   return { outcomes, consideredGodFunctions: godFunctions.length };
-}
-
-/** Replace 1-based lines [startLine, endLine] of `original` with `replacement`. */
-export function spliceLines(original: string, startLine: number, endLine: number, replacement: string): string {
-  const lines = original.split("\n");
-  const before = lines.slice(0, Math.max(startLine - 1, 0));
-  const after = lines.slice(endLine);
-  const repl = replacement.replace(/\n$/, "").split("\n");
-  return [...before, ...repl, ...after].join("\n");
-}
-
-/** Best-effort unified diff between two strings via `git diff --no-index`. */
-async function computeUnifiedDiff(original: string, updated: string): Promise<string | null> {
-  const dir = await mkdtemp(join(tmpdir(), "necro-refdiff-"));
-  try {
-    const a = join(dir, "a");
-    const b = join(dir, "b");
-    await writeFile(a, original);
-    await writeFile(b, updated);
-    try {
-      // Differing files make git exit 1 with the diff on stdout — that's success here.
-      await execFileAsync("git", ["diff", "--no-index", "--", a, b], { timeout: 10_000 });
-      return ""; // identical
-    } catch (err) {
-      const e = err as { stdout?: string };
-      return e.stdout ?? null;
-    }
-  } finally {
-    await rm(dir, { recursive: true, force: true });
-  }
 }
