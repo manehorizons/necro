@@ -587,5 +587,904 @@
       "symbol": "getColorEnabledAsync"
     },
     "rationale": "imported and awaited in src/middleware/logger/index.ts"
+  },
+  {
+    "name": "JsonPrimitive",
+    "truth": "alive",
+    "code": "1\t/* eslint-disable @typescript-eslint/naming-convention */\n2\timport type { Simplify, WithoutIndexSignature } from '../types';\n3\t\n4\t/**\n5\t * @see https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts\n6\t */\n7\ttype JsonPrimitive = boolean | number | string | null;\n8\ttype JsonArray = JsonValue[] | readonly JsonValue[];\n9\ttype JsonObject = {\n10\t  readonly [key: string | number]: JsonValue;\n11\t  [key: symbol]: never;\n12\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 7,
+      "symbol": "JsonPrimitive"
+    },
+    "rationale": "type-level helper in serialize.ts; feeds JsonValue/JsonReturnable, transitively consumed by the exported Serialize<T> — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "JsonArray",
+    "truth": "alive",
+    "code": "1\t/* eslint-disable @typescript-eslint/naming-convention */\n2\timport type { Simplify, WithoutIndexSignature } from '../types';\n3\t\n4\t/**\n5\t * @see https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts\n6\t */\n7\ttype JsonPrimitive = boolean | number | string | null;\n8\ttype JsonArray = JsonValue[] | readonly JsonValue[];\n9\ttype JsonObject = {\n10\t  readonly [key: string | number]: JsonValue;\n11\t  [key: symbol]: never;\n12\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 8,
+      "symbol": "JsonArray"
+    },
+    "rationale": "type-level helper; member of JsonValue, transitively consumed by exported Serialize<T> — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "JsonObject",
+    "truth": "alive",
+    "code": "1\t/* eslint-disable @typescript-eslint/naming-convention */\n2\timport type { Simplify, WithoutIndexSignature } from '../types';\n3\t\n4\t/**\n5\t * @see https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts\n6\t */\n7\ttype JsonPrimitive = boolean | number | string | null;\n8\ttype JsonArray = JsonValue[] | readonly JsonValue[];\n9\ttype JsonObject = {\n10\t  readonly [key: string | number]: JsonValue;\n11\t  [key: symbol]: never;\n12\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 9,
+      "symbol": "JsonObject"
+    },
+    "rationale": "type-level helper; member of JsonValue, transitively consumed by exported Serialize<T> — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "JsonValue",
+    "truth": "alive",
+    "code": "1\t/* eslint-disable @typescript-eslint/naming-convention */\n2\timport type { Simplify, WithoutIndexSignature } from '../types';\n3\t\n4\t/**\n5\t * @see https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts\n6\t */\n7\ttype JsonPrimitive = boolean | number | string | null;\n8\ttype JsonArray = JsonValue[] | readonly JsonValue[];\n9\ttype JsonObject = {\n10\t  readonly [key: string | number]: JsonValue;\n11\t  [key: symbol]: never;\n12\t};\n13\ttype JsonValue = JsonPrimitive | JsonObject | JsonArray;\n14\t\n15\ttype IsJson<T> = T extends JsonValue ? true : false;\n16\t\n17\t// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type\n18\ttype NonJsonPrimitive = Function | symbol | undefined;\n19\t/*\n20\t * `any` is the only type that can let you equate `0` with `1`\n21\t * See https://stackoverflow.com/a/49928360/1490091\n22\t */\n23\ttype IsAny<T> = 0 extends T & 1 ? true : false;\n24\t\n25\t// `undefined` is a weird one that's technically not valid JSON,\n26\t// but the return value of `JSON.parse` can be `undefined` so we\n27\t// support it as both a Primitive and a NonJsonPrimitive\n28\ttype JsonReturnable = JsonPrimitive | undefined;\n29\t\n30\ttype IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never\n31\t  ? true\n32\t  : false;\n33\t\n34\t/* prettier-ignore */\n35\texport type Serialize<T> =\n36\t  IsAny<T> extends true ? any :\n37\t  unknown extends T ? unknown :\n38\t  IsJson<T> extends true ? T :\n39\t  T extends AsyncIterable<infer $T, infer $Return, infer $Next> ? AsyncIterable<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :\n40\t  T extends PromiseLike<infer $T> ? Promise<Serialize<$T>> :\n41\t  T extends JsonReturnable ? T :\n42\t  T extends Map<any, any> | Set<any> ? object :\n43\t  T extends NonJsonPrimitive ? never :\n44\t  T extends { toJSON(): infer U } ? U :",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 13,
+      "symbol": "JsonValue"
+    },
+    "rationale": "used by IsJson/JsonArray/JsonObject; transitively consumed by exported Serialize<T> — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "IsJson",
+    "truth": "alive",
+    "code": "1\t/* eslint-disable @typescript-eslint/naming-convention */\n2\timport type { Simplify, WithoutIndexSignature } from '../types';\n3\t\n4\t/**\n5\t * @see https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts\n6\t */\n7\ttype JsonPrimitive = boolean | number | string | null;\n8\ttype JsonArray = JsonValue[] | readonly JsonValue[];\n9\ttype JsonObject = {\n10\t  readonly [key: string | number]: JsonValue;\n11\t  [key: symbol]: never;\n12\t};\n13\ttype JsonValue = JsonPrimitive | JsonObject | JsonArray;\n14\t\n15\ttype IsJson<T> = T extends JsonValue ? true : false;\n16\t\n17\t// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type\n18\ttype NonJsonPrimitive = Function | symbol | undefined;\n19\t/*\n20\t * `any` is the only type that can let you equate `0` with `1`\n21\t * See https://stackoverflow.com/a/49928360/1490091\n22\t */\n23\ttype IsAny<T> = 0 extends T & 1 ? true : false;\n24\t\n25\t// `undefined` is a weird one that's technically not valid JSON,\n26\t// but the return value of `JSON.parse` can be `undefined` so we\n27\t// support it as both a Primitive and a NonJsonPrimitive\n28\ttype JsonReturnable = JsonPrimitive | undefined;\n29\t\n30\ttype IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never\n31\t  ? true\n32\t  : false;\n33\t\n34\t/* prettier-ignore */\n35\texport type Serialize<T> =\n36\t  IsAny<T> extends true ? any :\n37\t  unknown extends T ? unknown :\n38\t  IsJson<T> extends true ? T :\n39\t  T extends AsyncIterable<infer $T, infer $Return, infer $Next> ? AsyncIterable<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :\n40\t  T extends PromiseLike<infer $T> ? Promise<Serialize<$T>> :\n41\t  T extends JsonReturnable ? T :\n42\t  T extends Map<any, any> | Set<any> ? object :\n43\t  T extends NonJsonPrimitive ? never :\n44\t  T extends { toJSON(): infer U } ? U :",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 15,
+      "symbol": "IsJson"
+    },
+    "rationale": "used by Serialize<T> (line 38) to short-circuit JSON-safe types — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "NonJsonPrimitive",
+    "truth": "alive",
+    "code": "1\t/* eslint-disable @typescript-eslint/naming-convention */\n2\timport type { Simplify, WithoutIndexSignature } from '../types';\n3\t\n4\t/**\n5\t * @see https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts\n6\t */\n7\ttype JsonPrimitive = boolean | number | string | null;\n8\ttype JsonArray = JsonValue[] | readonly JsonValue[];\n9\ttype JsonObject = {\n10\t  readonly [key: string | number]: JsonValue;\n11\t  [key: symbol]: never;\n12\t};\n13\ttype JsonValue = JsonPrimitive | JsonObject | JsonArray;\n14\t\n15\ttype IsJson<T> = T extends JsonValue ? true : false;\n16\t\n17\t// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type\n18\ttype NonJsonPrimitive = Function | symbol | undefined;\n19\t/*\n20\t * `any` is the only type that can let you equate `0` with `1`\n21\t * See https://stackoverflow.com/a/49928360/1490091\n22\t */\n23\ttype IsAny<T> = 0 extends T & 1 ? true : false;\n24\t\n25\t// `undefined` is a weird one that's technically not valid JSON,\n26\t// but the return value of `JSON.parse` can be `undefined` so we\n27\t// support it as both a Primitive and a NonJsonPrimitive\n28\ttype JsonReturnable = JsonPrimitive | undefined;\n29\t\n30\ttype IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never\n31\t  ? true\n32\t  : false;\n33\t\n34\t/* prettier-ignore */\n35\texport type Serialize<T> =\n36\t  IsAny<T> extends true ? any :\n37\t  unknown extends T ? unknown :\n38\t  IsJson<T> extends true ? T :\n39\t  T extends AsyncIterable<infer $T, infer $Return, infer $Next> ? AsyncIterable<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :\n40\t  T extends PromiseLike<infer $T> ? Promise<Serialize<$T>> :\n41\t  T extends JsonReturnable ? T :\n42\t  T extends Map<any, any> | Set<any> ? object :\n43\t  T extends NonJsonPrimitive ? never :\n44\t  T extends { toJSON(): infer U } ? U :",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 18,
+      "symbol": "NonJsonPrimitive"
+    },
+    "rationale": "used by Serialize<T>, SerializeTuple, and SerializeObjectKey — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "IsAny",
+    "truth": "alive",
+    "code": "3\t\n4\t/**\n5\t * @see https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts\n6\t */\n7\ttype JsonPrimitive = boolean | number | string | null;\n8\ttype JsonArray = JsonValue[] | readonly JsonValue[];\n9\ttype JsonObject = {\n10\t  readonly [key: string | number]: JsonValue;\n11\t  [key: symbol]: never;\n12\t};\n13\ttype JsonValue = JsonPrimitive | JsonObject | JsonArray;\n14\t\n15\ttype IsJson<T> = T extends JsonValue ? true : false;\n16\t\n17\t// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type\n18\ttype NonJsonPrimitive = Function | symbol | undefined;\n19\t/*\n20\t * `any` is the only type that can let you equate `0` with `1`\n21\t * See https://stackoverflow.com/a/49928360/1490091\n22\t */\n23\ttype IsAny<T> = 0 extends T & 1 ? true : false;\n24\t\n25\t// `undefined` is a weird one that's technically not valid JSON,\n26\t// but the return value of `JSON.parse` can be `undefined` so we\n27\t// support it as both a Primitive and a NonJsonPrimitive\n28\ttype JsonReturnable = JsonPrimitive | undefined;\n29\t\n30\ttype IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never\n31\t  ? true\n32\t  : false;\n33\t\n34\t/* prettier-ignore */\n35\texport type Serialize<T> =\n36\t  IsAny<T> extends true ? any :\n37\t  unknown extends T ? unknown :\n38\t  IsJson<T> extends true ? T :\n39\t  T extends AsyncIterable<infer $T, infer $Return, infer $Next> ? AsyncIterable<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :\n40\t  T extends PromiseLike<infer $T> ? Promise<Serialize<$T>> :\n41\t  T extends JsonReturnable ? T :\n42\t  T extends Map<any, any> | Set<any> ? object :\n43\t  T extends NonJsonPrimitive ? never :\n44\t  T extends { toJSON(): infer U } ? U :",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 23,
+      "symbol": "IsAny"
+    },
+    "rationale": "used by Serialize<T> (line 36) and SerializeObjectKey (line 63) — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "JsonReturnable",
+    "truth": "alive",
+    "code": "8\ttype JsonArray = JsonValue[] | readonly JsonValue[];\n9\ttype JsonObject = {\n10\t  readonly [key: string | number]: JsonValue;\n11\t  [key: symbol]: never;\n12\t};\n13\ttype JsonValue = JsonPrimitive | JsonObject | JsonArray;\n14\t\n15\ttype IsJson<T> = T extends JsonValue ? true : false;\n16\t\n17\t// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type\n18\ttype NonJsonPrimitive = Function | symbol | undefined;\n19\t/*\n20\t * `any` is the only type that can let you equate `0` with `1`\n21\t * See https://stackoverflow.com/a/49928360/1490091\n22\t */\n23\ttype IsAny<T> = 0 extends T & 1 ? true : false;\n24\t\n25\t// `undefined` is a weird one that's technically not valid JSON,\n26\t// but the return value of `JSON.parse` can be `undefined` so we\n27\t// support it as both a Primitive and a NonJsonPrimitive\n28\ttype JsonReturnable = JsonPrimitive | undefined;\n29\t\n30\ttype IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never\n31\t  ? true\n32\t  : false;\n33\t\n34\t/* prettier-ignore */\n35\texport type Serialize<T> =\n36\t  IsAny<T> extends true ? any :\n37\t  unknown extends T ? unknown :\n38\t  IsJson<T> extends true ? T :\n39\t  T extends AsyncIterable<infer $T, infer $Return, infer $Next> ? AsyncIterable<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :\n40\t  T extends PromiseLike<infer $T> ? Promise<Serialize<$T>> :\n41\t  T extends JsonReturnable ? T :\n42\t  T extends Map<any, any> | Set<any> ? object :\n43\t  T extends NonJsonPrimitive ? never :\n44\t  T extends { toJSON(): infer U } ? U :",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 28,
+      "symbol": "JsonReturnable"
+    },
+    "rationale": "used by Serialize<T> (line 41) — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "IsRecord",
+    "truth": "alive",
+    "code": "10\t  readonly [key: string | number]: JsonValue;\n11\t  [key: symbol]: never;\n12\t};\n13\ttype JsonValue = JsonPrimitive | JsonObject | JsonArray;\n14\t\n15\ttype IsJson<T> = T extends JsonValue ? true : false;\n16\t\n17\t// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type\n18\ttype NonJsonPrimitive = Function | symbol | undefined;\n19\t/*\n20\t * `any` is the only type that can let you equate `0` with `1`\n21\t * See https://stackoverflow.com/a/49928360/1490091\n22\t */\n23\ttype IsAny<T> = 0 extends T & 1 ? true : false;\n24\t\n25\t// `undefined` is a weird one that's technically not valid JSON,\n26\t// but the return value of `JSON.parse` can be `undefined` so we\n27\t// support it as both a Primitive and a NonJsonPrimitive\n28\ttype JsonReturnable = JsonPrimitive | undefined;\n29\t\n30\ttype IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never\n31\t  ? true\n32\t  : false;\n33\t\n34\t/* prettier-ignore */\n35\texport type Serialize<T> =\n36\t  IsAny<T> extends true ? any :\n37\t  unknown extends T ? unknown :\n38\t  IsJson<T> extends true ? T :\n39\t  T extends AsyncIterable<infer $T, infer $Return, infer $Next> ? AsyncIterable<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :\n40\t  T extends PromiseLike<infer $T> ? Promise<Serialize<$T>> :\n41\t  T extends JsonReturnable ? T :\n42\t  T extends Map<any, any> | Set<any> ? object :\n43\t  T extends NonJsonPrimitive ? never :\n44\t  T extends { toJSON(): infer U } ? U :",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 30,
+      "symbol": "IsRecord"
+    },
+    "rationale": "used by Serialize<T> (line 49) to pick the record branch — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "Serialize",
+    "truth": "alive",
+    "code": "15\ttype IsJson<T> = T extends JsonValue ? true : false;\n16\t\n17\t// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type\n18\ttype NonJsonPrimitive = Function | symbol | undefined;\n19\t/*\n20\t * `any` is the only type that can let you equate `0` with `1`\n21\t * See https://stackoverflow.com/a/49928360/1490091\n22\t */\n23\ttype IsAny<T> = 0 extends T & 1 ? true : false;\n24\t\n25\t// `undefined` is a weird one that's technically not valid JSON,\n26\t// but the return value of `JSON.parse` can be `undefined` so we\n27\t// support it as both a Primitive and a NonJsonPrimitive\n28\ttype JsonReturnable = JsonPrimitive | undefined;\n29\t\n30\ttype IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never\n31\t  ? true\n32\t  : false;\n33\t\n34\t/* prettier-ignore */\n35\texport type Serialize<T> =\n36\t  IsAny<T> extends true ? any :\n37\t  unknown extends T ? unknown :\n38\t  IsJson<T> extends true ? T :\n39\t  T extends AsyncIterable<infer $T, infer $Return, infer $Next> ? AsyncIterable<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :\n40\t  T extends PromiseLike<infer $T> ? Promise<Serialize<$T>> :\n41\t  T extends JsonReturnable ? T :\n42\t  T extends Map<any, any> | Set<any> ? object :\n43\t  T extends NonJsonPrimitive ? never :\n44\t  T extends { toJSON(): infer U } ? U :",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 35,
+      "symbol": "Serialize"
+    },
+    "rationale": "exported; re-exported via unstable-core-do-not-import.ts and consumed in production (inference.ts, stream/jsonl.ts, stream/sse.ts) — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "SerializeTuple",
+    "truth": "alive",
+    "code": "34\t/* prettier-ignore */\n35\texport type Serialize<T> =\n36\t  IsAny<T> extends true ? any :\n37\t  unknown extends T ? unknown :\n38\t  IsJson<T> extends true ? T :\n39\t  T extends AsyncIterable<infer $T, infer $Return, infer $Next> ? AsyncIterable<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :\n40\t  T extends PromiseLike<infer $T> ? Promise<Serialize<$T>> :\n41\t  T extends JsonReturnable ? T :\n42\t  T extends Map<any, any> | Set<any> ? object :\n43\t  T extends NonJsonPrimitive ? never :\n44\t  T extends { toJSON(): infer U } ? U :\n45\t  T extends [] ? [] :\n46\t  T extends [unknown, ...unknown[]] ? SerializeTuple<T> :\n47\t  T extends readonly (infer U)[] ? (U extends NonJsonPrimitive ? null : Serialize<U>)[] :\n48\t  T extends object ?\n49\t    IsRecord<T> extends true ? Record<keyof T, Serialize<T[keyof T]>> :\n50\t    Simplify<SerializeObject<UndefinedToOptional<T>>> :\n51\t  never;\n52\t\n53\t/** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */\n54\ttype SerializeTuple<T extends [unknown, ...unknown[]]> = {\n55\t  [K in keyof T]: T[K] extends NonJsonPrimitive ? null : Serialize<T[K]>;\n56\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 54,
+      "symbol": "SerializeTuple"
+    },
+    "rationale": "used by Serialize<T> (line 46) for tuple types — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "SerializeObjectKey",
+    "truth": "alive",
+    "code": "39\t  T extends AsyncIterable<infer $T, infer $Return, infer $Next> ? AsyncIterable<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :\n40\t  T extends PromiseLike<infer $T> ? Promise<Serialize<$T>> :\n41\t  T extends JsonReturnable ? T :\n42\t  T extends Map<any, any> | Set<any> ? object :\n43\t  T extends NonJsonPrimitive ? never :\n44\t  T extends { toJSON(): infer U } ? U :\n45\t  T extends [] ? [] :\n46\t  T extends [unknown, ...unknown[]] ? SerializeTuple<T> :\n47\t  T extends readonly (infer U)[] ? (U extends NonJsonPrimitive ? null : Serialize<U>)[] :\n48\t  T extends object ?\n49\t    IsRecord<T> extends true ? Record<keyof T, Serialize<T[keyof T]>> :\n50\t    Simplify<SerializeObject<UndefinedToOptional<T>>> :\n51\t  never;\n52\t\n53\t/** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */\n54\ttype SerializeTuple<T extends [unknown, ...unknown[]]> = {\n55\t  [K in keyof T]: T[K] extends NonJsonPrimitive ? null : Serialize<T[K]>;\n56\t};\n57\t\n58\t// prettier-ignore\n59\ttype SerializeObjectKey<T extends Record<any, any>, K> = \n60\t  // never include entries where the key is a symbol\n61\t  K extends symbol ? never : \n62\t  // always include entries where the value is any\n63\t  IsAny<T[K]> extends true ? K :\n64\t  // always include entries where the value is unknown\n65\t  unknown extends T[K] ? K : \n66\t  // never include entries where the value is a non-JSON primitive\n67\t  T[K] extends NonJsonPrimitive ? never : \n68\t  // otherwise serialize the value\n69\t  K;\n70\t/**\n71\t * JSON serialize objects (not including arrays) and classes\n72\t * @internal\n73\t **/\n74\texport type SerializeObject<T extends object> = {\n75\t  [K in keyof T as SerializeObjectKey<T, K>]: Serialize<T[K]>;\n76\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 59,
+      "symbol": "SerializeObjectKey"
+    },
+    "rationale": "used by the exported SerializeObject (line 75) to filter keys — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "SerializeObject",
+    "truth": "alive",
+    "code": "54\ttype SerializeTuple<T extends [unknown, ...unknown[]]> = {\n55\t  [K in keyof T]: T[K] extends NonJsonPrimitive ? null : Serialize<T[K]>;\n56\t};\n57\t\n58\t// prettier-ignore\n59\ttype SerializeObjectKey<T extends Record<any, any>, K> = \n60\t  // never include entries where the key is a symbol\n61\t  K extends symbol ? never : \n62\t  // always include entries where the value is any\n63\t  IsAny<T[K]> extends true ? K :\n64\t  // always include entries where the value is unknown\n65\t  unknown extends T[K] ? K : \n66\t  // never include entries where the value is a non-JSON primitive\n67\t  T[K] extends NonJsonPrimitive ? never : \n68\t  // otherwise serialize the value\n69\t  K;\n70\t/**\n71\t * JSON serialize objects (not including arrays) and classes\n72\t * @internal\n73\t **/\n74\texport type SerializeObject<T extends object> = {\n75\t  [K in keyof T as SerializeObjectKey<T, K>]: Serialize<T[K]>;\n76\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 74,
+      "symbol": "SerializeObject"
+    },
+    "rationale": "exported (@internal); used by Serialize<T> (line 50) — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "FilterDefinedKeys",
+    "truth": "alive",
+    "code": "62\t  // always include entries where the value is any\n63\t  IsAny<T[K]> extends true ? K :\n64\t  // always include entries where the value is unknown\n65\t  unknown extends T[K] ? K : \n66\t  // never include entries where the value is a non-JSON primitive\n67\t  T[K] extends NonJsonPrimitive ? never : \n68\t  // otherwise serialize the value\n69\t  K;\n70\t/**\n71\t * JSON serialize objects (not including arrays) and classes\n72\t * @internal\n73\t **/\n74\texport type SerializeObject<T extends object> = {\n75\t  [K in keyof T as SerializeObjectKey<T, K>]: Serialize<T[K]>;\n76\t};\n77\t\n78\t/**\n79\t * Extract keys from T where the value dosen't extend undefined\n80\t * Note: Can't parse IndexSignature or Record types\n81\t */\n82\ttype FilterDefinedKeys<T extends object> = Exclude<\n83\t  {\n84\t    [K in keyof T]: undefined extends T[K] ? never : K;\n85\t  }[keyof T],",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 82,
+      "symbol": "FilterDefinedKeys"
+    },
+    "rationale": "used by UndefinedToOptional (line 128) and HandleUndefined (line 120) — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "ExactOptionalPropertyTypes",
+    "truth": "alive",
+    "code": "72\t * @internal\n73\t **/\n74\texport type SerializeObject<T extends object> = {\n75\t  [K in keyof T as SerializeObjectKey<T, K>]: Serialize<T[K]>;\n76\t};\n77\t\n78\t/**\n79\t * Extract keys from T where the value dosen't extend undefined\n80\t * Note: Can't parse IndexSignature or Record types\n81\t */\n82\ttype FilterDefinedKeys<T extends object> = Exclude<\n83\t  {\n84\t    [K in keyof T]: undefined extends T[K] ? never : K;\n85\t  }[keyof T],\n86\t  undefined\n87\t>;\n88\t\n89\t/**\n90\t * Get value of exactOptionalPropertyTypes config\n91\t */\n92\ttype ExactOptionalPropertyTypes = { a?: 0 | undefined } extends {\n93\t  a?: 0;\n94\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 92,
+      "symbol": "ExactOptionalPropertyTypes"
+    },
+    "rationale": "used by UndefinedToOptional (line 130) — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "HasIndexSignature",
+    "truth": "alive",
+    "code": "81\t */\n82\ttype FilterDefinedKeys<T extends object> = Exclude<\n83\t  {\n84\t    [K in keyof T]: undefined extends T[K] ? never : K;\n85\t  }[keyof T],\n86\t  undefined\n87\t>;\n88\t\n89\t/**\n90\t * Get value of exactOptionalPropertyTypes config\n91\t */\n92\ttype ExactOptionalPropertyTypes = { a?: 0 | undefined } extends {\n93\t  a?: 0;\n94\t}\n95\t  ? false\n96\t  : true;\n97\t\n98\t/**\n99\t * Check if T has an index signature\n100\t */\n101\ttype HasIndexSignature<T extends object> = string extends keyof T\n102\t  ? true\n103\t  : false;\n104\t\n105\t/**\n106\t * { [key: string]: number | undefined } --> { [key: string]: number }",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 101,
+      "symbol": "HasIndexSignature"
+    },
+    "rationale": "used by UndefinedToOptional (line 132) — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "HandleIndexSignature",
+    "truth": "alive",
+    "code": "88\t\n89\t/**\n90\t * Get value of exactOptionalPropertyTypes config\n91\t */\n92\ttype ExactOptionalPropertyTypes = { a?: 0 | undefined } extends {\n93\t  a?: 0;\n94\t}\n95\t  ? false\n96\t  : true;\n97\t\n98\t/**\n99\t * Check if T has an index signature\n100\t */\n101\ttype HasIndexSignature<T extends object> = string extends keyof T\n102\t  ? true\n103\t  : false;\n104\t\n105\t/**\n106\t * { [key: string]: number | undefined } --> { [key: string]: number }\n107\t */\n108\ttype HandleIndexSignature<T extends object> = {\n109\t  [K in keyof Omit<T, keyof WithoutIndexSignature<T>>]: Exclude<\n110\t    T[K],\n111\t    undefined\n112\t  >;\n113\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 108,
+      "symbol": "HandleIndexSignature"
+    },
+    "rationale": "used by UndefinedToOptional (lines 131,133) — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "HandleUndefined",
+    "truth": "alive",
+    "code": "99\t * Check if T has an index signature\n100\t */\n101\ttype HasIndexSignature<T extends object> = string extends keyof T\n102\t  ? true\n103\t  : false;\n104\t\n105\t/**\n106\t * { [key: string]: number | undefined } --> { [key: string]: number }\n107\t */\n108\ttype HandleIndexSignature<T extends object> = {\n109\t  [K in keyof Omit<T, keyof WithoutIndexSignature<T>>]: Exclude<\n110\t    T[K],\n111\t    undefined\n112\t  >;\n113\t};\n114\t\n115\t/**\n116\t * { a: number | undefined } --> { a?: number }\n117\t * Note: Can't parse IndexSignature or Record types\n118\t */\n119\ttype HandleUndefined<T extends object> = {\n120\t  [K in keyof Omit<T, FilterDefinedKeys<T>>]?: Exclude<T[K], undefined>;\n121\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 119,
+      "symbol": "HandleUndefined"
+    },
+    "rationale": "used by UndefinedToOptional (lines 131,134) — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "UndefinedToOptional",
+    "truth": "alive",
+    "code": "106\t * { [key: string]: number | undefined } --> { [key: string]: number }\n107\t */\n108\ttype HandleIndexSignature<T extends object> = {\n109\t  [K in keyof Omit<T, keyof WithoutIndexSignature<T>>]: Exclude<\n110\t    T[K],\n111\t    undefined\n112\t  >;\n113\t};\n114\t\n115\t/**\n116\t * { a: number | undefined } --> { a?: number }\n117\t * Note: Can't parse IndexSignature or Record types\n118\t */\n119\ttype HandleUndefined<T extends object> = {\n120\t  [K in keyof Omit<T, FilterDefinedKeys<T>>]?: Exclude<T[K], undefined>;\n121\t};\n122\t\n123\t/**\n124\t * Handle undefined, index signature and records\n125\t */\n126\ttype UndefinedToOptional<T extends object> =\n127\t  // Property is not a union with `undefined`, keep as-is\n128\t  Pick<WithoutIndexSignature<T>, FilterDefinedKeys<WithoutIndexSignature<T>>> &\n129\t    // If following is true, don't merge undefined or optional into index signature if any in T\n130\t    (ExactOptionalPropertyTypes extends true\n131\t      ? HandleIndexSignature<T> & HandleUndefined<WithoutIndexSignature<T>>\n132\t      : HasIndexSignature<T> extends true\n133\t        ? HandleIndexSignature<T>\n134\t        : HandleUndefined<T>);\n135\t",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/clientish/serialize.ts",
+      "line": 126,
+      "symbol": "UndefinedToOptional"
+    },
+    "rationale": "used by Serialize<T> (line 50) for object serialization — transitively reachable from the exported, production-consumed Serialize<T>; necro's '0 static references' is a dynamic-import-taint artifact (genuinely alive)."
+  },
+  {
+    "name": "returnSymbol",
+    "truth": "dead",
+    "code": "25\timport type {\n26\t  Deferred,\n27\t  RootConfig,\n28\t  Serialize,\n29\t  TrackedData,\n30\t} from '@trpc/server/unstable-core-do-not-import';\n31\timport {\n32\t  createDeferred,\n33\t  makeAsyncResource,\n34\t  run,\n35\t} from '@trpc/server/unstable-core-do-not-import';\n36\timport { makeResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';\n37\timport { uneval } from 'devalue';\n38\timport { konn } from 'konn';\n39\timport superjson from 'superjson';\n40\timport { z } from 'zod';\n41\timport { zAsyncIterable } from './zAsyncIterable';\n42\t\n43\tconst sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));\n44\t\n45\tconst returnSymbol = Symbol();\n46\t\n47\ttype MyEvents = {\n48\t  data: [Error | number | typeof returnSymbol];\n49\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/tests/server/httpSubscriptionLink.test.ts",
+      "line": 45,
+      "symbol": "returnSymbol"
+    },
+    "rationale": "test-local const (Symbol) used only within that test (lines 48,80,1022) — no production (non-test) reference; production-dead (necro's '0 static references' is a dynamic-import-taint artifact hiding the test-only use)."
+  },
+  {
+    "name": "MyEvents",
+    "truth": "dead",
+    "code": "27\t  RootConfig,\n28\t  Serialize,\n29\t  TrackedData,\n30\t} from '@trpc/server/unstable-core-do-not-import';\n31\timport {\n32\t  createDeferred,\n33\t  makeAsyncResource,\n34\t  run,\n35\t} from '@trpc/server/unstable-core-do-not-import';\n36\timport { makeResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';\n37\timport { uneval } from 'devalue';\n38\timport { konn } from 'konn';\n39\timport superjson from 'superjson';\n40\timport { z } from 'zod';\n41\timport { zAsyncIterable } from './zAsyncIterable';\n42\t\n43\tconst sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));\n44\t\n45\tconst returnSymbol = Symbol();\n46\t\n47\ttype MyEvents = {\n48\t  data: [Error | number | typeof returnSymbol];\n49\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/tests/server/httpSubscriptionLink.test.ts",
+      "line": 47,
+      "symbol": "MyEvents"
+    },
+    "rationale": "test-local event-map type used only within that test's router setup — no production (non-test) reference; production-dead (necro's '0 static references' is a dynamic-import-taint artifact hiding the test-only use)."
+  },
+  {
+    "name": "orderedResults",
+    "truth": "dead",
+    "code": "30\t} from '@trpc/server/unstable-core-do-not-import';\n31\timport {\n32\t  createDeferred,\n33\t  makeAsyncResource,\n34\t  run,\n35\t} from '@trpc/server/unstable-core-do-not-import';\n36\timport { makeResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';\n37\timport { uneval } from 'devalue';\n38\timport { konn } from 'konn';\n39\timport superjson from 'superjson';\n40\timport { z } from 'zod';\n41\timport { zAsyncIterable } from './zAsyncIterable';\n42\t\n43\tconst sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));\n44\t\n45\tconst returnSymbol = Symbol();\n46\t\n47\ttype MyEvents = {\n48\t  data: [Error | number | typeof returnSymbol];\n49\t};\n50\tconst orderedResults: number[] = [];\n51\tconst ctx = konn()\n52\t  .beforeEach(() => {\n53\t    const onIterableInfiniteSpy =\n54\t      vi.fn<(args: { input: { lastEventId?: number } }) => void>();\n55\t\n56\t    const ee = new IterableEventEmitter<MyEvents>();\n57\t\n58\t    const t = initTRPC.create({\n59\t      transformer: superjson,\n60\t    });\n61\t    orderedResults.length = 0;\n62\t    const infiniteYields = vi.fn();\n63\t\n64\t    const router = t.router({\n65\t      sub: {\n66\t        iterableEvent: t.procedure\n67\t          .output(\n68\t            zAsyncIterable({\n69\t              yield: z.number(),\n70\t              tracked: false,\n71\t            }),\n72\t          )\n73\t          .subscription(async function* (opts) {\n74\t            for await (const [thing] of ee.toIterable('data', {\n75\t              signal: opts.signal,\n76\t            })) {\n77\t              if (thing instanceof Error) {\n78\t                throw thing;\n79\t              }\n80\t              if (thing === returnSymbol) {\n81\t                return;\n82\t              }\n83\t\n84\t              yield thing;\n85\t            }\n86\t          }),\n87\t\n88\t        iterableInfinite: t.procedure\n89\t          .input(\n90\t            z.object({\n91\t              lastEventId: z.coerce.number().min(0).optional(),\n92\t            }),\n93\t          )\n94\t          .output(zAsyncIterable({ yield: z.number(), tracked: true }))\n95\t          .subscription(async function* (opts) {\n96\t            onIterableInfiniteSpy({\n97\t              input: opts.input,\n98\t            });\n99\t            let idx = opts.input.lastEventId ?? 0;\n100\t            while (true) {\n101\t              yield tracked(String(idx), idx);\n102\t              idx++;\n103\t              await sleep();\n104\t              infiniteYields();\n105\t            }\n106\t          }),\n107\t      },\n108\t    });\n109\t\n110\t    const linkSpy: TRPCLink<typeof router> = () => {\n111\t      // here we just got initialized in the app - this happens once per app\n112\t      // useful for storing cache for instance\n113\t      return ({ next, op }) => {\n114\t        // this is when passing the result to the next link\n115\t        // each link needs to return an observable which propagates results\n116\t        return observable((observer) => {\n117\t          const unsubscribe = next(op).subscribe({\n118\t            next(value) {\n119\t              orderedResults.push(value.result.data as number);\n120\t              observer.next(value);\n121\t            },\n122\t            error: observer.error,\n123\t            complete: observer.complete,\n124\t          });\n125\t          return unsubscribe;\n126\t        });\n127\t      };\n128\t    };\n129\t    const opts = testServerAndClientResource(router, {\n130\t      server: {},\n131\t      client(opts) {\n132\t        return {\n133\t          links: [\n134\t            linkSpy,\n135\t            splitLink({\n136\t              condition: (op) => op.type === 'subscription',\n137\t              true: httpSubscriptionLink({\n138\t                url: opts.httpUrl,\n139\t                transformer: superjson,\n140\t              }),\n141\t              false: httpBatchStreamLink({\n142\t                url: opts.httpUrl,\n143\t                transformer: superjson,\n144\t              }),\n145\t            }),\n146\t          ],\n147\t        };\n148\t      },\n149\t    });\n150\t    return {\n151\t      ...opts,\n152\t      ee,\n153\t      infiniteYields,\n154\t      onIterableInfiniteSpy,\n155\t    };\n156\t  })",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/tests/server/httpSubscriptionLink.test.ts",
+      "line": 50,
+      "symbol": "orderedResults"
+    },
+    "rationale": "test-local accumulator array used only within that test — no production (non-test) reference; production-dead (necro's '0 static references' is a dynamic-import-taint artifact hiding the test-only use)."
+  },
+  {
+    "name": "createPuller",
+    "truth": "dead",
+    "code": "1038\t      Object {\n1039\t        \"error\": null,\n1040\t        \"state\": \"pending\",\n1041\t        \"type\": \"state\",\n1042\t      },\n1043\t      Object {\n1044\t        \"error\": null,\n1045\t        \"state\": \"idle\",\n1046\t        \"type\": \"state\",\n1047\t      },\n1048\t    ]\n1049\t  `);\n1050\t\n1051\t  expect(es.readyState).toBe(EventSource.CLOSED);\n1052\t\n1053\t  expect(onErrorSpy).not.toHaveBeenCalled();\n1054\t\n1055\t  sub.unsubscribe();\n1056\t});\n1057\t\n1058\tfunction createPuller(): PromiseLike<void> & {\n1059\t  pull: () => void;\n1060\t  reject: (err: unknown) => void;\n1061\t} {\n1062\t  let deferred = createDeferred();\n1063\t\n1064\t  return {\n1065\t    pull: () => {\n1066\t      deferred.resolve();\n1067\t    },\n1068\t    reject: (err: unknown) => {\n1069\t      deferred.reject(err);\n1070\t    },\n1071\t    then(onFulfilled, onRejected) {\n1072\t      return deferred.promise.then(onFulfilled, onRejected).then((res) => {\n1073\t        deferred = createDeferred();\n1074\t        return res;\n1075\t      });\n1076\t    },\n1077\t  };\n1078\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/tests/server/httpSubscriptionLink.test.ts",
+      "line": 1058,
+      "symbol": "createPuller"
+    },
+    "rationale": "test-local helper fn called only within that test (line 1087) — no production (non-test) reference; production-dead (necro's '0 static references' is a dynamic-import-taint artifact hiding the test-only use)."
+  },
+  {
+    "name": "useSetupAllTestHooks",
+    "truth": "dead",
+    "code": "173\t            }),\n174\t          )\n175\t          .query(({ input: { id } }) => {\n176\t            resolvers.posts['comments.getById'][id]();\n177\t            return `posts.[comments.getById][${id}]` as const;\n178\t          }),\n179\t      }),\n180\t    });\n181\t\n182\t    return { ...getServerAndReactClient(appRouter), resolvers };\n183\t  })\n184\t  .afterEach(async (ctx) => {\n185\t    await ctx?.close?.();\n186\t  })\n187\t  .done();\n188\t\n189\t/**\n190\t * A hook that will subscribe the component to all the hooks for the\n191\t * invalidation test.\n192\t */\n193\tconst useSetupAllTestHooks = (client: (typeof ctx)['client']) => {\n194\t  const hooks = {\n195\t    user: {\n196\t      listAll: client.user.listAll.useQuery(),\n197\t      byId: {\n198\t        '1': client.user.byId.useQuery({ userId: '1' }),\n199\t        '2': client.user.byId.useQuery({ userId: '2' }),\n200\t      },\n201\t      details: {\n202\t        getByUserId: {\n203\t          '1': client.user.details.getByUserId.useQuery({ userId: '1' }),\n204\t          '2': client.user.details.getByUserId.useQuery({ userId: '2' }),\n205\t        },\n206\t      },\n207\t    },\n208\t    'user.current.email.getMain': client['user.current.email.getMain'].useQuery(\n209\t      {\n210\t        getExtraDetails: false,\n211\t      },\n212\t    ), // Really not a fan of allowing `.` in property names...\n213\t    posts: {\n214\t      getAll: client.posts.getAll.useQuery(),\n215\t      getAllInfinite: client.posts.getAllInfinite.useInfiniteQuery(\n216\t        {\n217\t          limit: 1,\n218\t        },\n219\t        {\n220\t          getNextPageParam: (lastPage) => lastPage.nextCursor,\n221\t        },\n222\t      ),\n223\t      byId: {\n224\t        '1': client.posts.byId.useQuery({ id: '1' }),\n225\t        '2': client.posts.byId.useQuery({ id: '2' }),\n226\t      },\n227\t      'comments.getById': {\n228\t        1: client.posts['comments.getById'].useQuery({ id: 1 }),\n229\t        2: client.posts['comments.getById'].useQuery({ id: 2 }),\n230\t      },\n231\t    },\n232\t  };\n233\t\n234\t  return {\n235\t    hooks,\n236\t  };\n237\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/react-query/test/invalidateRouters.test.tsx",
+      "line": 193,
+      "symbol": "useSetupAllTestHooks"
+    },
+    "rationale": "test-local hook helper called only within that test (lines 244,309,368) — no production (non-test) reference; production-dead (necro's '0 static references' is a dynamic-import-taint artifact hiding the test-only use)."
+  },
+  {
+    "name": "Post",
+    "truth": "dead",
+    "code": "1\timport { getServerAndReactClient } from './__reactHelpers';\n2\timport { ignoreErrors } from '@trpc/server/__tests__/suppressLogs';\n3\timport { useIsFetching } from '@tanstack/react-query';\n4\timport { render } from '@testing-library/react';\n5\timport userEvent from '@testing-library/user-event';\n6\timport { initTRPC } from '@trpc/server';\n7\timport { konn } from 'konn';\n8\timport React from 'react';\n9\timport { z } from 'zod';\n10\t\n11\texport type Post = {\n12\t  id: string;\n13\t  title: string;\n14\t  createdAt: number;\n15\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/react-query/test/invalidateRouters.test.tsx",
+      "line": 11,
+      "symbol": "Post"
+    },
+    "rationale": "test-local `export type Post` in a test file; referenced only within test code — no production (non-test) reference; production-dead (necro's '0 static references' is a dynamic-import-taint artifact hiding the test-only use)."
+  },
+  {
+    "name": "formatFile",
+    "truth": "dead",
+    "code": "1\timport { existsSync, readdirSync, readFileSync } from 'node:fs';\n2\timport { join } from 'node:path';\n3\timport { applyTransform } from 'jscodeshift/src/testUtils';\n4\timport { format, resolveConfig } from 'prettier';\n5\timport { describe, expect, it } from 'vitest';\n6\timport * as hooksTransform from '../src/transforms/hooksToOptions';\n7\timport * as providerTransform from '../src/transforms/provider';\n8\timport type { ComponentFile, SpecDefFile } from './specDef';\n9\t\n10\tconst formatFile = async (path: string, source: string) => {\n11\t  const prettierConfig = await resolveConfig(path);\n12\t  return format(source, {\n13\t    ...prettierConfig,\n14\t    parser: 'typescript',\n15\t  });\n16\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/upgrade/test/transforms.test.ts",
+      "line": 10,
+      "symbol": "formatFile"
+    },
+    "rationale": "test-local prettier helper used only within the transforms test — no production (non-test) reference; production-dead (necro's '0 static references' is a dynamic-import-taint artifact hiding the test-only use)."
+  },
+  {
+    "name": "snapshotTestTransform",
+    "truth": "dead",
+    "code": "1\timport { existsSync, readdirSync, readFileSync } from 'node:fs';\n2\timport { join } from 'node:path';\n3\timport { applyTransform } from 'jscodeshift/src/testUtils';\n4\timport { format, resolveConfig } from 'prettier';\n5\timport { describe, expect, it } from 'vitest';\n6\timport * as hooksTransform from '../src/transforms/hooksToOptions';\n7\timport * as providerTransform from '../src/transforms/provider';\n8\timport type { ComponentFile, SpecDefFile } from './specDef';\n9\t\n10\tconst formatFile = async (path: string, source: string) => {\n11\t  const prettierConfig = await resolveConfig(path);\n12\t  return format(source, {\n13\t    ...prettierConfig,\n14\t    parser: 'typescript',\n15\t  });\n16\t};\n17\t\n18\ttype Transformer = Parameters<typeof applyTransform>[0];\n19\tconst snapshotTestTransform = async (file: string, transform: Transformer) => {\n20\t  const source = readFileSync(file, 'utf-8');\n21\t\n22\t  const transformed = applyTransform(\n23\t    transform,\n24\t    { trpcImportName: 'trpc' },\n25\t    { source },\n26\t    {},\n27\t  );\n28\t  const formatted = await formatFile(file, transformed || source);\n29\t\n30\t  await expect(formatted).toMatchFileSnapshot(\n31\t    file.replace('.tsx', '.snap.tsx'),\n32\t  );\n33\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/upgrade/test/transforms.test.ts",
+      "line": 19,
+      "symbol": "snapshotTestTransform"
+    },
+    "rationale": "test-local snapshot helper used only within the transforms test — no production (non-test) reference; production-dead (necro's '0 static references' is a dynamic-import-taint artifact hiding the test-only use)."
+  },
+  {
+    "name": "isFixture",
+    "truth": "dead",
+    "code": "15\t  });\n16\t};\n17\t\n18\ttype Transformer = Parameters<typeof applyTransform>[0];\n19\tconst snapshotTestTransform = async (file: string, transform: Transformer) => {\n20\t  const source = readFileSync(file, 'utf-8');\n21\t\n22\t  const transformed = applyTransform(\n23\t    transform,\n24\t    { trpcImportName: 'trpc' },\n25\t    { source },\n26\t    {},\n27\t  );\n28\t  const formatted = await formatFile(file, transformed || source);\n29\t\n30\t  await expect(formatted).toMatchFileSnapshot(\n31\t    file.replace('.tsx', '.snap.tsx'),\n32\t  );\n33\t};\n34\t\n35\tfunction isFixture(file: string) {\n36\t  return (\n37\t    !file.endsWith('.snap.tsx') &&\n38\t    !file.endsWith('.spec.tsx') &&\n39\t    !file.endsWith('.trpc.tsx')\n40\t  );\n41\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/upgrade/test/transforms.test.ts",
+      "line": 35,
+      "symbol": "isFixture"
+    },
+    "rationale": "test-local predicate used only within the transforms test — no production (non-test) reference; production-dead (necro's '0 static references' is a dynamic-import-taint artifact hiding the test-only use)."
+  },
+  {
+    "name": "executeTests",
+    "truth": "dead",
+    "code": "23\t    transform,\n24\t    { trpcImportName: 'trpc' },\n25\t    { source },\n26\t    {},\n27\t  );\n28\t  const formatted = await formatFile(file, transformed || source);\n29\t\n30\t  await expect(formatted).toMatchFileSnapshot(\n31\t    file.replace('.tsx', '.snap.tsx'),\n32\t  );\n33\t};\n34\t\n35\tfunction isFixture(file: string) {\n36\t  return (\n37\t    !file.endsWith('.snap.tsx') &&\n38\t    !file.endsWith('.spec.tsx') &&\n39\t    !file.endsWith('.trpc.tsx')\n40\t  );\n41\t}\n42\t\n43\tasync function executeTests(\n44\t  fixturesDir: string,\n45\t  file: string,\n46\t  transform: Transformer,\n47\t) {\n48\t  const fixtureFile = join(fixturesDir, file);\n49\t\n50\t  // Load the spec which can be used to test both input and transformed components\n51\t  const specFile = fixtureFile.replace('.tsx', '.spec.tsx');\n52\t  const hasSpec = existsSync(specFile);\n53\t\n54\t  // Check the input component runs if a spec is provided\n55\t  if (hasSpec) {\n56\t    const spec = (await import(specFile)) as SpecDefFile;\n57\t\n58\t    const fixture = (await import(fixtureFile)) as ComponentFile;\n59\t    const fixtureComponents = Object.keys(fixture)\n60\t      .filter((key) => key.startsWith('Component'))\n61\t      .map((key) => [key, fixture[key]!] as const);\n62\t    for (const [name, Component] of fixtureComponents) {\n63\t      // eslint-disable-next-line no-console\n64\t      console.log(`Running spec on input for ${name}`);\n65\t      await spec.run(Component);\n66\t    }\n67\t  }\n68\t\n69\t  await snapshotTestTransform(fixtureFile, transform);\n70\t\n71\t  if (hasSpec) {\n72\t    const spec = (await import(specFile)) as SpecDefFile;\n73\t\n74\t    const snapshotFile = join(fixturesDir, file.replace('.tsx', '.snap.tsx'));\n75\t    const snapshot = (await import(snapshotFile)) as ComponentFile;\n76\t\n77\t    // We get the original fixture components because we expect them to be 1-1 and if not we'll throw\n78\t    const fixture = (await import(fixtureFile)) as ComponentFile;\n79\t    const fixtureComponents = Object.keys(fixture)\n80\t      .filter((key) => key.startsWith('Component'))\n81\t      .map((key) => [key, snapshot[key]] as const);\n82\t\n83\t    for (const [name, Component] of fixtureComponents) {\n84\t      if (!Component) {\n85\t        expect.fail(\n86\t          `Snapshot file ${snapshotFile} does not export ${name}, this could indicate the transform didn't work or is a test harness problem`,\n87\t        );\n88\t      }\n89\t\n90\t      // eslint-disable-next-line no-console\n91\t      console.log(`Running spec on output for ${name}`);\n92\t      await spec.run(Component);\n93\t    }\n94\t  }\n95\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 static references (TS compiler)"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      },
+      {
+        "ok": true,
+        "text": "not in package.json exports"
+      },
+      {
+        "ok": false,
+        "text": "dynamic-import taint in scope — target unresolvable"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/upgrade/test/transforms.test.ts",
+      "line": 43,
+      "symbol": "executeTests"
+    },
+    "rationale": "test-local harness fn used only within the transforms test — no production (non-test) reference; production-dead (necro's '0 static references' is a dynamic-import-taint artifact hiding the test-only use)."
   }
 ]

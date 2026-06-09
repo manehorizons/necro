@@ -22,11 +22,16 @@ function oracleClient(decide: (name: string) => TriageVerdict): TriageClient {
 }
 
 describe("real-repo corpus integrity (AC-6)", () => {
-  test("loads ≥18 cases with both truth classes present (AC-6)", async () => {
+  test("loads ≥35 cases spanning ≥2 source repos with both truth classes present (AC-1)", async () => {
     const cases = await loadEvalCases(corpusPath);
-    expect(cases.length).toBeGreaterThanOrEqual(18);
+    // phase 13 expansion: a corpus large enough that no single symbol's coin-flip
+    // swings precision ~0.33 (the phase-11 19-case failure mode).
+    expect(cases.length).toBeGreaterThanOrEqual(35);
     expect(cases.some((c) => c.truth === "dead")).toBe(true);
     expect(cases.some((c) => c.truth === "alive")).toBe(true);
+    // multi-repo: the gate must not silently collapse back to a single source.
+    const repos = new Set(cases.map((c) => c.provenance?.repo).filter(Boolean));
+    expect(repos.size).toBeGreaterThanOrEqual(2);
   });
 
   test("every case carries authentic evidence, provenance, and a rationale (AC-6)", async () => {
