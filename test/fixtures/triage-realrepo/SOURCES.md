@@ -67,3 +67,26 @@ trust-killer); a model that reads the code rescues them. The 5 **dead** cases
 are test-only symbols whose evidence is accurate. The corpus is intentionally
 skewed toward `alive`, which is realistic: clearly-dead code lands in necro's
 `certain`/`likely` tiers, so real `maybe` findings mostly resolve to alive.
+
+## Measured baseline (the milestone's payoff)
+
+Live runs of `necro triage` (claude-opus-4-8) against this corpus:
+
+| run | precision | recall |
+|-----|-----------|--------|
+| 1 | 0.50 | 0.40 |
+| 2 | 0.75 | 0.60 |
+
+This is **mediocre and variable** — and the synthetic eval (near-perfect) hid
+it entirely. The persistent failure across runs is the trust-killer: live code
+(`RequiredRequestInit`, `detectResponseType`) flagged dead because the model
+trusts the misleading `0 static references` evidence. The recall ceiling is
+dragged down by the test-local "dead" cases (`pathname`, `InferValidatorResponse`),
+whose production-dead labels are definitionally debatable — which is why
+**precision** is the headline metric.
+
+The live gate (`test/triage-eval.live.test.ts`) is a **regression floor**
+(precision ≥ 0.4, recall ≥ 0.3) set under the observed minima, not a target
+cherry-picked to pass. **Raising triage accuracy toward precision ≥ 0.85 is a
+separate tuning phase** (this phase measures triage; the boundary forbids tuning
+it here).
