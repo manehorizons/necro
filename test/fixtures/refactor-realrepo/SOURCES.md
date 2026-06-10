@@ -70,15 +70,27 @@ The live structural-pass-rate gate (`test/refactor-eval.live.test.ts`) is a
 **regression floor** set under the observed run-to-run minima across ≥3 deliberate
 live runs against the real model — not a target cherry-picked to pass. Real god
 functions are materially harder to split correctly than the synthetic reference
-set (which scores ≈1.0), so the real-repo floor is expected to sit below the
-synthetic 0.8; the exact value and the per-run numbers are recorded in
-`test/refactor-eval.live.test.ts` once calibrated.
+set (which scores ≈1.0), so the real-repo floor sits below the synthetic 0.8.
 
-<!-- PHASE-14 CALIBRATION (filled by T4 after ≥3 live runs):
-| run | passRate |
-|-----|----------|
-| 1   | ?        |
-| 2   | ?        |
-| 3   | ?        |
-REALREPO_PASS_RATE_GATE = ?
--->
+### Phase 14 calibration (claude-opus-4-8, 3 deliberate live runs)
+
+| run | passRate | failures |
+|-----|----------|----------|
+| 1 | **0.86** (12/14) | httpBatchLink, sseStreamProducer |
+| 2 | **0.64** (9/14)  | dataLoader, httpBatchLink, jsonlStreamConsumer, mergeAsyncIterables, sseStreamConsumer |
+| 3 | **0.57** (8/14)  | createBody, dataLoader, httpBatchLink, sseStreamProducer, jsonlStreamConsumer, mergeAsyncIterables |
+
+**Mean ≈0.69, observed minimum 0.57.** Split quality is genuinely variable on real
+god functions. `httpBatchLink` failed **all three** runs; the streaming/batching
+functions (`sseStreamProducer`, `dataLoader`, `jsonlStreamConsumer`,
+`mergeAsyncIterables`) fail intermittently — they are hard to break up while
+preserving the public signature **and** bringing every resulting unit under the
+50-LOC threshold. The synthetic reference set (≈1.0) hid this entirely; the
+real-repo gate is what surfaces it. A future tuning phase (mirroring triage phase
+12) could lift the real-repo pass-rate.
+
+**`REALREPO_PASS_RATE_GATE = 0.5`** — a regression floor set *below* the observed
+minimum (0.57) with margin for the model's non-determinism. It is a collapse
+detector (catches the split path regressing materially), not a target; it is **not**
+cherry-picked to the runs. Re-calibrate (and consider raising) only after a tuning
+phase moves the real-repo pass-rate up across ≥3 fresh runs.
