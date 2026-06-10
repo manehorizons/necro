@@ -11,3 +11,7 @@ HANDOFF.md.resumed-*
 
 # Local scratch (eval/run output dumps)
 dumpfile
+
+# Local CADENCE session artifacts (handoff archive + intelligence context)
+.cadence/handoff/
+.cadence/intelligence/
