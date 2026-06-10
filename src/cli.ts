@@ -213,6 +213,16 @@ program
     console.log(opts.json ? toRefactorJson(res) : renderRefactor(res));
   });
 
+program
+  .command("mcp")
+  .description(
+    "Run necro as a read-only MCP server over stdio (agent-callable scan + verify). Never edits your files.",
+  )
+  .action(async () => {
+    const { runStdio } = await import("./mcp/server.js");
+    await runStdio(); // serves until stdin closes
+  });
+
 program.parseAsync().catch((err: unknown) => {
   console.error(err instanceof Error ? err.message : String(err));
   process.exitCode = 1;

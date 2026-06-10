@@ -18,12 +18,14 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.102.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "commander": "^12.1.0",
     "diff": "^7.0.0",
     "picomatch": "^4.0.4",
     "tree-sitter-wasms": "^0.1.13",
     "ts-morph": "^24.0.0",
-    "web-tree-sitter": "^0.25.10"
+    "web-tree-sitter": "^0.25.10",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/diff": "^7.0.2",
