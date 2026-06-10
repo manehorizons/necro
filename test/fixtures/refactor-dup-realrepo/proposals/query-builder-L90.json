@@ -1,0 +1,20 @@
+{
+  "summary": "Extracted the lazy dialect-creation logic shared by both query builders' `getDialect` methods into a single generic exported helper.",
+  "sharedFunction": "export function lazyDialect<T>(\n\tself: { dialect?: T; dialectConfig: any },\n\tDialectClass: new (config: any) => T,\n): T {\n\tif (!self.dialect) {\n\t\tself.dialect = new DialectClass(self.dialectConfig);\n\t}\n\n\treturn self.dialect;\n}",
+  "sharedFunctionFile": "mysql-core/query-builders/query-builder.ts",
+  "edits": [
+    {
+      "file": "mysql-core/query-builders/query-builder.ts",
+      "startLine": 90,
+      "endLine": 116,
+      "replacement": "\t\treturn new MySqlSelectBuilder({ fields: fields ?? undefined, session: undefined, dialect: this.getDialect() });\n\t}\n\n\tselectDistinct(): MySqlSelectBuilder<undefined, never, 'qb'>;\n\tselectDistinct<TSelection extends SelectedFields>(\n\t\tfields: TSelection,\n\t): MySqlSelectBuilder<TSelection, never, 'qb'>;\n\tselectDistinct<TSelection extends SelectedFields>(\n\t\tfields?: TSelection,\n\t): MySqlSelectBuilder<TSelection | undefined, never, 'qb'> {\n\t\treturn new MySqlSelectBuilder({\n\t\t\tfields: fields ?? undefined,\n\t\t\tsession: undefined,\n\t\t\tdialect: this.getDialect(),\n\t\t\tdistinct: true,\n\t\t});\n\t}\n\n\t// Lazy load dialect to avoid circular dependency\n\tprivate getDialect() {\n\t\treturn lazyDialect(this, MySqlDialect);\n\t}\n}"
+    },
+    {
+      "file": "singlestore-core/query-builders/query-builder.ts",
+      "startLine": 94,
+      "endLine": 120,
+      "replacement": "\t\t});\n\t}\n\n\tselectDistinct(): SingleStoreSelectBuilder<undefined, never, 'qb'>;\n\tselectDistinct<TSelection extends SelectedFields>(\n\t\tfields: TSelection,\n\t): SingleStoreSelectBuilder<TSelection, never, 'qb'>;\n\tselectDistinct<TSelection extends SelectedFields>(\n\t\tfields?: TSelection,\n\t): SingleStoreSelectBuilder<TSelection | undefined, never, 'qb'> {\n\t\treturn new SingleStoreSelectBuilder({\n\t\t\tfields: fields ?? undefined,\n\t\t\tsession: undefined,\n\t\t\tdialect: this.getDialect(),\n\t\t\tdistinct: true,\n\t\t});\n\t}\n\n\t// Lazy load dialect to avoid circular dependency\n\tprivate getDialect() {\n\t\treturn lazyDialect(this, SingleStoreDialect);\n\t}\n}"
+    }
+  ],
+  "rationale": "The only behaviorally identical, parameterizable portion across both blocks is the lazy dialect instantiation; extracting it into a generic `lazyDialect` helper preserves each class's distinct select-builder/dialect types and the unchanged `getDialect` surface."
+}

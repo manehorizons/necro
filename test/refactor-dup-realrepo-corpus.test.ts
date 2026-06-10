@@ -136,10 +136,11 @@ describe("structural scoring math on the real corpus (AC-2)", () => {
     expect(noFn.extractsSharedFunction).toBe(false);
     expect(duplicatePasses(noFn)).toBe(false);
 
-    // a clone site left un-replaced — edit count != location count, duplication remains
+    // a clone site left un-replaced — edit count != location count (the dropped
+    // edit is caught structurally; the edited-site collapse metric only inspects
+    // the edits the model did make)
     const oneEdit = await evaluateDuplicateProposal(c, { ...good, edits: [good.edits[0]!] });
     expect(oneEdit.extractsSharedFunction).toBe(false);
-    expect(oneEdit.collapsesDuplication).toBe(false);
     expect(duplicatePasses(oneEdit)).toBe(false);
 
     // a changed call surface: an edit that spans and deletes a signature that exists
@@ -164,6 +165,23 @@ describe("structural scoring math on the real corpus (AC-2)", () => {
       const cr = await evaluateDuplicateProposal(uniq, sigDeleted);
       expect(cr.preservesCallSurface).toBe(false);
       expect(duplicatePasses(cr)).toBe(false);
+    }
+  });
+
+  test("a lazy extraction that leaves the clone body inline fails on every corpus case (AC-2)", async () => {
+    // Real shared function + one edit per location (clears the structural check),
+    // but each edit re-emits its own clone body instead of a call — the edited
+    // sites still clone one another, so collapse must reject it for every case.
+    const cases = await loadDuplicateEvalCases(corpusPath);
+    for (const c of cases) {
+      const lazy: DuplicateProposal = {
+        ...oracle(c),
+        edits: c.locations.map((l) => ({ file: l.file, startLine: l.startLine, endLine: l.endLine, replacement: bodyOf(c, l) })),
+      };
+      const cr = await evaluateDuplicateProposal(c, lazy);
+      expect(cr.extractsSharedFunction, `${c.name}: declares a real shared function`).toBe(true);
+      expect(cr.collapsesDuplication, `${c.name}: lazy extraction does NOT collapse`).toBe(false);
+      expect(duplicatePasses(cr), `${c.name}: lazy extraction fails`).toBe(false);
     }
   });
 

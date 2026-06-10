@@ -1,7 +1,11 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
 import type { RefactorClient } from "../src/refactor/client.js";
 import type { DuplicateProposal, RefactorProposal } from "../src/refactor/prompt.js";
 import {
+  COLLAPSE_RATIO,
   type DuplicateEvalCase,
   duplicatePasses,
   evaluateDuplicateProposal,
@@ -184,11 +188,14 @@ describe("evaluateDuplicateProposal (AC-7)", () => {
     expect(duplicatePasses(cr)).toBe(false);
   });
 
-  test("fails when a clone site is left un-replaced (duplication remains) (AC-7)", async () => {
+  test("fails when a clone site is left un-replaced (wrong edit count) (AC-7)", async () => {
     const oneEdit = { ...goodDup(), edits: [goodDup().edits[0]!] };
     const cr = await evaluateDuplicateProposal(dupCase(), oneEdit);
-    expect(cr.extractsSharedFunction).toBe(false); // edit count != location count
-    expect(cr.collapsesDuplication).toBe(false); // the second site is still duplicated
+    // A dropped edit is caught structurally (edit count != location count). The
+    // edited-site collapse metric only inspects the edits the model did make, so
+    // a single trivial call leaves no residual clone — the failure is correctly
+    // attributed to extractsSharedFunction, not collapsesDuplication.
+    expect(cr.extractsSharedFunction).toBe(false);
     expect(duplicatePasses(cr)).toBe(false);
   });
 
@@ -204,6 +211,69 @@ describe("evaluateDuplicateProposal (AC-7)", () => {
     const cr = await evaluateDuplicateProposal(dupCase(), sigChanged);
     expect(cr.preservesCallSurface).toBe(false);
     expect(duplicatePasses(cr)).toBe(false);
+  });
+});
+
+// ── edited-site partial-collapse boundary (phase 16) ─────────────────────────
+
+// Captured live-model proposals + their case inputs are snapshotted under
+// proposals/ so these scorer-regression tests stay hermetic — independent of
+// which cases remain in the live corpus (count-L24 / query-builder-L90 are
+// dropped from cases.json but kept here as genuinely-uncollapsible references).
+const CORPUS_DIR = join(dirname(fileURLToPath(import.meta.url)), "fixtures/refactor-dup-realrepo");
+const loadFixture = (name: string): DuplicateProposal =>
+  JSON.parse(readFileSync(join(CORPUS_DIR, "proposals", `${name}.json`), "utf8")) as DuplicateProposal;
+const loadCase = (name: string): DuplicateEvalCase =>
+  JSON.parse(readFileSync(join(CORPUS_DIR, "proposals", `${name}.case.json`), "utf8")) as DuplicateEvalCase;
+
+/** A "lazy" extraction: declares a real shared function (so it clears the
+ * structural check) but leaves the full duplicated body inline at every site
+ * instead of replacing it with a call — the duplication is not actually lifted. */
+const lazyDup = (): DuplicateProposal => {
+  const body = "  const total = values.reduce((s, v) => s + v, 0);\n  const mean = total / values.length;\n  return round(mean, 2);";
+  return { ...goodDup(), edits: goodDup().edits.map((e) => ({ ...e, replacement: body })) };
+};
+
+describe("collapsesDuplication is measured on the edited sites (AC-1, AC-2)", () => {
+  test("a genuine extraction the live model produced collapses the duplication — utils-L303 (AC-1)", async () => {
+    const cr = await evaluateDuplicateProposal(loadCase("utils-L303"), loadFixture("utils-L303"));
+    // The shared typeof-guard was lifted into isAllowedType; the edited sites no
+    // longer clone one another (residual < minTokens). The OLD whole-file metric
+    // failed this case on unrelated near-identical config code — the bug this fixes.
+    expect(cr.extractsSharedFunction).toBe(true);
+    expect(cr.collapsesDuplication).toBe(true);
+    expect(cr.preservesCallSurface).toBe(true);
+    expect(duplicatePasses(cr)).toBe(true);
+  });
+
+  test("a class-structural 'extraction' that can't lift the body still fails (AC-2)", async () => {
+    // count-L24 / query-builder-L90: the live model returns a real exported helper
+    // and one edit per site, but the duplicated constructor / select-overload block
+    // remains cloned across the edits (~87% of the group) — genuinely not deduped.
+    for (const name of ["count-L24", "query-builder-L90"]) {
+      const cr = await evaluateDuplicateProposal(loadCase(name), loadFixture(name));
+      expect(cr.extractsSharedFunction, `${name}: extracts shared function`).toBe(true);
+      expect(cr.collapsesDuplication, `${name}: duplication NOT collapsed`).toBe(false);
+      expect(duplicatePasses(cr), `${name}: fails overall`).toBe(false);
+    }
+  });
+
+  test("a lazy extraction that leaves the body inline fails the partial-collapse margin (AC-2)", async () => {
+    const cr = await evaluateDuplicateProposal(dupCase(), lazyDup());
+    // A real shared function is declared and call surfaces survive, but the edits
+    // still clone the whole body — collapse must reject it.
+    expect(cr.extractsSharedFunction).toBe(true);
+    expect(cr.preservesCallSurface).toBe(true);
+    expect(cr.collapsesDuplication).toBe(false);
+    expect(duplicatePasses(cr)).toBe(false);
+  });
+
+  test("the collapse margin sits strictly between a real extraction (≈0) and a non-extraction (≈0.87) (AC-1)", () => {
+    // Pins COLLAPSE_RATIO away from both ends: a value at 0 would reject good
+    // partial extractions; a value at/above the captured non-extraction residual
+    // (~0.87) would credit them. The boundary tests above fail if it drifts there.
+    expect(COLLAPSE_RATIO).toBeGreaterThan(0);
+    expect(COLLAPSE_RATIO).toBeLessThan(0.87);
   });
 });
 

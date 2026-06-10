@@ -1,0 +1,20 @@
+{
+  "summary": "Both count builders contain an identical SQL expression that builds the `select count(*)` query. Extract that into one exported `buildCountQuery` helper and have each site's static method return its result.",
+  "sharedFunction": "export function buildCountQuery(source: SQL | SQLWrapper, filters?: SQL<unknown>): SQL<number> {\n\treturn sql<number>`select count(*) as count from ${source}${sql.raw(' where ').if(filters)}${filters};`;\n}",
+  "sharedFunctionFile": "pg-core/query-builders/count.ts",
+  "edits": [
+    {
+      "file": "gel-core/query-builders/count.ts",
+      "startLine": 24,
+      "endLine": 49,
+      "replacement": "\t\tsource: GelTable | SQL | SQLWrapper,\n\t\tfilters?: SQL<unknown>,\n\t): SQL<number> {\n\t\treturn buildCountQuery(source, filters);\n\t}\n\n\tconstructor(\n\t\treadonly params: {\n\t\t\tsource: GelTable | SQL | SQLWrapper;\n\t\t\tfilters?: SQL<unknown>;\n\t\t\tsession: TSession;\n\t\t},\n\t) {\n\t\tsuper(GelCountBuilder.buildEmbeddedCount(params.source, params.filters).queryChunks);\n\n\t\tthis.mapWith(Number);\n\n\t\tthis.session = params.session;\n\n\t\tthis.sql = GelCountBuilder.buildCount(\n\t\t\tparams.source,\n\t\t\tparams.filters,\n\t\t);\n\t}\n\n\tthen<TResult1 = number, TResult2 = never>("
+    },
+    {
+      "file": "pg-core/query-builders/count.ts",
+      "startLine": 26,
+      "endLine": 52,
+      "replacement": "\t\tsource: PgTable | SQL | SQLWrapper,\n\t\tfilters?: SQL<unknown>,\n\t): SQL<number> {\n\t\treturn buildCountQuery(source, filters);\n\t}\n\n\tconstructor(\n\t\treadonly params: {\n\t\t\tsource: PgTable | SQL | SQLWrapper;\n\t\t\tfilters?: SQL<unknown>;\n\t\t\tsession: TSession;\n\t\t},\n\t) {\n\t\tsuper(PgCountBuilder.buildEmbeddedCount(params.source, params.filters).queryChunks);\n\n\t\tthis.mapWith(Number);\n\n\t\tthis.session = params.session;\n\n\t\tthis.sql = PgCountBuilder.buildCount(\n\t\t\tparams.source,\n\t\t\tparams.filters,\n\t\t);\n\t}\n\n\t/** @intrnal */\n\tsetToken(token?: NeonAuthToken) {"
+    }
+  ],
+  "rationale": "The only varying piece of the duplicated SQL construction is `source`/`filters`, so a single `buildCountQuery(source, filters)` helper captures it while each static method keeps returning the same `SQL<number>` value and all surrounding signatures stay intact."
+}

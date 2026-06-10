@@ -1,0 +1,20 @@
+{
+  "summary": "Both clone ranges contain the same `type !== X && ... && type !== 'undefined'` guard pattern at their first and last lines. I extract that into a single `isAllowedType` helper that allows `'undefined'` plus a variadic list of permitted typeof strings, and rewrite the two guard lines in each range to call it while leaving the intervening lines byte-identical.",
+  "sharedFunction": "export function isAllowedType(type: string, ...allowed: string[]): boolean {\n\treturn type === 'undefined' || allowed.includes(type);\n}",
+  "sharedFunctionFile": "utils.ts",
+  "edits": [
+    {
+      "file": "utils.ts",
+      "startLine": 303,
+      "endLine": 310,
+      "replacement": "\t\tif (!isAllowedType(type, 'object')) return false;\n\n\t\treturn true;\n\t}\n\n\tif ('casing' in data) {\n\t\tconst type = typeof data['casing'];\n\t\tif (!isAllowedType(type, 'string')) return false;"
+    },
+    {
+      "file": "utils.ts",
+      "startLine": 323,
+      "endLine": 330,
+      "replacement": "\t\tif (!isAllowedType(type, 'string', 'object')) return false;\n\n\t\treturn true;\n\t}\n\n\tif ('client' in data) {\n\t\tconst type = typeof data['client'];\n\t\tif (!isAllowedType(type, 'object', 'function')) return false;"
+    }
+  ],
+  "rationale": "The repeated logic is a typeof guard that always permits `'undefined'` plus a fixed set of types; `isAllowedType` captures it variadically. Only the two guard expressions per range change, so the `const type = ...` lines stay used and observable behavior is identical."
+}

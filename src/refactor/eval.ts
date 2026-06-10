@@ -161,12 +161,29 @@ export interface DuplicateEvalCase {
   provenance?: CaseProvenance;
 }
 
+/**
+ * Fraction of the original clone-group token length that the largest residual
+ * clone **among the model's edit replacements** must fall below for the
+ * duplication to count as collapsed. A genuine extraction reduces each clone
+ * site to a short call (residual ≈ 0); a non-extraction leaves the site's body
+ * near-intact (residual ≈ the full group). `0.5` is the midpoint that credits
+ * any extraction reducing the shared logic by more than half while still failing
+ * proposals that barely touch it — calibrated from the captured live proposals
+ * (`test/fixtures/refactor-dup-realrepo/proposals/`): a fully-deduped extraction
+ * leaves a sub-`minTokens` residual (0), whereas a class-structural "extraction"
+ * that can't actually lift the body leaves ~87% of the group cloned across its
+ * edits. Not hand-fit to one case; see `refactor-eval.test.ts` boundary tests.
+ */
+export const COLLAPSE_RATIO = 0.5;
+
 /** The three structural criteria an extract-duplicate proposal must clear. */
 export interface DuplicateCriteria {
   /** One exported shared function, with one edit per clone location. */
   extractsSharedFunction: boolean;
-  /** Re-running duplication detection on the spliced result no longer flags a
-   * clone as long as the original group. */
+  /** The model's edit replacements no longer share a clone approaching the
+   * original group's token length — i.e. the duplicated logic was actually
+   * lifted out of the sites, not merely reshuffled. Measured on the edited
+   * sites, not the whole spliced files (see {@link evaluateDuplicateProposal}). */
   collapsesDuplication: boolean;
   /** Every site's call-surface signature still appears post-splice. */
   preservesCallSurface: boolean;
@@ -215,9 +232,23 @@ export function buildDuplicateCasePrompt(c: DuplicateEvalCase): RefactorPrompt {
  * Score one extract-duplicate proposal against the three structural criteria.
  * Splices the proposal into the case's inline sources in-memory (no fs, no git),
  * then: confirms a single exported shared function with one edit per location;
- * re-tokenizes the spliced files and asserts the duplication detector no longer
- * finds a clone as long as the original; and checks every call-surface signature
- * survived. A proposal that can't be spliced scores all-false (never throws).
+ * measures whether the duplication actually collapsed; and checks every
+ * call-surface signature survived. A proposal that can't be spliced scores
+ * all-false (never throws).
+ *
+ * **Collapse is measured on the edited sites, not the whole spliced files.** The
+ * earlier all-or-nothing check re-tokenized the entire spliced files and demanded
+ * *zero* residual clone ≥ the group's tokens — but that is confounded by unrelated
+ * near-identical code elsewhere in the same files (e.g. drizzle's parallel dialect
+ * modules), so a correct extraction could still "fail" because a different, untouched
+ * clone survives globally. Instead, we tokenize each edit's `replacement` as its own
+ * pseudo-file and run the clone detector across just those: a real extraction turns
+ * every site into a short call (no residual clone reaching `minTokens`), while a
+ * proposal that only reshuffles the duplicated body leaves the sites cloning one
+ * another. The duplication has collapsed iff the largest residual clone among the
+ * edits falls below `c.tokens * COLLAPSE_RATIO`. A dropped/extra edit is already
+ * caught by `extractsSharedFunction` (edit count ≠ location count), so the edited-site
+ * metric does not need to re-detect that.
  */
 export async function evaluateDuplicateProposal(
   c: DuplicateEvalCase,
@@ -237,11 +268,18 @@ export async function evaluateDuplicateProposal(
 
   const { tokenize } = await import("../syntactic/tokens.js");
   const { findClones } = await import("../syntactic/duplication.js");
-  const fileTokens = await Promise.all(
-    spliced.map(async (s) => ({ file: s.file, tokens: await tokenize(s.file, s.newContent) })),
+  // Each edit replacement becomes its own pseudo-file (index-tagged so two edits
+  // in the same source file are distinct streams). Residual clones across/within
+  // these are duplication the model failed to lift out of the sites.
+  const editTokens = await Promise.all(
+    proposal.edits.map(async (e, i) => ({
+      file: `${i}:${e.file}`,
+      tokens: await tokenize(e.file, e.replacement),
+    })),
   );
-  const clonesAfter = findClones(fileTokens, c.minTokens);
-  const collapsesDuplication = clonesAfter.every((f) => f.tokens < c.tokens);
+  const residual = findClones(editTokens, c.minTokens);
+  const largestResidual = residual.length > 0 ? residual[0]!.tokens : 0; // findClones sorts desc
+  const collapsesDuplication = largestResidual < c.tokens * COLLAPSE_RATIO;
 
   const combined = spliced.map((s) => s.newContent).join("\n");
   const preservesCallSurface = c.signatures.every((sig) => combined.includes(sig));
