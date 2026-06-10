@@ -106,6 +106,35 @@ A successful scan exits `0` regardless of findings (non-zero only on internal
 error); a `--fail-on <tier>` flag is [planned](#roadmap). Gate CI by parsing
 `--json` output.
 
+## Use from an AI agent (MCP)
+
+Necro runs as a read-only [MCP](https://modelcontextprotocol.io) server over
+stdio, so an agent (Claude Code, Cursor, Codex, Windsurf) can call necro's
+evidence-backed verdicts and verify its own edits in isolation — necro **never
+edits your files and never wraps an LLM**:
+
+```bash
+necro mcp        # serves over stdio
+```
+
+Two read-only tools are exposed:
+
+- **`necro_scan`** — the same findings as `necro scan --json` (dead-code tiers +
+  evidence chains, complexity, hotspots, duplication).
+- **`necro_verify`** — apply a set of `{file, content}` edits in a throwaway git
+  worktree, run checks (default: typecheck + tests), and report `{ok, output}`.
+  Your working tree is never touched.
+
+Register it with your agent (Claude Code example):
+
+```json
+{
+  "mcpServers": {
+    "necro": { "command": "necro", "args": ["mcp"] }
+  }
+}
+```
+
 ## Configuration
 
 Necro runs zero-config. To customize which files it analyzes, add a
