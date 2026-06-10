@@ -22,6 +22,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = join(here, "fixtures/refactor/cases.json");
 const dupFixtures = join(here, "fixtures/refactor-duplicate/cases.json");
 const realRepo = join(here, "fixtures/refactor-realrepo/cases.json");
+const dupRealRepo = join(here, "fixtures/refactor-dup-realrepo/cases.json");
 const THRESHOLD = 0.8;
 
 /**
@@ -47,6 +48,25 @@ const THRESHOLD = 0.8;
  * fixtures/refactor-realrepo/SOURCES.md.
  */
 const REALREPO_PASS_RATE_GATE = 0.5;
+
+/**
+ * The REAL extract-duplicate accuracy gate: 12 authentically-sized clone groups
+ * captured verbatim from real repos (trpc/trpc + drizzle-team/drizzle-orm — see
+ * fixtures/refactor-dup-realrepo/SOURCES.md), scored structurally by the same
+ * `evaluateDuplicateProposal` (one shared exported function / one edit per clone
+ * location collapsing the duplication below `minTokens` / every call surface
+ * preserved). Real clone groups are materially harder to collapse correctly than
+ * the synthetic reference set (≈1.0), so this floor sits below the synthetic 0.8.
+ *
+ * CALIBRATION (phase 15a, claude-opus-4-8, 3 deliberate live runs):
+ *   passRate __ / __ / __   (mean ~__, observed minimum __)   ← filled by T4 calibration
+ *
+ * DUP_REALREPO_PASS_RATE_GATE is a REGRESSION FLOOR set BELOW the observed
+ * run-to-run minimum with margin for the model's non-determinism — a
+ * collapse-detector, not a target cherry-picked to pass. The per-run numbers are
+ * recorded in fixtures/refactor-dup-realrepo/SOURCES.md.
+ */
+const DUP_REALREPO_PASS_RATE_GATE = 0.5; // provisional — recalibrated by T4 under the observed minimum
 
 describe("live refactor eval (AC-7)", () => {
   test.runIf(process.env.ANTHROPIC_API_KEY)(
@@ -91,6 +111,24 @@ describe("live refactor eval — real-repo accuracy gate (AC-3)", () => {
           m.rows.map((r) => `  ${r.pass ? "PASS" : "FAIL"}  ${r.name}${r.failure ? ` — ${r.failure}` : ""}`).join("\n"),
       );
       expect(meetsThreshold(m, REALREPO_PASS_RATE_GATE)).toBe(true);
+    },
+    240_000,
+  );
+});
+
+describe("live extract-duplicate eval — real-repo accuracy gate (AC-3)", () => {
+  test.runIf(process.env.ANTHROPIC_API_KEY)(
+    "real model's extractions clear the calibrated real-repo floor on the 12-case corpus (AC-3)",
+    async () => {
+      const cases = await loadDuplicateEvalCases(dupRealRepo);
+      const client = createRefactorClient(DEFAULT_LLM);
+      const m = await runDuplicateEval(cases, client, { concurrency: 4 });
+      // biome-ignore lint/suspicious/noConsole: eval output is the point of the live run
+      console.log(
+        `live real-repo extract-duplicate eval — passRate ${m.passRate.toFixed(2)} (${m.rows.filter((r) => r.pass).length}/${m.rows.length})\n` +
+          m.rows.map((r) => `  ${r.pass ? "PASS" : "FAIL"}  ${r.name}${r.failure ? ` — ${r.failure}` : ""}`).join("\n"),
+      );
+      expect(meetsThreshold(m, DUP_REALREPO_PASS_RATE_GATE)).toBe(true);
     },
     240_000,
   );
