@@ -23,20 +23,28 @@ Necro's edge is **refusing to guess**. It adds a third `maybe` tier and
 quarantines ambiguous code — dynamic imports, reflection, public API — with
 reasons, instead of falsely killing it.
 
-## What this release does
+## What Necro does
 
 - Finds unreferenced TypeScript symbols using the **compiler API** (via
   ts-morph), not text matching — so it follows re-exports, type-only imports,
   and barrel files.
-- Classifies every finding as [`certain` / `likely` / `maybe`](/necro/guide/understanding-results/).
-- Surfaces the [`test-only`](/necro/guide/test-only/) verdict — production-dead
-  code kept warm only by tests.
-- Ships an [evidence chain](/necro/guide/evidence-chains/) per finding.
-- Reads your real [test-runner config](/necro/guide/framework-awareness/) so
-  test files aren't mistaken for dead code.
+- Classifies every finding as [`certain` / `likely` / `maybe`](/necro/guide/understanding-results/),
+  ships an [evidence chain](/necro/guide/evidence-chains/) per finding, and
+  surfaces the [`test-only`](/necro/guide/test-only/) verdict.
+- Reads your real [test-runner config](/necro/guide/framework-awareness/) and
+  folds [lcov coverage](/necro/reference/cli/#coverage) into the verdict.
+- Analyzes beyond dead code: [complexity](/necro/guide/complexity/) detectors,
+  CRAP × churn [risk hotspots](/necro/guide/hotspots/), and Type-2
+  [duplication](/necro/guide/duplication/).
+- Acts on findings: [`fix`](/necro/reference/cli/#necro-fix) safely removes
+  `certain`-dead code; [`triage`](/necro/reference/cli/#necro-triage) and
+  [`refactor`](/necro/reference/cli/#necro-refactor) bring an opt-in LLM layer
+  (refactors verified in a scratch worktree).
+- Exposes a read-only [MCP server](/necro/reference/cli/#necro-mcp) so AI agents
+  can call necro's verdicts and verify their own edits.
 
 ## What it doesn't do yet
 
-Duplication, complexity/nesting, god-function detection, churn scoring,
-coverage ingestion, `--fix`, LLM triage, SARIF output, and Python support are
-all on the [roadmap](/necro/guide/roadmap/) — not yet available.
+SARIF output, `--fail-on` build gating, more framework plugins (Next.js,
+NestJS), monorepo workspace edges, and Python support are on the
+[roadmap](/necro/guide/roadmap/) — not yet available.

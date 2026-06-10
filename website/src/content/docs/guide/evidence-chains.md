@@ -46,7 +46,8 @@ terms of production vs. test references instead.
 
 :::note
 A `maybe` finding is quarantined for human review — it's never auto-removed.
-[LLM triage](/necro/guide/roadmap/) to help resolve the `maybe` tier is planned.
+[`necro triage`](/necro/reference/cli/#necro-triage) can call an LLM to help
+resolve the `maybe` tier (opt-in); it annotates findings and never edits code.
 :::
 
 ## Why it matters

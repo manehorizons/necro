@@ -20,7 +20,10 @@ yet.
 - [Safe fix](/necro/reference/cli/#necro-fix): `necro fix` removes `certain`-dead code — preview by default, `--write` to apply, with a dirty git-tree guard.
 - [Complexity detectors](/necro/guide/complexity/): nesting, cyclomatic, cognitive, and god-function (tree-sitter), with configurable thresholds.
 - [Risk hotspots](/necro/guide/hotspots/): CRAP score (complexity × coverage) weighted by git churn, ranked worst-first.
-- [Duplication](/necro/guide/duplication/): Type-2 (renamed) copy-paste clone detection (tree-sitter, no jscpd).
+- [Duplication](/necro/guide/duplication/): Type-2 (renamed) copy-paste clone detection (tree-sitter, no jscpd), clamped to function boundaries.
+- [LLM triage](/necro/reference/cli/#necro-triage): `necro triage` resolves the quarantined `maybe` findings (opt-in, Anthropic API).
+- [LLM refactors](/necro/reference/cli/#necro-refactor): `necro refactor` proposes god-function splits and extract-duplicate, each verified (typecheck + tests) in a scratch git worktree.
+- [MCP server](/necro/reference/cli/#necro-mcp): `necro mcp` exposes read-only `necro_scan` + `necro_verify` tools so AI agents can call necro's verdicts and verify edits in isolation.
 - Output modes: default terminal, `--json`, `--top N`.
 
 ## Planned
@@ -30,9 +33,9 @@ None of the following is implemented yet.
 | Area | Planned capability |
 |---|---|
 | Accuracy | istanbul-JSON coverage (lcov ships today); cascading re-analysis after a fix |
-| Detectors | Cross-language & fuzzy (Type-3) clones; god-function responsibility-clustering (nesting, cyclomatic, cognitive, god-function & Type-2 duplication ship today) |
-| Scoring | Per-line & recency-weighted churn, ownership weighting (CRAP + per-file churn hotspots ship today) |
-| Fixes | LLM triage on `maybe`, then LLM refactors (safe `certain`-dead removal ships today) |
+| Detectors | Cross-language & fuzzy (Type-3) clones; god-function responsibility-clustering |
+| Scoring | Per-line & recency-weighted churn, ownership weighting |
+| Fixes | `test-only` auto-apply (report-only today); cascading re-analysis after a fix |
 | Output | SARIF (GitHub code scanning), `--fail-on <tier>` exit gating |
 | Frameworks | Next.js, NestJS (DI decorators), template-based plugins |
 | Languages | Python (the polyglot bet — detectors reused, new symbol-graph adapter) |

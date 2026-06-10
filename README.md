@@ -4,10 +4,13 @@
 CLI that finds anti-pattern code and proposes LLM-assisted fixes — and refuses
 to guess where pure-static tools can't.
 
-> **Status: early.** This first release finds **dead code in TypeScript** with
-> confidence tiers, evidence chains, and the `test-only` verdict. Duplication,
-> complexity, churn scoring, coverage ingestion, `--fix`, LLM triage, SARIF, and
-> Python are on the [roadmap](#roadmap) — not yet implemented.
+> **Status: active development, pre-1.0.** Necro analyzes **TypeScript** across
+> multiple axes — dead code (with confidence tiers, evidence chains, and the
+> `test-only` verdict), complexity, risk hotspots, and duplication — plus safe
+> dead-code removal (`fix`), LLM triage of ambiguous findings (`triage`),
+> LLM-assisted refactors (`refactor`), and a read-only [MCP server](#use-from-an-ai-agent-mcp)
+> for AI agents (`mcp`). SARIF output, `--fail-on` gating, more framework
+> plugins, Python, and a published npm package are on the [roadmap](#roadmap).
 
 ## Why Necro
 
@@ -93,6 +96,26 @@ testUtil  src/util.ts:4   tier: maybe
   externally, so Necro asks you to confirm).
 - **`testUtil`** is reached only via tests → the `test-only` verdict.
 
+Below the dead-code findings, `scan` also prints **Complexity** (over-complex
+functions — nesting, cyclomatic, cognitive, god-function), **Risk hotspots**
+(CRAP score × git churn, ranked worst-first), and **Duplication** (Type-2
+copy-paste clones) — each section omitted when empty.
+
+### Acting on findings
+
+```bash
+necro fix src/                 # preview removal of certain-dead code (diff only)
+necro fix src/ --write         # apply it (refuses on a dirty git tree; --force to override)
+necro triage src/              # LLM-resolve the quarantined `maybe` findings (opt-in, Anthropic API)
+necro refactor src/ --type god-function        # propose an LLM refactor, verified in a scratch worktree
+necro refactor src/ --type extract-duplicate   # lift a shared function out of a clone
+```
+
+`triage` and `refactor` are opt-in and call the Anthropic API (set
+`ANTHROPIC_API_KEY`); `scan` and `fix` are fully local and free. `refactor`
+prints proposals — it never edits your files — and each is verified
+(typecheck + tests) in a throwaway git worktree before you see it.
+
 ### Output modes
 
 ```bash
@@ -159,16 +182,27 @@ A scan is a pipeline of small, independently tested stages:
 discover files
   → build symbol graph        (ts-morph; the only language-specific part)
   → resolve entries           (prod entries + framework plugins)
-  → two-color reachability    (+ taint)
-  → classify into tiers
-  → render (terminal / JSON)
+  → two-color reachability    (+ taint)            ─┐ dead code → tiers
+  → classify into tiers                             │
+  → syntactic detectors       (tree-sitter)        ─┤ complexity · hotspots · duplication
+  → score                     (CRAP × churn)        │
+  → render (terminal / JSON)                       ─┘
 ```
 
+Static analysis is always-on, deterministic, and free. The **LLM layer is
+hybrid and on-demand** — `triage` and `refactor` call the Anthropic API only for
+the findings you ask about, so cost scales with fixes requested, not codebase
+size. Refactor proposals are verified (typecheck + tests) in a throwaway git
+worktree before being shown, and necro computes the diff itself (the model
+returns code, never a patch).
+
 The **core invariant**: language-specific code lives only in the symbol-graph
-adapter. Reachability, classification, and reporting are language-agnostic — so
-adding a language (Python is planned) means writing one new adapter, not
-touching the engine. Test files are recognized from your real test-runner config
-(jest `--showConfig` / vitest), so test infrastructure is never flagged dead.
+adapter. Reachability, classification, scoring, and reporting are
+language-agnostic — so adding a language (Python is planned) means writing one
+new adapter, not touching the engine. Test files are recognized from your real
+test-runner config (jest `--showConfig` / vitest), so test infrastructure is
+never flagged dead. The same engine backs the [MCP server](#use-from-an-ai-agent-mcp),
+which reuses `scan` and the worktree verifier without forking their logic.
 
 See the [Architecture docs](#documentation) and
 [`docs/necro-design-spec.md`](docs/necro-design-spec.md) for the full design.
@@ -202,13 +236,18 @@ npm run preview
 
 ```
 src/
-├─ cli.ts                  commander CLI (necro scan)
+├─ cli.ts                  commander CLI (scan · fix · triage · refactor · mcp)
 ├─ config.ts               necro.config.json loader
 ├─ discover.ts / glob.ts   file discovery
 ├─ engine/                 scan pipeline + prod-entry resolution
 ├─ graph/                  symbol graph (ts-morph) — the language adapter
+├─ syntactic/              tree-sitter detectors: complexity, duplication, metrics
 ├─ plugins/                FrameworkPlugin contract + test-runner plugin
-├─ analyze/                two-color reachability, taint, tier classification
+├─ analyze/                reachability, taint, tier classification, hotspots, coverage
+├─ fix/                    safe certain-dead removal + dirty-tree guard
+├─ triage/                 LLM resolution of `maybe` findings (Anthropic)
+├─ refactor/              LLM refactors + scratch-worktree verification
+├─ mcp/                    read-only MCP server (necro_scan, necro_verify)
 └─ report/                 evidence chains, terminal/JSON output, sorting
 test/                      vitest suite, mirroring src/
 website/                   Astro Starlight documentation site
@@ -233,19 +272,32 @@ tests and clear acceptance criteria match how the codebase is built.
 
 ## Roadmap
 
-**Available today:** semantic dead-code detection for TypeScript, confidence
-tiers, evidence chains, the `test-only` verdict, test-runner awareness
-(jest/vitest), and `--json` / `--top` output.
+**Available today** (TypeScript):
+
+- Semantic **dead-code** detection (TS compiler API via ts-morph), confidence
+  tiers, evidence chains, the `test-only` verdict, test-runner awareness
+  (jest/vitest), and lcov **coverage ingestion**.
+- **Complexity** detectors (nesting, cyclomatic, cognitive, god-function) with
+  configurable thresholds.
+- **Risk hotspots**: CRAP score (complexity² × (1 − coverage)³ + complexity) ×
+  git churn, ranked worst-first.
+- **Duplication**: Type-2 (renamed) clone detection, clamped to function
+  boundaries — no jscpd.
+- **`fix`**: safe removal of `certain`-dead code (preview by default, dirty-tree guard).
+- **`triage`**: LLM resolution of `maybe` findings (opt-in, Anthropic API).
+- **`refactor`**: LLM god-function splits and extract-duplicate, verified in a
+  scratch worktree.
+- **`mcp`**: a read-only MCP server (`necro_scan`, `necro_verify`) for AI agents.
+- Output: terminal, `--json`, `--top N`.
 
 **Planned** (not yet implemented):
 
 | Area | Planned capability |
 |---|---|
-| Accuracy | Coverage ingestion (lcov/c8) |
-| Detectors | Duplication, nesting, cyclomatic & cognitive complexity, god-function |
-| Scoring | CRAP score, complexity × churn hotspots |
-| Fixes | `--fix-safe` (remove `certain`-dead), then LLM triage on `maybe`, then LLM refactors |
-| Output | SARIF (GitHub code scanning), `--fail-on <tier>` |
+| Detectors | Cross-language & fuzzy (Type-3) clones; god-function responsibility clustering |
+| Scoring | Per-line & recency-weighted churn, ownership weighting |
+| Fixes | `test-only` auto-apply; cascading re-analysis after a fix |
+| Output | SARIF (GitHub code scanning), `--fail-on <tier>` gating |
 | Frameworks | Next.js, NestJS (DI), template-based plugins |
 | Languages | Python (detectors reused, new symbol-graph adapter) |
 | Scale | Monorepo workspace-edge resolution |
@@ -253,5 +305,4 @@ tiers, evidence chains, the `test-only` verdict, test-runner awareness
 
 ## License
 
-Not yet chosen — a license will be added before any public release. (MIT is the
-intended default.)
+[MIT](LICENSE) © manehorizons.

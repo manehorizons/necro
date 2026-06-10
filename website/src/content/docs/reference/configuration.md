@@ -62,6 +62,16 @@ many hotspots `scan` shows.
 Options for the [duplication detector](/necro/guide/duplication/). `minTokens`
 is the smallest normalized-token sequence reported as a clone.
 
+### `llm`
+
+- **Type:** object
+- **Default:** `{ model: "claude-opus-4-8", snippetRadius: 20 }`
+
+Options for the opt-in LLM layer ([`triage`](/necro/reference/cli/#necro-triage)
+and [`refactor`](/necro/reference/cli/#necro-refactor)). `model` is the Anthropic
+model id; `snippetRadius` is how many lines of context around a finding are sent.
+Used only when you invoke those commands, which require `ANTHROPIC_API_KEY`.
+
 ## Example
 
 ```json title="necro.config.json"
@@ -81,7 +91,7 @@ Independent of `ignore`, declaration files (`*.d.ts`) and the directories
 `node_modules`, `.git`, `dist`, `build`, and `coverage` are never analyzed.
 
 :::note[This is the full key set]
-`include`, `ignore`, `coveragePath`, `complexity`, `hotspots`, and `duplication`
-are the only configuration keys in this release. Entry-point overrides and tier
-tuning are [planned](/necro/guide/roadmap/).
+`include`, `ignore`, `coveragePath`, `complexity`, `hotspots`, `duplication`,
+and `llm` are the configuration keys today. Entry-point override syntax is
+[planned](/necro/guide/roadmap/).
 :::

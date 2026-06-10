@@ -62,9 +62,10 @@ node dist/cli.js scan src/
 You'll get tiered findings, each with an evidence chain — see the
 [Quickstart](/necro/guide/quickstart/) to read the output.
 
-:::note[Early days]
-Necro is in active development. This first release finds **dead code** in
-TypeScript with confidence tiers, evidence chains, and the `test-only`
-verdict. Duplication, complexity, churn, and LLM fixes are on the
+:::note[Pre-1.0, active development]
+Necro analyzes **TypeScript** across multiple axes — dead code, complexity, risk
+hotspots, and duplication — plus safe dead-code removal (`fix`), LLM triage and
+refactors, and a read-only [MCP server](/necro/reference/cli/#necro-mcp) for AI
+agents. SARIF output, more framework plugins, and Python are on the
 [roadmap](/necro/guide/roadmap/).
 :::

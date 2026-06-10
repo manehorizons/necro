@@ -54,6 +54,7 @@ The list of signals (each `✓` / `✗` / `•`) plus a verdict line that
 
 ## CRAP
 
-*Change Risk Anti-Patterns* — an existing public metric
-(`complexity² × (1 − coverage)³ + complexity`) that Necro [plans](/necro/guide/roadmap/)
-to adopt as one scoring axis. Not yet implemented.
+*Change Risk Anti-Patterns* — a public metric
+(`complexity² × (1 − coverage)³ + complexity`) Necro computes as one input to its
+[risk hotspot](/necro/guide/hotspots/) ranking (weighted by git churn). Requires
+a coverage report; without one, hotspots fall back to complexity × churn.

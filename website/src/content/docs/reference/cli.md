@@ -117,7 +117,78 @@ necro fix [path] [options]
 
 `fix` exits `0` on every successful run (preview, write, or nothing-to-fix).
 
-:::note[This is the full surface]
-`scan` and `fix` are the commands in this release. An `explain` command and
-LLM-assisted refactors are [planned](/necro/guide/roadmap/).
+## `necro triage`
+
+LLM-resolve the quarantined `maybe` findings — advisory and opt-in. `triage`
+scans (or reads a prior `scan --json` document), then asks the Anthropic API to
+adjudicate each `maybe` with a recommendation and rationale. It **never edits
+your code**; it only annotates findings. Requires `ANTHROPIC_API_KEY`.
+
+```
+necro triage [path] [options]
+```
+
+### Options
+
+| Option | Description |
+|---|---|
+| `--input <file>` | Triage a prior `necro scan --json` document instead of re-scanning. |
+| `--json` | Emit triaged findings as JSON. |
+| `-h`, `--help` | Show help for `triage`. |
+
+## `necro refactor`
+
+Suggest LLM-assisted refactors — advisory and opt-in. `refactor` prints
+proposals and **never edits your files**. Each proposal is verified (typecheck +
+tests) in a throwaway git worktree before you see it, so a badged-green proposal
+is known to compile and pass tests. necro computes the diff itself (the model
+returns code, not a patch). Requires `ANTHROPIC_API_KEY`.
+
+```
+necro refactor [path] [options]
+```
+
+### Options
+
+| Option | Description |
+|---|---|
+| `--type <type>` | `god-function` (split an over-complex function) or `extract-duplicate` (lift a shared function out of a clone). Default `god-function`. |
+| `--limit <n>` | Max findings to propose refactors for (default 1). |
+| `--no-verify` | Skip scratch-worktree verification (typecheck + tests). |
+| `--json` | Emit proposals as JSON. |
+| `-h`, `--help` | Show help for `refactor`. |
+
+## `necro mcp`
+
+Run necro as a read-only [MCP](https://modelcontextprotocol.io) server over
+stdio, so an AI agent (Claude Code, Cursor, Codex, Windsurf) can call necro's
+verdicts and verify its own edits. necro **never edits your files and never
+wraps an LLM** on this path.
+
+```
+necro mcp
+```
+
+Two read-only tools are exposed:
+
+| Tool | Input | Returns |
+|---|---|---|
+| `necro_scan` | `{ path?, top?, coverage? }` | The same JSON as `necro scan --json` — dead-code tiers + evidence chains, complexity, hotspots, duplication. |
+| `necro_verify` | `{ edits: {file, content}[], checks? }` | Applies the full-file edits in a throwaway git worktree, runs the checks (default: typecheck + tests), and returns `{ ok, output }`. Your working tree is never touched. |
+
+Register it with your agent (Claude Code example):
+
+```json
+{
+  "mcpServers": {
+    "necro": { "command": "necro", "args": ["mcp"] }
+  }
+}
+```
+
+:::note[Opt-in & cost]
+`scan`, `fix`, and `mcp` are fully local and free. `triage` and `refactor` call
+the Anthropic API and run only when you invoke them — set `ANTHROPIC_API_KEY`
+first. An `explain` command, SARIF output, and `--fail-on` gating are
+[planned](/necro/guide/roadmap/).
 :::

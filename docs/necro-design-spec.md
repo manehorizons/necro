@@ -1,5 +1,13 @@
 # Necro — Design Specification
 
+> **This is the design-intent reference, not a status report.** It records the
+> decisions behind Necro; forward-looking sections (build order, "for MVP")
+> describe original intent. For what's shipped vs. planned today, see the
+> [roadmap](../website/src/content/docs/guide/roadmap.md) and `README.md`. As of
+> this writing the TypeScript engine ships dead-code, complexity, hotspot, and
+> duplication analysis plus `fix`, `triage`, `refactor`, and a read-only `mcp`
+> server; SARIF, more framework plugins, and Python remain planned.
+
 **Necro.** A local, free, polyglot CLI that finds anti-pattern code across multiple axes (dead code, duplication, complexity, nesting, god functions/files, recursion) and proposes LLM-assisted fixes. This document is the reference for all decisions made to date.
 
 The product is named for the death/forensic theme that maps onto its design: tiered verdicts are triage, evidence chains are an autopsy declaring cause of death per finding, the `test-only` verdict is code on life support, and `--fix` is exhumation. CLI command: `necro` (e.g. `necro scan src/`, `necro fix`, `necro --explain`).

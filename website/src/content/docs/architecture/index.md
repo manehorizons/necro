@@ -45,12 +45,14 @@ The design calls for two intermediate representations:
 1. **Symbol graph** — references, exports, reachability. Per-language, built by
    the language-native semantic tool (the TS compiler API today). **Implemented.**
 2. **Syntactic IR** — block tree + branch counts for complexity/duplication
-   detectors. Language-agnostic, tree-sitter-fed. **Planned** — this release
-   ships dead-code detection only, which needs the symbol graph.
+   detectors. Language-agnostic, tree-sitter-fed. **Implemented.**
 
 ## What exists today
 
-The dead-code vertical slice: discovery, symbol graph, plugin/entry resolution,
-two-color reachability with taint, tier classification, evidence chains, and
-terminal/JSON output. Syntactic detectors, scoring, and fixes are
-[planned](/necro/guide/roadmap/).
+The dead-code vertical slice (discovery, symbol graph, plugin/entry resolution,
+two-color reachability with taint, tier classification, evidence chains,
+terminal/JSON output), plus the tree-sitter syntactic detectors (complexity,
+duplication), CRAP × churn hotspot scoring, safe dead-code removal (`fix`), the
+LLM `triage`/`refactor` layer, and a read-only `mcp` server. Still
+[planned](/necro/guide/roadmap/): SARIF output, more framework plugins, and
+Python (a second symbol-graph adapter).
