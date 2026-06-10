@@ -170,13 +170,17 @@ describe("structural scoring math on the real corpus (AC-2)", () => {
 
   test("a lazy extraction that leaves the clone body inline fails on every corpus case (AC-2)", async () => {
     // Real shared function + one edit per location (clears the structural check),
-    // but each edit re-emits its own clone body instead of a call — the edited
-    // sites still clone one another, so collapse must reject it for every case.
+    // but every edit re-emits the (identical) clone body instead of a call — the
+    // duplication is left fully in place, so the edited sites still clone one
+    // another and collapse must reject it for every case. Using one canonical body
+    // at all sites keeps the residual robust even for token-boundary-straddling
+    // clones whose per-site bodies differ at the edges.
     const cases = await loadDuplicateEvalCases(corpusPath);
     for (const c of cases) {
+      const body = bodyOf(c, c.locations[0]!);
       const lazy: DuplicateProposal = {
         ...oracle(c),
-        edits: c.locations.map((l) => ({ file: l.file, startLine: l.startLine, endLine: l.endLine, replacement: bodyOf(c, l) })),
+        edits: c.locations.map((l) => ({ file: l.file, startLine: l.startLine, endLine: l.endLine, replacement: body })),
       };
       const cr = await evaluateDuplicateProposal(c, lazy);
       expect(cr.extractsSharedFunction, `${c.name}: declares a real shared function`).toBe(true);

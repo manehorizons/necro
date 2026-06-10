@@ -58,20 +58,18 @@ const REALREPO_PASS_RATE_GATE = 0.5;
  * preserved). Real clone groups are materially harder to collapse correctly than
  * the synthetic reference set (≈1.0), so this floor sits below the synthetic 0.8.
  *
- * CALIBRATION (phase 15a, claude-opus-4-8, 3 deliberate live runs):
- *   passRate 0.67 / 0.75 / 0.67   (mean ~0.70, observed minimum 0.67)
- * Three cases fail every run — `utils-L303` (a config-validation clone), `count-L24`
- * and `query-builder-L90` (dialect query-builder methods) — and `select-L685` /
- * `driver-L61` flake (incl. one unparseable response). Collapsing a real clone group
- * into one shared function while preserving every call surface is genuinely variable;
- * the synthetic reference set (≈1.0) hid this entirely. A future tuning phase (15b,
- * mirroring triage phase 12) could lift the real-repo pass-rate.
+ * CALIBRATION — PENDING RE-MEASURE (phase 16, T4). The phase-15a numbers
+ * (passRate 0.67 / 0.75 / 0.67, old min 0.67) were measured under the OLD all-or-nothing
+ * whole-file collapse scorer and the OLD corpus. Phase 16 reworked collapse to the
+ * edited-site metric and refined the corpus (dropped the class-structural `count-L24` /
+ * `query-builder-L90`, added `dialect-L948` / `session-L69`), so those numbers no longer
+ * describe this gate. The floor is held conservatively at 0.5 until T4 re-runs the live
+ * eval >=3x and re-sets it below the fresh observed minimum (expected to rise materially
+ * now that genuine extractions are credited). See fixtures/refactor-dup-realrepo/SOURCES.md.
  *
- * DUP_REALREPO_PASS_RATE_GATE is a REGRESSION FLOOR set BELOW the observed
- * run-to-run minimum (0.67) with margin for the model's non-determinism — a single
- * run can drop ~0.08 per parse flake — so it is a collapse-detector, not a target
- * cherry-picked to pass. The per-run numbers are recorded in
- * fixtures/refactor-dup-realrepo/SOURCES.md.
+ * DUP_REALREPO_PASS_RATE_GATE is a REGRESSION FLOOR (a collapse-detector, not a target
+ * cherry-picked to pass), set below the observed run-to-run minimum with margin for the
+ * model's non-determinism.
  */
 const DUP_REALREPO_PASS_RATE_GATE = 0.5;
 

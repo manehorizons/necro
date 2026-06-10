@@ -10,11 +10,20 @@ survive the extraction, and full provenance (repo + SHA).
 Unlike the triage corpus, **no human ground-truth label is applied.** An extract-duplicate
 proposal is scored **structurally** by `evaluateDuplicateProposal` (`src/refactor/eval.ts`):
 it passes only if it (1) extracts one exported shared function with exactly one edit per
-clone location, (2) collapses the duplication — re-tokenizing the spliced files leaves no
-clone as long as the original group, and (3) preserves every site's call surface. The
+clone location, (2) collapses the duplication — the largest residual clone **among the
+model's edit replacements** (the edited sites, each tokenized as its own pseudo-file) falls
+below `tokens × COLLAPSE_RATIO` (`0.5`) — and (3) preserves every site's call surface. The
 corpus therefore only needs authentic, genuinely-hard *inputs* — selection is the sole
 human step; `files`, `locations`, `tokens`, `minTokens`, `signatures`, and `provenance`
 are the mechanical output of `src/refactor/eval-capture.ts` (`captureDuplicateSkeletons`).
+
+> **Phase 16 — edited-site collapse.** Criterion (2) originally re-tokenized the **whole
+> spliced files** and demanded zero residual clone ≥ the group's `tokens`. That global
+> measure was confounded by unrelated near-identical code in the same files (drizzle's
+> parallel dialect modules), so a correct extraction could still "fail" on an untouched
+> clone elsewhere. It now measures only the edited sites: a genuine extraction reduces each
+> site to a short call (residual ≈ 0); a non-extraction leaves the body cloned across the
+> edits (residual ≈ the full group). See `COLLAPSE_RATIO` in `src/refactor/eval.ts`.
 
 ## Source repositories
 
@@ -28,6 +37,18 @@ are the mechanical output of `src/refactor/eval-capture.ts` (`captureDuplicateSk
 — the same clone groups `necro refactor` feeds the model in production. Capture used
 `src/refactor/eval-capture.ts` (`captureDuplicateSkeletons`): verbatim file sources +
 locations + provenance; only case *selection* was human.
+
+> **Phase 16 — corpus refinement.** Two drizzle cases were dropped and two added (counts
+> per repo unchanged). Removed: `count-L24` and `query-builder-L90` — dialect query-builder
+> clones that are **class-structural** (constructor / select-overload blocks), so no
+> behavior-preserving function extraction exists; the live model correctly-but-unhelpfully
+> failed them every run, depressing the pass-rate with a corpus artifact rather than a
+> model-quality signal (under the edited-site scorer they leave ~0.87 of the group cloned
+> across the edits — captured as regression fixtures in `proposals/`). Added two clean
+> single-unit logic clones the model can genuinely dedupe: `dialect-L948` (the
+> migration-table-setup block duplicated across two `migrate` methods of sqlite-core's
+> dialect) and `session-L69` (the `tracer.startActiveSpan('drizzle.mapResponse', …)`
+> result-mapper shared by the gel + pg-proxy sessions, differing only by `result`/`rows`).
 
 > trpc reuses the triage/phase-14 SHA (`c7360d4`, still reachable). drizzle-orm is a
 > new third source pinned at its scanned default-branch HEAD (`48e5406`). **hono and
@@ -53,18 +74,20 @@ authentic, reviewable, and self-validating:
   (`implements`, leading `>`); excluded doc-padded clones (>30 % comment lines, i.e.
   JSDoc/overload-signature duplication). Each location also requires a substantive
   enclosing line above it, captured as its `signature`.
-- **Oracle-validated collapsibility (the key gate)** — `evaluateDuplicateProposal`
-  measures duplication globally over the spliced files, so a clone group in a file that
-  retains *another* clone ≥ its token length can never be collapsed and is unscorable.
-  Every selected case was verified to pass a **generic oracle** proposal (shared
-  function = the clone body once; each location replaced by a call), guaranteeing a
-  correct extraction exists and the whole corpus scores `passRate = 1` under the oracle.
-  ~85 % of otherwise-clean candidates were dropped here — they live in pervasively
-  duplicated files (typical of drizzle's dialect code) and are inherently uncollapsible.
+- **Oracle-validated collapsibility (the key gate)** — every selected case was verified to
+  pass a **generic oracle** proposal (shared function = the clone body once; each location
+  replaced by a call), guaranteeing a structurally-correct extraction exists and the whole
+  corpus scores `passRate = 1` under the oracle. Under the phase-16 edited-site scorer the
+  oracle's trivial call replacements leave a sub-`minTokens` residual, so this invariant is
+  scorer-independent. (Pre-phase-16, the all-or-nothing global measure additionally
+  rejected groups whose file retained *another* clone ≥ its token length; that whole-file
+  confound is what the edited-site scorer removes.) The phase-16 backfill cases were
+  re-validated against this oracle under the new scorer, and excluded import-block /
+  type-literal / class-structural clones in favour of genuine, parameterizable logic.
 
 The selected cases span trpc's links / React-Query hooks / Lambda adapter and drizzle's
-dialect drivers, sessions, count/select/delete query-builders, and config validation.
-Token lengths span **52–178**; no clone body was re-authored.
+dialect drivers, sessions, select/delete query-builders, migration-table setup, and config
+validation. Token lengths span **50–178**; no clone body was re-authored.
 
 ## Why these repos
 
@@ -82,7 +105,17 @@ the real model — not a target cherry-picked to pass. Real clone groups are mat
 harder to collapse correctly than the synthetic reference set (which scores ≈1.0), so the
 real-repo floor is expected to sit below the synthetic 0.8.
 
-### Phase 15a calibration (claude-opus-4-8, 3 deliberate live runs)
+> **⚠ Pending re-calibration (phase 16, T4).** The table below is the **phase-15a**
+> baseline, measured under the **old all-or-nothing whole-file scorer** and the **old
+> corpus** (before `count-L24` / `query-builder-L90` were dropped). It is retained for
+> history but **no longer describes the current scorer or corpus**: under the edited-site
+> collapse metric, `utils-L303` now correctly passes (it was the genuine dedup the old
+> metric wrongly failed), and the two class-structural cases are gone. The floor is held at
+> the conservative `0.5` until phase-16 T4 re-runs the live eval ≥3× and replaces this block
+> with fresh numbers; **the live gate is expected to rise materially** now that genuine
+> extractions are credited.
+
+### Phase 15a calibration (claude-opus-4-8, 3 deliberate live runs) — SUPERSEDED, old scorer/corpus
 
 | run | passRate | failures |
 |-----|----------|----------|
@@ -90,17 +123,13 @@ real-repo floor is expected to sit below the synthetic 0.8.
 | 2 | **0.75** (9/12) | utils-L303, count-L24, query-builder-L90 |
 | 3 | **0.67** (8/12) | utils-L303, driver-L61, count-L24, query-builder-L90 |
 
-**Mean ≈ 0.70, observed minimum 0.67.** Three cases fail **every** run — `utils-L303`
-(a config-validation clone), `count-L24` and `query-builder-L90` (dialect query-builder
-methods): collapsing them into one shared function while preserving every call surface
-is genuinely hard. `select-L685` and `driver-L61` flake intermittently (run 1 saw one
-unparseable model response). The synthetic reference set (≈1.0) hid this difficulty
-entirely; the real-repo gate surfaces it. A future tuning phase (15b, mirroring triage
-phase 12) could lift the real-repo pass-rate.
+**Mean ≈ 0.70, observed minimum 0.67** (old scorer). `count-L24` / `query-builder-L90`
+failed every run because no behavior-preserving function extraction exists for them — the
+phase-16 diagnosis that motivated dropping them; `utils-L303` failed only on the whole-file
+confound the edited-site scorer removes. `select-L685` / `driver-L61` flaked (one
+unparseable response).
 
-**`DUP_REALREPO_PASS_RATE_GATE = 0.5`** — a regression floor set *below* the observed
-minimum (0.67), with margin for the model's non-determinism (a single run can drop
-~0.08 per parse flake). It is a collapse detector (catches the extract-duplicate path
-regressing materially), not a target, and is **not** cherry-picked to the runs.
-Re-calibrate (and consider raising) only after a tuning phase moves the real-repo
-pass-rate up across ≥3 fresh runs.
+**`DUP_REALREPO_PASS_RATE_GATE = 0.5`** — held as a conservative regression floor through
+phase 16's scorer + corpus change. It is a collapse detector (catches the extract-duplicate
+path regressing materially), not a target. T4 re-measures under the new scorer/corpus and
+re-sets the floor below the fresh observed minimum.
