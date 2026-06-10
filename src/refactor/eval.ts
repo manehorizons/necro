@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import type { CloneLocation } from "../syntactic/types.js";
+import type { CaseProvenance } from "../triage/eval-capture.js";
 import { extractRange } from "../triage/snippet.js";
 import type { RefactorClient } from "./client.js";
 import type { DuplicateLocationContext, RefactorContext } from "./context.js";
@@ -25,6 +26,8 @@ export interface RefactorEvalCase {
   signature: string;
   /** LOC threshold the split must bring every function under. */
   threshold: number;
+  /** Where a real-repo case was captured from — absent on synthetic cases. */
+  provenance?: CaseProvenance;
 }
 
 /** The three structural criteria a god-function split must clear. */
