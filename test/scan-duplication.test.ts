@@ -55,6 +55,40 @@ describe("scan duplication axis (AC-6)", () => {
     );
   });
 
+  test("a clone across two adjacent functions is split at the boundary, not one cross-function window (AC-1)", async () => {
+    // funcOne (lines 1-6) and funcTwo (lines 7-12) are structurally distinct, so
+    // the only match is a.ts-whole vs b.ts-whole — which spans both functions
+    // unless the detector is given unit boundaries.
+    const funcOne = `export function alpha(x: number, y: number) {
+  const sum = x + y;
+  const prod = x * y;
+  if (sum > prod) { return sum; }
+  return prod;
+}
+`;
+    const funcTwo = `export function beta(items: string[]) {
+  let total = 0;
+  for (const it of items) { total += it.length; }
+  while (total > 100) { total -= 10; }
+  return total;
+}
+`;
+    const both = funcOne + funcTwo;
+    await write("package.json", JSON.stringify({ name: "fx" }));
+    await write("src/a.ts", both);
+    await write("src/b.ts", both);
+
+    const { duplication } = await scan(dir, { ...DEFAULT_CONFIG, duplication: { minTokens: 15 } });
+
+    const K = 6; // funcOne occupies lines 1..6; funcTwo starts at line 7
+    const straddles = duplication.some((d) =>
+      d.locations.some((l) => l.startLine <= K && l.endLine >= K + 1),
+    );
+    expect(straddles).toBe(false);
+    // The merged cross-function window splits into one clone per function.
+    expect(duplication.length).toBe(2);
+  });
+
   test("complexity:false skips duplication (fix path)", async () => {
     await write("package.json", JSON.stringify({ name: "fx" }));
     await write("src/a.ts", blockA);

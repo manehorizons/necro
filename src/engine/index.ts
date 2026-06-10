@@ -140,8 +140,22 @@ async function analyzeHeavy(
   const churn = await fileChurn(targetPath);
   const hotspots = rankHotspots(units, coverageReport, churn, config.hotspots.top);
 
+  // Group the already-computed function units by file as line ranges, so the
+  // duplication detector never reports a clone window straddling a function
+  // boundary (the cross-function windows phases 16–17 curated around).
+  const unitsByFile = new Map<string, { startLine: number; endLine: number }[]>();
+  for (const u of units) {
+    const range = { startLine: u.line, endLine: u.line + u.loc - 1 };
+    const arr = unitsByFile.get(u.file);
+    if (arr) arr.push(range);
+    else unitsByFile.set(u.file, [range]);
+  }
   const fileTokens = await Promise.all(
-    sources.map(async ({ file, text }) => ({ file, tokens: await tokenize(file, text) })),
+    sources.map(async ({ file, text }) => ({
+      file,
+      tokens: await tokenize(file, text),
+      units: unitsByFile.get(file) ?? [],
+    })),
   );
   const duplication = findClones(fileTokens, config.duplication.minTokens);
 
