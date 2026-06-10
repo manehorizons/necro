@@ -59,14 +59,21 @@ const REALREPO_PASS_RATE_GATE = 0.5;
  * the synthetic reference set (≈1.0), so this floor sits below the synthetic 0.8.
  *
  * CALIBRATION (phase 15a, claude-opus-4-8, 3 deliberate live runs):
- *   passRate __ / __ / __   (mean ~__, observed minimum __)   ← filled by T4 calibration
+ *   passRate 0.67 / 0.75 / 0.67   (mean ~0.70, observed minimum 0.67)
+ * Three cases fail every run — `utils-L303` (a config-validation clone), `count-L24`
+ * and `query-builder-L90` (dialect query-builder methods) — and `select-L685` /
+ * `driver-L61` flake (incl. one unparseable response). Collapsing a real clone group
+ * into one shared function while preserving every call surface is genuinely variable;
+ * the synthetic reference set (≈1.0) hid this entirely. A future tuning phase (15b,
+ * mirroring triage phase 12) could lift the real-repo pass-rate.
  *
  * DUP_REALREPO_PASS_RATE_GATE is a REGRESSION FLOOR set BELOW the observed
- * run-to-run minimum with margin for the model's non-determinism — a
- * collapse-detector, not a target cherry-picked to pass. The per-run numbers are
- * recorded in fixtures/refactor-dup-realrepo/SOURCES.md.
+ * run-to-run minimum (0.67) with margin for the model's non-determinism — a single
+ * run can drop ~0.08 per parse flake — so it is a collapse-detector, not a target
+ * cherry-picked to pass. The per-run numbers are recorded in
+ * fixtures/refactor-dup-realrepo/SOURCES.md.
  */
-const DUP_REALREPO_PASS_RATE_GATE = 0.5; // provisional — recalibrated by T4 under the observed minimum
+const DUP_REALREPO_PASS_RATE_GATE = 0.5;
 
 describe("live refactor eval (AC-7)", () => {
   test.runIf(process.env.ANTHROPIC_API_KEY)(

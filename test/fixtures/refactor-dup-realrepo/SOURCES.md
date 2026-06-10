@@ -82,11 +82,25 @@ the real model — not a target cherry-picked to pass. Real clone groups are mat
 harder to collapse correctly than the synthetic reference set (which scores ≈1.0), so the
 real-repo floor is expected to sit below the synthetic 0.8.
 
-### Phase 15a calibration (claude-opus-4-8, ≥3 deliberate live runs)
-
-_(filled in by T4 — `DUP_REALREPO_PASS_RATE_GATE` is set below the observed minimum
-across the runs recorded here.)_
+### Phase 15a calibration (claude-opus-4-8, 3 deliberate live runs)
 
 | run | passRate | failures |
 |-----|----------|----------|
-| _pending_ | | |
+| 1 | **0.67** (8/12) | utils-L303, select-L685 (unparseable), count-L24, query-builder-L90 |
+| 2 | **0.75** (9/12) | utils-L303, count-L24, query-builder-L90 |
+| 3 | **0.67** (8/12) | utils-L303, driver-L61, count-L24, query-builder-L90 |
+
+**Mean ≈ 0.70, observed minimum 0.67.** Three cases fail **every** run — `utils-L303`
+(a config-validation clone), `count-L24` and `query-builder-L90` (dialect query-builder
+methods): collapsing them into one shared function while preserving every call surface
+is genuinely hard. `select-L685` and `driver-L61` flake intermittently (run 1 saw one
+unparseable model response). The synthetic reference set (≈1.0) hid this difficulty
+entirely; the real-repo gate surfaces it. A future tuning phase (15b, mirroring triage
+phase 12) could lift the real-repo pass-rate.
+
+**`DUP_REALREPO_PASS_RATE_GATE = 0.5`** — a regression floor set *below* the observed
+minimum (0.67), with margin for the model's non-determinism (a single run can drop
+~0.08 per parse flake). It is a collapse detector (catches the extract-duplicate path
+regressing materially), not a target, and is **not** cherry-picked to the runs.
+Re-calibrate (and consider raising) only after a tuning phase moves the real-repo
+pass-rate up across ≥3 fresh runs.
