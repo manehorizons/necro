@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { isAbsolute, join, relative } from "node:path";
 import { type FunctionUnit, lowerSource } from "../syntactic/ir.js";
 import type { ComplexityFinding } from "../syntactic/types.js";
 import type { CaseProvenance } from "../triage/eval-capture.js";
@@ -44,25 +44,28 @@ export async function captureRefactorSkeletons(
 
   const textCache = new Map<string, string>();
   const unitsCache = new Map<string, FunctionUnit[]>();
-  const readOnce = async (file: string): Promise<string> => {
-    const cached = textCache.get(file);
+  const readOnce = async (absPath: string): Promise<string> => {
+    const cached = textCache.get(absPath);
     if (cached !== undefined) return cached;
-    const text = await readFile(join(opts.sourceRoot, file), "utf8");
-    textCache.set(file, text);
+    const text = await readFile(absPath, "utf8");
+    textCache.set(absPath, text);
     return text;
   };
-  const lowerOnce = async (file: string, text: string): Promise<FunctionUnit[]> => {
-    const cached = unitsCache.get(file);
+  const lowerOnce = async (rel: string, absPath: string, text: string): Promise<FunctionUnit[]> => {
+    const cached = unitsCache.get(absPath);
     if (cached !== undefined) return cached;
-    const units = await lowerSource(file, text);
-    unitsCache.set(file, units);
+    const units = await lowerSource(rel, text); // `rel` keeps the extension hint clean
+    unitsCache.set(absPath, units);
     return units;
   };
 
   const cases: RefactorEvalCase[] = [];
   for (const f of gods) {
-    const text = await readOnce(f.file);
-    const units = await lowerOnce(f.file, text);
+    // necro scan emits absolute paths; tolerate relative too. Read absolute, store repo-relative.
+    const absPath = isAbsolute(f.file) ? f.file : join(opts.sourceRoot, f.file);
+    const rel = isAbsolute(f.file) ? relative(opts.sourceRoot, f.file) : f.file;
+    const text = await readOnce(absPath);
+    const units = await lowerOnce(rel, absPath, text);
     // Match the finding back to its lowered unit for an exact, robust span — the
     // finding's `value` is the param count when flagged on params, not the LOC.
     const unit = units.find((u) => u.name === f.name && u.line === f.line);
@@ -71,8 +74,8 @@ export async function captureRefactorSkeletons(
     const lines = text.split("\n");
     const source = lines.slice(unit.line - 1, unit.line - 1 + unit.loc).join("\n");
     const signature = lines[unit.line - 1] ?? "";
-    const provenance: CaseProvenance = { repo: opts.repo, sha: opts.sha, file: f.file, line: unit.line, symbol: unit.name };
-    cases.push({ name: unit.name, file: f.file, source, signature, threshold, provenance });
+    const provenance: CaseProvenance = { repo: opts.repo, sha: opts.sha, file: rel, line: unit.line, symbol: unit.name };
+    cases.push({ name: unit.name, file: rel, source, signature, threshold, provenance });
   }
   return cases;
 }

@@ -76,6 +76,20 @@ describe("captureRefactorSkeletons (AC-1)", () => {
     expect(c.provenance).toEqual({ repo: "acme/widgets", sha: "abc1234", file: "src/svc.ts", line: 3, symbol: "bigHandler" });
   });
 
+  test("handles absolute finding paths (real `necro scan` output), recording repo-relative provenance (AC-1)", async () => {
+    await writeSource();
+    // necro scan emits ABSOLUTE file paths; capture must read them and relativize provenance to sourceRoot.
+    const abs = join(dir, "src", "svc.ts");
+    const json = scanDoc([godFinding("bigHandler", 3, 5)].map((f) => ({ ...f, file: abs })));
+    const cases = await captureRefactorSkeletons(json, { repo: "acme/widgets", sha: "abc1234", sourceRoot: dir, threshold: 3 });
+
+    expect(cases).toHaveLength(1);
+    const c = cases[0]!;
+    expect(c.signature).toBe("export function bigHandler(a, b) {");
+    expect(c.file).toBe("src/svc.ts"); // repo-relative, not absolute
+    expect(c.provenance).toEqual({ repo: "acme/widgets", sha: "abc1234", file: "src/svc.ts", line: 3, symbol: "bigHandler" });
+  });
+
   test("excludes non-god-function complexity findings (AC-1)", async () => {
     await writeSource();
     const cyclomatic = { detector: "cyclomatic", file: "src/svc.ts", line: 3, name: "bigHandler", value: 11, threshold: 10, message: "cyclomatic complexity 11 > 10" };
