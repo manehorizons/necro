@@ -105,31 +105,41 @@ the real model — not a target cherry-picked to pass. Real clone groups are mat
 harder to collapse correctly than the synthetic reference set (which scores ≈1.0), so the
 real-repo floor is expected to sit below the synthetic 0.8.
 
-> **⚠ Pending re-calibration (phase 16, T4).** The table below is the **phase-15a**
-> baseline, measured under the **old all-or-nothing whole-file scorer** and the **old
-> corpus** (before `count-L24` / `query-builder-L90` were dropped). It is retained for
-> history but **no longer describes the current scorer or corpus**: under the edited-site
-> collapse metric, `utils-L303` now correctly passes (it was the genuine dedup the old
-> metric wrongly failed), and the two class-structural cases are gone. The floor is held at
-> the conservative `0.5` until phase-16 T4 re-runs the live eval ≥3× and replaces this block
-> with fresh numbers; **the live gate is expected to rise materially** now that genuine
-> extractions are credited.
-
-### Phase 15a calibration (claude-opus-4-8, 3 deliberate live runs) — SUPERSEDED, old scorer/corpus
+### Phase 16 calibration (claude-opus-4-8, 3 deliberate live runs, edited-site scorer + refined corpus)
 
 | run | passRate | failures |
 |-----|----------|----------|
-| 1 | **0.67** (8/12) | utils-L303, select-L685 (unparseable), count-L24, query-builder-L90 |
-| 2 | **0.75** (9/12) | utils-L303, count-L24, query-builder-L90 |
-| 3 | **0.67** (8/12) | utils-L303, driver-L61, count-L24, query-builder-L90 |
+| 1 | **0.75** (9/12) | select-L685, delete-L205, driver-L61 |
+| 2 | **0.75** (9/12) | select-L685, delete-L205, driver-L61 |
+| 3 | **0.58** (7/12) | createHooksInternal-L178 (unparseable), utils-L303, select-L685, delete-L205, driver-L61 |
 
-**Mean ≈ 0.70, observed minimum 0.67** (old scorer). `count-L24` / `query-builder-L90`
-failed every run because no behavior-preserving function extraction exists for them — the
-phase-16 diagnosis that motivated dropping them; `utils-L303` failed only on the whole-file
-confound the edited-site scorer removes. `select-L685` / `driver-L61` flaked (one
-unparseable response).
+**Mean ≈ 0.69, observed minimum 0.58.** The edited-site scorer is validated: `utils-L303`
+— the genuine deduplication the old whole-file metric wrongly failed every run — now passes
+(it flaked once in run 3 on model non-determinism, not the scorer), and both backfilled
+single-unit clones (`dialect-L948`, `session-L69`) pass all three runs.
 
-**`DUP_REALREPO_PASS_RATE_GATE = 0.5`** — held as a conservative regression floor through
-phase 16's scorer + corpus change. It is a collapse detector (catches the extract-duplicate
-path regressing materially), not a target. T4 re-measures under the new scorer/corpus and
-re-sets the floor below the fresh observed minimum.
+**The floor did not rise** — and the reason is an honest, substantive finding about the
+*corpus inputs*, not the scorer. The three consistent failures (`select-L685`,
+`delete-L205`, `driver-L61`) are **multi-unit clone windows**: the duplication detector
+flagged a window *larger than a single extractable unit*, bundling near-identical class
+scaffolding around the one reusable fragment. In all three the model **correctly extracted
+the genuine shared function** — `buildQueryFromDialect` (delete), `createSelectionProxy`
+(select), `extractRelationalConfig` (driver) — and wired every call site, but the window's
+surrounding scaffolding (the `getSQL`/`_prepare` methods, the `groupBy`/`orderBy` overload
+signatures, the driver-construction block) has *no* single-function extraction and remains
+cloned, leaving an edited-site residual of **0.66–0.89**. Crucially these ratios **overlap**
+the genuinely-non-extractable cases dropped earlier (`count-L24` / `query-builder-L90` at
+~0.87), so **no `COLLAPSE_RATIO` can credit the multi-unit partials without also crediting
+real non-extractions** — confirming `0.5` is the correct ratio and that these failures are a
+corpus-input limitation, not a scorer or model defect. (A future corpus-refinement phase
+could drop the multi-unit windows for single-unit clones, as the `dialect-L948` /
+`session-L69` backfill demonstrated, to lift the aggregate.)
+
+**`DUP_REALREPO_PASS_RATE_GATE = 0.5`** — a regression floor set *below* the observed
+minimum (0.58), with margin for the model's non-determinism (a single parse flake dropped
+run 3 by ~0.17). It is a collapse detector (catches the extract-duplicate path regressing
+materially), not a target, and is **not** cherry-picked to the runs. It is held at 0.5
+(unchanged) because the scorer fix corrected *which* cases pass — recovering `utils-L303`,
+retiring the class-structural pair — without materially moving the aggregate, as the
+multi-unit windows offset the recovery. Re-calibrate only after a corpus-refinement phase
+retires the multi-unit windows across ≥3 fresh runs.

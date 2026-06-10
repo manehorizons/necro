@@ -58,18 +58,22 @@ const REALREPO_PASS_RATE_GATE = 0.5;
  * preserved). Real clone groups are materially harder to collapse correctly than
  * the synthetic reference set (≈1.0), so this floor sits below the synthetic 0.8.
  *
- * CALIBRATION — PENDING RE-MEASURE (phase 16, T4). The phase-15a numbers
- * (passRate 0.67 / 0.75 / 0.67, old min 0.67) were measured under the OLD all-or-nothing
- * whole-file collapse scorer and the OLD corpus. Phase 16 reworked collapse to the
- * edited-site metric and refined the corpus (dropped the class-structural `count-L24` /
- * `query-builder-L90`, added `dialect-L948` / `session-L69`), so those numbers no longer
- * describe this gate. The floor is held conservatively at 0.5 until T4 re-runs the live
- * eval >=3x and re-sets it below the fresh observed minimum (expected to rise materially
- * now that genuine extractions are credited). See fixtures/refactor-dup-realrepo/SOURCES.md.
+ * CALIBRATION (phase 16, claude-opus-4-8, 3 deliberate live runs — edited-site scorer + refined corpus):
+ *   passRate 0.75 / 0.75 / 0.58   (mean ~0.69, observed minimum 0.58)
+ * The scorer fix is validated: `utils-L303` (the genuine dedup the old whole-file metric
+ * wrongly failed) now passes, and the backfilled `dialect-L948` / `session-L69` pass all 3
+ * runs. The floor did NOT rise: the three consistent failures (`select-L685`, `delete-L205`,
+ * `driver-L61`) are MULTI-UNIT clone windows — the model correctly extracts the one reusable
+ * function (createSelectionProxy / buildQueryFromDialect / extractRelationalConfig) but the
+ * detector's window bundles near-identical class scaffolding that has no single-function
+ * extraction, leaving an edited-site residual 0.66-0.89. Those ratios overlap the dropped
+ * non-extractable pair (~0.87), so no COLLAPSE_RATIO can credit them without crediting real
+ * failures — a corpus-input limitation, not a scorer/model defect. Per-run detail + the
+ * future-phase note are in fixtures/refactor-dup-realrepo/SOURCES.md.
  *
- * DUP_REALREPO_PASS_RATE_GATE is a REGRESSION FLOOR (a collapse-detector, not a target
- * cherry-picked to pass), set below the observed run-to-run minimum with margin for the
- * model's non-determinism.
+ * DUP_REALREPO_PASS_RATE_GATE is a REGRESSION FLOOR set BELOW the observed run-to-run
+ * minimum (0.58) with margin for the model's non-determinism (one parse flake dropped run 3
+ * by ~0.17) — a collapse-detector, not a target cherry-picked to pass.
  */
 const DUP_REALREPO_PASS_RATE_GATE = 0.5;
 
