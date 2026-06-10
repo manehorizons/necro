@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { captureRefactorSkeletons } from "../src/refactor/eval-capture.js";
+import { captureDuplicateSkeletons, captureRefactorSkeletons } from "../src/refactor/eval-capture.js";
 
 /** A `necro scan --json` document carrying only the given complexity findings. */
 const scanDoc = (complexity: unknown[]) => JSON.stringify({ findings: [], complexity, hotspots: [], duplication: [] });
@@ -109,6 +109,126 @@ describe("captureRefactorSkeletons (AC-1)", () => {
 
   test("empty complexity findings → empty cases, no throw (AC-1)", async () => {
     const cases = await captureRefactorSkeletons(scanDoc([]), { repo: "r", sha: "s", sourceRoot: dir, threshold: 3 });
+    expect(cases).toEqual([]);
+  });
+});
+
+/** A `necro scan --json` document carrying only the given duplication findings. */
+const dupDoc = (duplication: unknown[]) => JSON.stringify({ findings: [], complexity: [], hotspots: [], duplication });
+
+describe("captureDuplicateSkeletons (AC-1)", () => {
+  let dir: string;
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "necro-dup-capture-"));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  // src/metrics.ts — a same-file clone group: the bodies of reportA / reportB.
+  //  1 import { round } from "./math.js";
+  //  2 export function reportA(values) {        <- enclosing surface for clone #1
+  //  3   const total = values.reduce((s, v) => s + v, 0);   <- clone startLine
+  //  4   const mean = total / values.length;
+  //  5   return round(mean, 2);
+  //  6 }
+  //  7 export function reportB(values) {        <- enclosing surface for clone #2
+  //  8   const total = values.reduce((s, v) => s + v, 0);   <- clone startLine
+  //  9   const mean = total / values.length;
+  // 10   return round(mean, 2);
+  // 11 }
+  const metricsSource = [
+    'import { round } from "./math.js";',
+    "export function reportA(values) {",
+    "  const total = values.reduce((s, v) => s + v, 0);",
+    "  const mean = total / values.length;",
+    "  return round(mean, 2);",
+    "}",
+    "export function reportB(values) {",
+    "  const total = values.reduce((s, v) => s + v, 0);",
+    "  const mean = total / values.length;",
+    "  return round(mean, 2);",
+    "}",
+  ].join("\n");
+  const writeMetrics = async () => {
+    await mkdir(join(dir, "src"), { recursive: true });
+    await writeFile(join(dir, "src", "metrics.ts"), metricsSource);
+  };
+
+  const sameFileGroup = (file: string) => ({
+    tokens: 18,
+    locations: [
+      { file, startLine: 3, endLine: 5 },
+      { file, startLine: 8, endLine: 10 },
+    ],
+  });
+
+  test("emits one case per clone group with verbatim file sources, locations, tokens, minTokens, signatures, provenance (AC-1)", async () => {
+    await writeMetrics();
+    const json = dupDoc([sameFileGroup("src/metrics.ts")]);
+    const cases = await captureDuplicateSkeletons(json, { repo: "acme/widgets", sha: "abc1234", sourceRoot: dir, minTokens: 10 });
+
+    expect(cases).toHaveLength(1);
+    const c = cases[0]!;
+    // a single referenced file, captured VERBATIM (raw — buildDuplicateCasePrompt numbers it)
+    expect(c.files).toHaveLength(1);
+    expect(c.files[0]!.path).toBe("src/metrics.ts");
+    expect(c.files[0]!.source).toBe(metricsSource);
+    expect(c.files[0]!.source).not.toMatch(/^\d+\t/m);
+    // locations preserved (repo-relative file), tokens + minTokens recorded
+    expect(c.locations).toEqual([
+      { file: "src/metrics.ts", startLine: 3, endLine: 5 },
+      { file: "src/metrics.ts", startLine: 8, endLine: 10 },
+    ]);
+    expect(c.tokens).toBe(18);
+    expect(c.minTokens).toBe(10);
+    // signatures are the enclosing declaration lines (nearest non-blank line above each clone), verbatim
+    expect(c.signatures).toEqual(["export function reportA(values) {", "export function reportB(values) {"]);
+    for (const sig of c.signatures) expect(c.files[0]!.source).toContain(sig);
+    // provenance — anchored at the first location; symbol === name for the integrity guard
+    expect(c.provenance).toMatchObject({ repo: "acme/widgets", sha: "abc1234", file: "src/metrics.ts", line: 3 });
+    expect(c.provenance!.symbol).toBe(c.name);
+  });
+
+  test("handles absolute finding paths (real `necro scan` output), recording repo-relative paths (AC-1)", async () => {
+    await writeMetrics();
+    const abs = join(dir, "src", "metrics.ts");
+    const json = dupDoc([sameFileGroup(abs)]);
+    const cases = await captureDuplicateSkeletons(json, { repo: "acme/widgets", sha: "abc1234", sourceRoot: dir, minTokens: 10 });
+
+    expect(cases).toHaveLength(1);
+    const c = cases[0]!;
+    expect(c.files[0]!.path).toBe("src/metrics.ts"); // repo-relative, not absolute
+    expect(c.locations.every((l) => l.file === "src/metrics.ts")).toBe(true);
+    expect(c.provenance).toMatchObject({ repo: "acme/widgets", sha: "abc1234", file: "src/metrics.ts" });
+  });
+
+  test("a cross-file clone group collects each distinct file once, verbatim (AC-1)", async () => {
+    await mkdir(join(dir, "src"), { recursive: true });
+    const a = ["export function loadA(p) {", "  const raw = read(p);", "  return parse(raw);", "}"].join("\n");
+    const b = ["export function loadB(p) {", "  const raw = read(p);", "  return parse(raw);", "}"].join("\n");
+    await writeFile(join(dir, "src", "a.ts"), a);
+    await writeFile(join(dir, "src", "b.ts"), b);
+    const json = dupDoc([
+      {
+        tokens: 20,
+        locations: [
+          { file: "src/a.ts", startLine: 2, endLine: 3 },
+          { file: "src/b.ts", startLine: 2, endLine: 3 },
+        ],
+      },
+    ]);
+    const cases = await captureDuplicateSkeletons(json, { repo: "r", sha: "s", sourceRoot: dir, minTokens: 10 });
+    expect(cases).toHaveLength(1);
+    const c = cases[0]!;
+    expect(c.files.map((f) => f.path).sort()).toEqual(["src/a.ts", "src/b.ts"]);
+    expect(c.files.find((f) => f.path === "src/a.ts")!.source).toBe(a);
+    expect(c.files.find((f) => f.path === "src/b.ts")!.source).toBe(b);
+    expect(c.signatures).toEqual(["export function loadA(p) {", "export function loadB(p) {"]);
+  });
+
+  test("empty duplication findings → empty cases, no throw (AC-1)", async () => {
+    const cases = await captureDuplicateSkeletons(dupDoc([]), { repo: "r", sha: "s", sourceRoot: dir, minTokens: 10 });
     expect(cases).toEqual([]);
   });
 });

@@ -157,6 +157,8 @@ export interface DuplicateEvalCase {
   minTokens: number;
   /** Call-surface lines that must still appear after the extraction. */
   signatures: string[];
+  /** Where a real-repo case was captured from — absent on synthetic cases. */
+  provenance?: CaseProvenance;
 }
 
 /** The three structural criteria an extract-duplicate proposal must clear. */
