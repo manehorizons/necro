@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
 import type { RefactorClient } from "../src/refactor/client.js";
 import { buildCasePrompt, evaluateProposal, loadEvalCases, proposalPasses, runRefactorEval } from "../src/refactor/eval.js";
-import type { RefactorProposal } from "../src/refactor/prompt.js";
+import { type RefactorProposal, SYSTEM_PROMPT } from "../src/refactor/prompt.js";
 
 /**
  * Deterministic CI guard for the real-repo refactor corpus — runs with NO API
@@ -50,6 +50,17 @@ describe("real-repo refactor corpus integrity (AC-2)", () => {
       const p = buildCasePrompt(c);
       expect(p.user).toContain(`God function: ${c.name}`);
       expect(p.user).toContain(c.signature);
+    }
+  });
+
+  test("the real-repo eval drives the unchanged production refactor system prompt (AC-4)", async () => {
+    // No-regression invariant: this phase adds a measure, it does not fork or tune the
+    // refactor prompt. Every real-repo case is scored through the same frozen SYSTEM_PROMPT
+    // `necro refactor` ships — not a copy.
+    const cases = await loadEvalCases(corpusPath);
+    expect(cases.length).toBeGreaterThan(0);
+    for (const c of cases) {
+      expect(buildCasePrompt(c).system).toBe(SYSTEM_PROMPT);
     }
   });
 });
