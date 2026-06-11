@@ -3,37 +3,51 @@
 **Date:** 2026-06-11
 **Recommendation:** rec-20260610-008 — "False-positive reduction: Next.js/NestJS
 plugins + monorepo workspace edges"
-**Status:** design approved; NestJS dropped during BUILD on empirical evidence
-(see "Build-time finding" below). Active scope: Next.js + workspaces.
+**Status:** design approved; scope narrowed twice during BUILD on empirical
+evidence (NestJS dropped, monorepo split to phase 24 — see "Build-time
+findings"). **Active scope: the Next.js plugin.**
 
 ## Problem
 
 necro's dead-code axis flags symbols as dead when static reachability can't see
-why they're alive. On real-world repos two structural blind spots dominate the
-false-positive (false-"dead") rate:
+why they're alive. The Next.js blind spot: file-routing entrypoints
+(`app/**/page.tsx`, `pages/**`, `middleware.ts`, …) are alive by framework
+convention but have no static importer, so the framework's own surface reads as
+dead. It is deterministic to detect (no model in the loop), so the validation
+corpus runs under `npm test` with no API key and no cost.
 
-1. **Next.js** — file-routing entrypoints (`app/**/page.tsx`, `pages/**`,
-   `middleware.ts`, …) are alive by framework convention but have no static
-   importer, so the framework's own surface reads as dead.
-2. **Monorepos** — `resolveProdEntries` reads only the *root* `package.json`.
-   Each workspace member's own `main`/`module`/`exports`/`bin` is invisible, so
-   sub-package public APIs read as dead.
+## Build-time findings
 
-Both are deterministic to detect (no model in the loop), so the whole
-validation corpus runs under `npm test` with no API key and no cost.
+### NestJS dropped (zero FP)
 
-## Build-time finding: NestJS dropped
+The original recommendation named a NestJS plugin. Empirical scans of a minimal
+NestJS app during BUILD showed **zero false positives**: necro node-ifies only
+top-level declarations (classes, functions, …), **not class methods**, and
+NestJS DI *requires* every provider/controller to be statically imported into a
+`@Module`, which keeps the class alive. The route-handler methods that "look
+dead" are never graph nodes. A NestJS plugin would detect the framework and then
+do nothing, so it was cut. Evidence: a minimal
+`main → AppModule → UsersModule → controller/service` slice scanned to 0
+findings, while the Next.js slice produced 4 false-dead.
 
-The original recommendation named a NestJS plugin as a third unit. Empirical
-scans of a minimal NestJS app during BUILD showed **zero false positives**:
-necro node-ifies only top-level declarations (classes, functions, …), **not
-class methods**, and NestJS DI *requires* every provider/controller to be
-statically imported into a `@Module`, which keeps the class alive. The
-route-handler methods that "look dead" are never graph nodes. A NestJS plugin
-would detect the framework and then do nothing, so it was cut. Evidence: a
-minimal `main → AppModule → UsersModule → controller/service` slice scanned to 0
-findings, while the Next.js slice produced 4 false-dead and the workspace slice
-3.
+### Monorepo split to its own phase (phase 24)
+
+The recommendation also named monorepo workspace edges. BUILD scans showed the
+*valuable* monorepo FP is the **cross-package alias** case, not member rooting.
+On a slice where `@ws/app` imports `@ws/core` and uses one of its symbols:
+
+- `appMain` (executed in the member's own entry) — FP, fixable by rooting member
+  entry **files**.
+- `usedCrossPackage` (consumed by app via the `@ws/core` alias) — FP, fixable
+  **only** by resolving the workspace alias to the member entry and adding a
+  cross-package edge.
+- `trulyUnused` (genuinely unused) — correctly dead; a fix **must not** suppress
+  it.
+
+So member-entry rooting alone fixes only the minor case; the real fix is
+alias-edge resolution while preserving true positives. That is a substantial,
+self-contained unit and was split to **phase 24** with its own corpus, rather
+than shipped half-done here.
 
 ## Architecture
 
@@ -46,8 +60,8 @@ The bones already exist and are reused, not rebuilt:
 - `RepoContext` (`hasDep` / `hasConfig` / `packageJsonHas`) for zero-config
   auto-detection.
 
-Two new plugins register into `PLUGINS`; one engine extension widens prod-entry
-resolution to workspace members.
+One new plugin registers into `PLUGINS`; one engine change makes `prod`-kind
+plugin entries root the exported symbols of the matched files.
 
 ## Unit 1 — Next.js plugin (`src/plugins/nextjs/`)
 
@@ -58,67 +72,58 @@ resolution to workspace members.
   - Root specials: `middleware.{ts,js}`, `instrumentation.{ts,js}`
   - The `src/`-prefixed variants of the above (Next.js supports a `src/` dir).
 - **resolveEdges / taintRules:** none — file routing is pure entrypoints.
-- **Engine change required:** today `engine/index.ts` collapses *all* plugin
-  entry globs into **test** entries (it ignores `EntrySpec.kind`). Next.js
-  entries are `prod`-kind and must seed **prod**-color reachability, so the
-  engine must split entry globs by `kind`: `test` → `testEntries` (unchanged),
-  `prod` → `prodEntries` (new). This is the one shared engine edit T2 carries.
-- **Risk:** low–medium. The glob set is pure convention; the only subtlety is the
-  entry-kind split in the engine, covered by the corpus slice.
-
-## Unit 2 — Monorepo workspace edges (`src/engine/prod-entries.ts`)
-
-- Detect workspace layout: `workspaces` field (npm/yarn) in root `package.json`,
-  and `pnpm-workspace.yaml` (pnpm). Enumerate member directories from their
-  globs.
-- **Root each member independently:** resolve every member's own
-  `package.json` `main` / `module` / `exports` / `bin` as prod entries (the same
-  logic `manifestEntries` already applies to the root, applied per member).
-  This alone removes the bulk of monorepo FPs — each package's public API
-  becomes a reachability root.
-- **Out of scope (v1):** cross-package alias (`@scope/pkg`) import →
-  member-entry **edge** resolution. Rooting members is sufficient for the FP
-  reduction; alias-edge resolution is a stretch/fast-follow.
-- **Risk:** medium. Touches a global code path (`resolveProdEntries`); must not
-  regress single-package repos (the root case stays exactly as today when no
-  workspaces are declared).
+- **resolveEdges / taintRules:** none — file routing is pure entrypoints.
+- **Engine change required — entry-kind split + export-rooting:** today
+  `engine/index.ts` collapses *all* plugin entry globs into **test** entries (it
+  ignores `EntrySpec.kind`). Two corrections:
+  1. Split entry globs by `kind`: `test` → `testEntries` (unchanged), `prod` →
+     a new prod path.
+  2. A file being a prod entry does **not** auto-root the symbols *declared* in
+     it — a file-path seed only roots symbols *referenced at module top-level*
+     (verified: a conventional `src/index.ts` entry's own unused exports are
+     still flagged). Framework entry files export components/handlers the
+     framework invokes, so the engine must add **the exported symbol ids
+     declared in matched prod-entry files** to `prodEntries`, not just the file
+     path. Genuinely-dead non-entry symbols are untouched.
+- **Risk:** low–medium. The glob set is pure convention; the subtlety is the
+  export-rooting primitive, covered by the corpus slice + a regression test.
 
 ## Validation — `test/fixtures/fp-realrepo/`
 
-- **Form:** extracted **minimal slices**. Per case, a small provenance-stamped
-  file tree (framework entrypoint + the falsely-dead file(s) + just enough
-  structure to reproduce the FP), pulled from a real repo and recorded in
-  `SOURCES.md` with `repo` + commit `sha` + path (mirrors the
-  `triage-realrepo` corpus discipline).
-- **Coverage:** at least one slice per unit (Next.js App Router page + route +
-  middleware, pnpm/yarn workspace member) — ideally a couple per unit spanning
-  the router variants.
-- **TDD per slice:** scan the slice and assert the specific symbols are reported
-  **dead before** the plugin (red), then **zero false-dead after** (green).
+- **Form:** SHA-pinned minimal slice. Real App-Router entry files vendored from
+  `vercel/next.js` (`app/page.tsx`, `app/layout.tsx`, `app/api/.../route.ts`)
+  plus a trivial scaffold (`package.json` with a `next` dep), recorded in
+  `SOURCES.md` with `repo` + commit `sha` + path (mirrors the `triage-realrepo`
+  corpus discipline). The slice reproduces 4 false-dead symbols (`Home`,
+  `RootLayout`, `metadata`, `GET`).
+- **Pattern coverage:** middleware / instrumentation / Pages-Router globs that
+  aren't in the corpus slice are covered by a plugin unit test over
+  `entryPatterns`.
+- **TDD:** scan the slice and assert the 4 symbols are **dead before** the
+  plugin (red), then **zero false-dead after** (green).
 - **Determinism:** dead-code reachability runs no model → the corpus is a
   normal `npm test` gate, hermetic and free.
 
 ### Acceptance bar
 
-- Zero false-dead on the `fp-realrepo` corpus.
+- Zero false-dead on the Next.js corpus slice; genuinely-dead non-entry symbols
+  still reported.
 - **No regression:** existing corpora hold their floors (triage precision, dup
   pass-rate) and the full suite stays green (currently 325 passing).
-- Single-package (non-workspace, non-framework) repos behave exactly as before.
+- Non-Next.js repos behave exactly as before; the test-runner plugin's entries
+  stay `test`-kind.
 
 ## Boundaries (YAGNI)
 
 - No competitor head-to-head accuracy table (that is the rec-006 fast-follow).
-- No NestJS plugin (dropped — see "Build-time finding"; zero FP at necro's
-  granularity).
+- No NestJS plugin (dropped — zero FP at necro's granularity).
+- No monorepo workspace support or cross-package alias edges (phase 24).
 - No Remix / SvelteKit / Angular plugins.
-- No cross-package dead-code *detection* refinement beyond rooting members.
 - No `FrameworkPlugin` interface extension.
 - Public Accuracy-page FP-rate line: optional, only if cheap; not a goal.
 
 ## Open risks carried into the build
 
-- The engine entry-kind split (test vs prod) must not change behavior for the
-  existing test-runner plugin (its entries stay `test`-kind).
-- Workspace enumeration must be defensive against malformed/missing member
-  manifests (reuse the existing `try/catch → []` discipline in
-  `manifestEntries`).
+- The engine entry-kind split + export-rooting must not change behavior for the
+  existing test-runner plugin (entries stay `test`-kind) or for non-Next.js
+  repos (no `prod`-kind plugin entries → no new roots).
