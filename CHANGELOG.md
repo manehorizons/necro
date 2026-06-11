@@ -4,6 +4,16 @@ All notable changes to `@manehorizons/necro` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-06-11
+
+### Added
+- **CI/PR citizen.** `scan --sarif <file>` emits a schema-valid SARIF 2.1.0
+  report for GitHub code-scanning.
+- `scan --fail-on <high|medium|low>` gates the exit code on a unified severity
+  scale (high = certain-dead; medium = likely-dead + complexity; low = the rest).
+- A composite GitHub Action (`manehorizons/necro/.github/actions/necro`) that
+  runs necro and uploads SARIF to code-scanning.
+
 ## [1.0.1] — 2026-06-11
 
 ### Changed
