@@ -15,3 +15,6 @@ dumpfile
 # Local CADENCE session artifacts (handoff archive + intelligence context)
 .cadence/handoff/
 .cadence/intelligence/
+
+# Local pre-launch planning docs — kept local, not part of the shipped repo
+docs/launch/
