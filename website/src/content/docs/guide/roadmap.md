@@ -24,7 +24,8 @@ yet.
 - [LLM triage](/necro/reference/cli/#necro-triage): `necro triage` resolves the quarantined `maybe` findings (opt-in, Anthropic API).
 - [LLM refactors](/necro/reference/cli/#necro-refactor): `necro refactor` proposes god-function splits and extract-duplicate, each verified (typecheck + tests) in a scratch git worktree.
 - [MCP server](/necro/reference/cli/#necro-mcp): `necro mcp` exposes read-only `necro_scan` + `necro_verify` tools so AI agents can call necro's verdicts and verify edits in isolation.
-- Output modes: default terminal, `--json`, `--top N`.
+- Output modes: default terminal, `--json`, `--top N`, and [SARIF 2.1.0](/necro/guide/ci-integration/#sarif-output) (`--sarif <file>`) for GitHub code-scanning.
+- [CI gating](/necro/guide/ci-integration/#gating-a-build): `--fail-on <high|medium|low>` exit gating plus a composite [GitHub Action](/necro/guide/ci-integration/#github-action).
 
 ## Planned
 
@@ -36,7 +37,6 @@ None of the following is implemented yet.
 | Detectors | Cross-language & fuzzy (Type-3) clones; god-function responsibility-clustering |
 | Scoring | Per-line & recency-weighted churn, ownership weighting |
 | Fixes | `test-only` auto-apply (report-only today); cascading re-analysis after a fix |
-| Output | SARIF (GitHub code scanning), `--fail-on <tier>` exit gating |
 | Frameworks | Next.js, NestJS (DI decorators), template-based plugins |
 | Languages | Python (the polyglot bet — detectors reused, new symbol-graph adapter) |
 | Scale | Monorepo workspace-edge resolution |

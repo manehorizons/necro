@@ -66,27 +66,55 @@ This prints an object with four axes — `findings` (dead code), `complexity`
 
 ## Gating a build
 
-:::caution[Exit code today]
-A successful scan currently exits `0` regardless of findings (a non-zero exit
-is only returned on an internal error). A `--fail-on <tier>` flag is
-[planned](/necro/guide/roadmap/). Until then, gate the build by parsing the
-JSON yourself.
-:::
+`--fail-on <severity>` exits non-zero when a finding at or above the threshold
+exists, on one unified `high > medium > low` scale:
 
-Example — fail when any `certain`-dead code is found:
+| Severity | SARIF level | Findings |
+|---|---|---|
+| `high` | `error` | dead-code `certain` |
+| `medium` | `warning` | dead-code `likely`; complexity (all detectors) |
+| `low` | `note` | dead-code `maybe`, `test-only`; duplication; hotspots |
 
 ```bash
-count=$(necro scan src/ --json | node -e \
-  'const o=JSON.parse(require("fs").readFileSync(0));process.stdout.write(String(o.findings.filter(x=>x.tier==="certain").length))')
-if [ "$count" -gt 0 ]; then
-  echo "::error::$count certain-dead symbols found"
-  exit 1
-fi
+# fail the build only on certain-dead code
+necro scan src/ --fail-on high
 ```
 
-Use `--top N` to cap output when you only care about the worst offenders.
+`--fail-on high` gates on certain-dead only; `medium` adds likely-dead and
+complexity; `low` fails on anything. It composes with `--json`, `--sarif`, and
+the human report.
 
-## What's planned
+## SARIF output
 
-[SARIF output](/necro/guide/roadmap/) (for GitHub code scanning), a dedicated
-`--fail-on` flag, and a ready-made GitHub Action are on the roadmap.
+`--sarif <file>` writes a schema-valid **SARIF 2.1.0** report that GitHub
+code-scanning accepts, so findings show up inline on the PR:
+
+```bash
+necro scan src/ --sarif necro.sarif
+```
+
+## GitHub Action
+
+A composite Action wraps scan + SARIF upload. Point it at your source and pick a
+gate:
+
+```yaml
+permissions:
+  contents: read
+  security-events: write # required to upload SARIF
+
+jobs:
+  necro:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: manehorizons/necro/.github/actions/necro@v1
+        with:
+          path: src
+          fail-on: high # high | medium | low; empty to surface-only
+```
+
+Inputs: `path` (default `.`), `fail-on` (default `high`; empty to never fail),
+`sarif-file` (default `necro.sarif`), `version` (default `latest`), `upload`
+(default `true`). Use `--top N` to cap output when you only care about the worst
+offenders.

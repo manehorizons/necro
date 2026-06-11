@@ -1,0 +1,31 @@
+name: necro scan
+
+# Dogfoods the composite necro Action: runs necro, uploads SARIF to
+# code-scanning. The Action pulls the *published* CLI (npx @manehorizons/necro),
+# so this only works once a release carrying --sarif/--fail-on (>= 1.1.0) is on
+# npm. Triggered on PRs and manually (not push) to avoid firing against an older
+# published CLI; validate with `workflow_dispatch` after the 1.1.0 release.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write # required for upload-sarif
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # fail-on is intentionally empty here: necro's own entry points resolve to
+      # dist/ (files:["dist"]), so a src/ self-scan is non-discriminating and
+      # must not gate necro's own PRs. This run proves the Action runs and the
+      # SARIF uploads; downstream consumers get `fail-on: high` by default.
+      - name: necro
+        uses: ./.github/actions/necro
+        with:
+          path: src
+          fail-on: ""

@@ -53,6 +53,6 @@ The dead-code vertical slice (discovery, symbol graph, plugin/entry resolution,
 two-color reachability with taint, tier classification, evidence chains,
 terminal/JSON output), plus the tree-sitter syntactic detectors (complexity,
 duplication), CRAP × churn hotspot scoring, safe dead-code removal (`fix`), the
-LLM `triage`/`refactor` layer, and a read-only `mcp` server. Still
-[planned](/necro/guide/roadmap/): SARIF output, more framework plugins, and
+LLM `triage`/`refactor` layer, a read-only `mcp` server, and SARIF + `--fail-on`
+CI gating. Still [planned](/necro/guide/roadmap/): more framework plugins, and
 Python (a second symbol-graph adapter).

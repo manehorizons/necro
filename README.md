@@ -10,8 +10,8 @@ to guess where pure-static tools can't.
 > `test-only` verdict), complexity, risk hotspots, and duplication — plus safe
 > dead-code removal (`fix`), LLM triage of ambiguous findings (`triage`),
 > LLM-assisted refactors (`refactor`), and a read-only [MCP server](#use-from-an-ai-agent-mcp)
-> for AI agents (`mcp`). SARIF output, `--fail-on` gating, more framework
-> plugins, and Python are on the [roadmap](#roadmap).
+> for AI agents (`mcp`), **SARIF output + `--fail-on` gating + a GitHub Action**
+> for CI. More framework plugins and Python are on the [roadmap](#roadmap).
 
 ## Why Necro
 
@@ -127,15 +127,18 @@ prints proposals — it never edits your files — and each is verified
 ### Output modes
 
 ```bash
-necro scan src/ --json      # machine-readable JSON (for CI)
-necro scan src/ --top 10    # only the 10 worst findings
-node dist/cli.js --version
-node dist/cli.js scan --help
+necro scan src/ --json              # machine-readable JSON (for CI)
+necro scan src/ --sarif necro.sarif # SARIF 2.1.0 for GitHub code-scanning
+necro scan src/ --fail-on high      # exit non-zero on certain-dead code
+necro scan src/ --top 10            # only the 10 worst findings
+necro --version
 ```
 
 A successful scan exits `0` regardless of findings (non-zero only on internal
-error); a `--fail-on <tier>` flag is [planned](#roadmap). Gate CI by parsing
-`--json` output.
+error) **unless** `--fail-on <high|medium|low>` is set — then it exits `1` when a
+finding at or above that severity exists. See
+[CI integration](https://github.com/manehorizons/necro) for the SARIF + GitHub
+Action setup.
 
 ## Use from an AI agent (MCP)
 
@@ -305,7 +308,6 @@ tests and clear acceptance criteria match how the codebase is built.
 | Detectors | Cross-language & fuzzy (Type-3) clones; god-function responsibility clustering |
 | Scoring | Per-line & recency-weighted churn, ownership weighting |
 | Fixes | `test-only` auto-apply; cascading re-analysis after a fix |
-| Output | SARIF (GitHub code scanning), `--fail-on <tier>` gating |
 | Frameworks | Next.js, NestJS (DI), template-based plugins |
 | Languages | Python (detectors reused, new symbol-graph adapter) |
 | Scale | Monorepo workspace-edge resolution |

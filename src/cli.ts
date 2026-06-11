@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { Command } from "commander";
 import { loadConfig } from "./config.js";
@@ -8,12 +9,18 @@ import { renderComplexity } from "./report/complexity.js";
 import { renderDuplication } from "./report/duplication.js";
 import { renderHotspots } from "./report/hotspots.js";
 import { toJson } from "./report/json.js";
+import { toSarif } from "./report/sarif.js";
+import { gate, isSeverity, SEVERITIES } from "./report/severity.js";
 import { renderTerminal } from "./report/terminal.js";
 
 interface ScanOptions {
   json?: boolean;
   top?: string;
   coverage?: string;
+  /** Write a SARIF 2.1.0 report to this path (for CI / code-scanning). */
+  sarif?: string;
+  /** Exit non-zero if a finding at/above this severity exists (high|medium|low). */
+  failOn?: string;
 }
 
 interface FixOptions {
@@ -52,12 +59,23 @@ program
   .option("--json", "emit findings as JSON")
   .option("--top <n>", "show only the worst N findings")
   .option("--coverage <path>", "path to an lcov report (default: coverage/lcov.info)")
+  .option("--sarif <file>", "write a SARIF 2.1.0 report to <file> (for CI / code-scanning)")
+  .option("--fail-on <severity>", "exit non-zero if a finding at/above high|medium|low exists")
   .action(async (path: string, opts: ScanOptions) => {
+    const failOn = opts.failOn;
+    if (failOn !== undefined && !isSeverity(failOn)) {
+      console.error(`--fail-on must be one of: ${SEVERITIES.join(", ")}`);
+      process.exitCode = 1;
+      return;
+    }
+
     const target = resolve(process.cwd(), path);
     const config = await loadConfig(process.cwd());
     if (opts.coverage) config.coveragePath = opts.coverage;
     const { findings, complexity, hotspots, duplication } = await scan(target, config);
 
+    // SARIF and --fail-on consider the full result set, never the --top view.
+    const full = { findings, complexity, hotspots, duplication };
     const top = opts.top ? Number.parseInt(opts.top, 10) : undefined;
     const shown = top && top > 0 ? findings.slice(0, top) : findings;
 
@@ -71,6 +89,15 @@ program
         renderDuplication(duplication),
       ].filter(Boolean);
       console.log(sections.join("\n\n"));
+    }
+
+    if (opts.sarif) {
+      const sarif = toSarif(full, { srcRoot: process.cwd() });
+      await writeFile(resolve(process.cwd(), opts.sarif), `${JSON.stringify(sarif, null, 2)}\n`);
+    }
+
+    if (failOn !== undefined && gate(full, failOn)) {
+      process.exitCode = 1;
     }
   });
 

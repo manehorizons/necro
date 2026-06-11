@@ -38,6 +38,8 @@ necro scan [path] [options]
 | Option | Description |
 |---|---|
 | `--json` | Emit findings as JSON instead of the terminal report. |
+| `--sarif <file>` | Write a SARIF 2.1.0 report to `<file>` for GitHub code-scanning / CI tooling. |
+| `--fail-on <severity>` | Exit non-zero if a finding at or above `high` \| `medium` \| `low` exists (see [severity mapping](#fail-on-severity)). |
 | `--top <n>` | Show only the worst `N` findings (after worst-first sort). |
 | `--coverage <path>` | Path to an lcov report. Defaults to `coverage/lcov.info`; overrides the `coveragePath` config key. |
 | `-h`, `--help` | Show help for `scan`. |
@@ -77,9 +79,23 @@ dead-code findings; the other sections follow their own limits.
 
 ### Exit code
 
-`scan` exits `0` on a successful run regardless of findings; a non-zero exit is
-returned only on an internal error. A `--fail-on <tier>` flag for gating builds
-is [planned](/necro/guide/roadmap/).
+`scan` exits `0` on a successful run regardless of findings, unless `--fail-on`
+is set. A non-zero exit is also returned on an internal error.
+
+### Fail-on severity
+
+`--fail-on <severity>` exits `1` if any finding is at or above the threshold,
+using one unified scale across all four axes:
+
+| Severity | SARIF level | Findings |
+|---|---|---|
+| `high` | `error` | dead-code `certain` |
+| `medium` | `warning` | dead-code `likely`; complexity (all detectors) |
+| `low` | `note` | dead-code `maybe`, `test-only`; duplication; hotspots |
+
+`--fail-on high` fails only on certain-dead code; `--fail-on medium` adds
+likely-dead and complexity; `--fail-on low` fails on anything. `--fail-on` and
+`--sarif` compose with `--json` and the human report.
 
 ## `necro fix`
 
