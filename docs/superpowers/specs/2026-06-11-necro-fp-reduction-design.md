@@ -3,26 +3,37 @@
 **Date:** 2026-06-11
 **Recommendation:** rec-20260610-008 — "False-positive reduction: Next.js/NestJS
 plugins + monorepo workspace edges"
-**Status:** design approved (brainstorm) — pending CADENCE DRAFT
+**Status:** design approved; NestJS dropped during BUILD on empirical evidence
+(see "Build-time finding" below). Active scope: Next.js + workspaces.
 
 ## Problem
 
 necro's dead-code axis flags symbols as dead when static reachability can't see
-why they're alive. On real-world repos three structural blind spots dominate the
+why they're alive. On real-world repos two structural blind spots dominate the
 false-positive (false-"dead") rate:
 
 1. **Next.js** — file-routing entrypoints (`app/**/page.tsx`, `pages/**`,
    `middleware.ts`, …) are alive by framework convention but have no static
    importer, so the framework's own surface reads as dead.
-2. **NestJS** — controller route-handler methods (`@Get`/`@Post`/…) and
-   lifecycle hooks (`onModuleInit`, …) are invoked by the framework, never by
-   user code, so they read as uncalled → dead.
-3. **Monorepos** — `resolveProdEntries` reads only the *root* `package.json`.
+2. **Monorepos** — `resolveProdEntries` reads only the *root* `package.json`.
    Each workspace member's own `main`/`module`/`exports`/`bin` is invisible, so
    sub-package public APIs read as dead.
 
-All three are deterministic to detect (no model in the loop), so the whole
+Both are deterministic to detect (no model in the loop), so the whole
 validation corpus runs under `npm test` with no API key and no cost.
+
+## Build-time finding: NestJS dropped
+
+The original recommendation named a NestJS plugin as a third unit. Empirical
+scans of a minimal NestJS app during BUILD showed **zero false positives**:
+necro node-ifies only top-level declarations (classes, functions, …), **not
+class methods**, and NestJS DI *requires* every provider/controller to be
+statically imported into a `@Module`, which keeps the class alive. The
+route-handler methods that "look dead" are never graph nodes. A NestJS plugin
+would detect the framework and then do nothing, so it was cut. Evidence: a
+minimal `main → AppModule → UsersModule → controller/service` slice scanned to 0
+findings, while the Next.js slice produced 4 false-dead and the workspace slice
+3.
 
 ## Architecture
 
@@ -47,27 +58,15 @@ resolution to workspace members.
   - Root specials: `middleware.{ts,js}`, `instrumentation.{ts,js}`
   - The `src/`-prefixed variants of the above (Next.js supports a `src/` dir).
 - **resolveEdges / taintRules:** none — file routing is pure entrypoints.
-- **Risk:** lowest. Pure glob entrypoints, no interface stress.
+- **Engine change required:** today `engine/index.ts` collapses *all* plugin
+  entry globs into **test** entries (it ignores `EntrySpec.kind`). Next.js
+  entries are `prod`-kind and must seed **prod**-color reachability, so the
+  engine must split entry globs by `kind`: `test` → `testEntries` (unchanged),
+  `prod` → `prodEntries` (new). This is the one shared engine edit T2 carries.
+- **Risk:** low–medium. The glob set is pure convention; the only subtlety is the
+  entry-kind split in the engine, covered by the corpus slice.
 
-## Unit 2 — NestJS plugin (`src/plugins/nestjs/`)
-
-- **detect:** `hasDep(["@nestjs/core"])`
-- The FP source is **method-level**, not class-level: provider/controller
-  classes are statically imported into their `@Module` (already reachable), but
-  their decorator-invoked **route handlers** and **lifecycle hooks** have no
-  in-code caller.
-- The current glob-based `entryPatterns` cannot express a method-level signal.
-  **Decision (v1):** model these as a `taintRule` that **downgrades** symbols in
-  decorator-marked handler regions to `maybe` rather than killing them. This
-  stays inside the existing interface and is conservative — it never asserts a
-  symbol is definitively alive, only that necro should not call it dead.
-- **Deferred alternative:** a symbol-predicate entry that marks decorated
-  handlers definitively alive would require extending the `FrameworkPlugin`
-  interface. Noted as a possible fast-follow, not done here.
-- **Risk:** highest unit. The taint-region matching against decorated methods is
-  the part most likely to need iteration.
-
-## Unit 3 — Monorepo workspace edges (`src/engine/prod-entries.ts`)
+## Unit 2 — Monorepo workspace edges (`src/engine/prod-entries.ts`)
 
 - Detect workspace layout: `workspaces` field (npm/yarn) in root `package.json`,
   and `pnpm-workspace.yaml` (pnpm). Enumerate member directories from their
@@ -91,9 +90,9 @@ resolution to workspace members.
   structure to reproduce the FP), pulled from a real repo and recorded in
   `SOURCES.md` with `repo` + commit `sha` + path (mirrors the
   `triage-realrepo` corpus discipline).
-- **Coverage:** at least one slice per unit (Next.js App Router page, NestJS
-  controller handler, pnpm/yarn workspace member) — ideally a couple per unit
-  spanning the router variants.
+- **Coverage:** at least one slice per unit (Next.js App Router page + route +
+  middleware, pnpm/yarn workspace member) — ideally a couple per unit spanning
+  the router variants.
 - **TDD per slice:** scan the slice and assert the specific symbols are reported
   **dead before** the plugin (red), then **zero false-dead after** (green).
 - **Determinism:** dead-code reachability runs no model → the corpus is a
@@ -109,16 +108,17 @@ resolution to workspace members.
 ## Boundaries (YAGNI)
 
 - No competitor head-to-head accuracy table (that is the rec-006 fast-follow).
+- No NestJS plugin (dropped — see "Build-time finding"; zero FP at necro's
+  granularity).
 - No Remix / SvelteKit / Angular plugins.
 - No cross-package dead-code *detection* refinement beyond rooting members.
-- No `FrameworkPlugin` interface extension (NestJS uses taint within the
-  existing contract).
+- No `FrameworkPlugin` interface extension.
 - Public Accuracy-page FP-rate line: optional, only if cheap; not a goal.
 
 ## Open risks carried into the build
 
-- NestJS taint-region matching may need iteration to catch the decorator forms
-  without over-tainting; the corpus slice is the guardrail.
+- The engine entry-kind split (test vs prod) must not change behavior for the
+  existing test-runner plugin (its entries stay `test`-kind).
 - Workspace enumeration must be defensive against malformed/missing member
   manifests (reuse the existing `try/catch → []` discipline in
   `manifestEntries`).
