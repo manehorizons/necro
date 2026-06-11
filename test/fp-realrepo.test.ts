@@ -10,6 +10,7 @@ import { createNextjsPlugin } from "../src/plugins/nextjs/index.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const NEXTJS_SLICE = join(here, "fixtures/fp-realrepo/nextjs-app");
+const MONOREPO_SLICE = join(here, "fixtures/fp-realrepo/monorepo-basic");
 
 describe("fp-realrepo: Next.js false-positive corpus", () => {
   test("AC-1: Next.js App-Router entry exports are not flagged dead", async () => {
@@ -86,6 +87,23 @@ describe("nextjs plugin", () => {
   });
 });
 
+describe("fp-realrepo: monorepo workspace false-positive corpus", () => {
+  test("AC-1: cross-package-consumed symbol is alive; unused member export stays dead", async () => {
+    const result = await scan(MONOREPO_SLICE, DEFAULT_CONFIG, { complexity: false });
+    const names = result.findings.map((f) => f.node.name);
+    // usedCrossPackage is consumed by @mono/app via the alias → alive.
+    expect(names).not.toContain("usedCrossPackage");
+    // trulyUnused is referenced by nobody → genuine dead code, still reported.
+    expect(names).toContain("trulyUnused");
+  });
+
+  test("AC-2: an executed member entry symbol is alive", async () => {
+    const result = await scan(MONOREPO_SLICE, DEFAULT_CONFIG, { complexity: false });
+    const names = result.findings.map((f) => f.node.name);
+    expect(names).not.toContain("appMain");
+  });
+});
+
 describe("fp-realrepo: no regression for non-Next.js repos", () => {
   let dir: string;
   beforeEach(async () => {
@@ -111,5 +129,23 @@ describe("fp-realrepo: no regression for non-Next.js repos", () => {
     const names = result.findings.map((f) => f.node.name);
     expect(names).toContain("unused");
     expect(names).toContain("used");
+  });
+
+  test("AC-3: a non-workspace repo is unaffected by workspace resolution", async () => {
+    // No `workspaces` field and no pnpm-workspace.yaml → resolveWorkspaces is a
+    // no-op, so cross-package aliasing and member rooting never activate.
+    await writeFile(
+      join(dir, "package.json"),
+      JSON.stringify({ name: "plain", main: "src/index.ts" }),
+    );
+    await mkdir(join(dir, "src"), { recursive: true });
+    await writeFile(
+      join(dir, "src", "index.ts"),
+      'import { dead } from "@scope/absent";\nexport function deadExport() { return dead; }\n',
+    );
+    const result = await scan(dir, DEFAULT_CONFIG, { complexity: false });
+    // The unresolved alias import does not resolve anywhere; deadExport is still
+    // reported (no workspace map to spuriously root it).
+    expect(result.findings.map((f) => f.node.name)).toContain("deadExport");
   });
 });

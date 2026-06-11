@@ -45,3 +45,25 @@ dead. Baseline scan (before the Next.js plugin) reports **6** false-dead:
 With the Next.js plugin registered, the matched entry files' exported symbols
 become prod roots, and all 6 clear to **zero** false-dead — while genuinely-dead
 non-entry symbols elsewhere are still reported.
+
+## `monorepo-basic/` — workspace cross-package (phase 24)
+
+A **synthesized structural fixture** (not vendored from a real repo). The
+monorepo false positive is structural — it's about the workspace *layout* and
+package aliasing, not about any real-world code — and a genuine cross-package
+slice from a real monorepo (e.g. trpc) cannot be kept minimal, self-contained,
+and deterministic: a single consumed symbol drags in many transitive imports.
+So this case is hand-built to reproduce the exact structure:
+
+- `@mono/core` exports `usedCrossPackage` (consumed by `@mono/app` via the
+  `@mono/core` alias) and `trulyUnused` (referenced by nobody).
+- `@mono/app` imports `usedCrossPackage` and executes `appMain()` at module top
+  level in its own entry.
+
+Baseline (before phase 24) flags **3** false-dead: `appMain`, `usedCrossPackage`,
+`trulyUnused`. After: only `trulyUnused` remains — `appMain` is alive (member
+entry rooting), `usedCrossPackage` is alive (the workspace alias resolves so the
+cross-package reference connects), and genuine dead code is preserved.
+
+> The `pnpm-workspace.yaml` and `workspaces.packages` object parsing variants are
+> covered by `test/workspaces.test.ts` rather than additional scan fixtures.
