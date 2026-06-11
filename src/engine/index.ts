@@ -11,6 +11,7 @@ import { buildSymbolGraph } from "../graph/symbol-graph.js";
 import type { SymbolEdge, SymbolNode } from "../graph/types.js";
 import { resolveEntries } from "../plugins/entry-resolver.js";
 import { createRepoContext, detectPlugins } from "../plugins/registry.js";
+import { createNextjsPlugin } from "../plugins/nextjs/index.js";
 import { createTestRunnerPlugin } from "../plugins/test-runner/index.js";
 import type { FrameworkPlugin } from "../plugins/types.js";
 import { sortWorstFirst } from "../report/sort.js";
@@ -38,7 +39,7 @@ export interface ScanOptions {
   complexity?: boolean;
 }
 
-const PLUGINS: FrameworkPlugin[] = [createTestRunnerPlugin()];
+const PLUGINS: FrameworkPlugin[] = [createTestRunnerPlugin(), createNextjsPlugin()];
 
 /**
  * Analyze the project at `targetPath`: discover files, build the symbol graph,
@@ -57,12 +58,19 @@ export async function scan(
   const ctx = await createRepoContext(targetPath);
   const detected = detectPlugins(PLUGINS, ctx);
 
-  // Test entries (globs) → matcher → which scanned files are test roots.
-  const testGlobs = resolveEntries(detected, ctx).map((e) => e.glob);
-  const matchesTestGlob = globMatcher(testGlobs);
+  // Plugin entries are split by kind: `test` globs seed test roots; `prod` globs
+  // (e.g. Next.js file-routing) seed prod roots.
+  const entrySpecs = resolveEntries(detected, ctx);
   const relToRoot = (abs: string) => relative(targetPath, abs);
+
+  const testGlobs = entrySpecs.filter((e) => e.kind === "test").map((e) => e.glob);
+  const matchesTestGlob = globMatcher(testGlobs);
   const isTestFile = (abs: string) => matchesTestGlob(relToRoot(abs));
   const testEntries = new Set(files.filter(isTestFile));
+
+  const prodGlobs = entrySpecs.filter((e) => e.kind === "prod").map((e) => e.glob);
+  const matchesProdGlob = globMatcher(prodGlobs);
+  const pluginProdEntryFiles = new Set(files.filter((abs) => matchesProdGlob(relToRoot(abs))));
 
   const graph = buildSymbolGraph(files, { isTestFile });
 
@@ -71,6 +79,14 @@ export async function scan(
   );
 
   const prodEntries = resolveProdEntries(targetPath, files);
+  // A framework entry file is invoked by convention, not imported — so root the
+  // symbols it *exports* (a file-path seed alone only roots module-top-level
+  // references, not the declared-but-unreferenced exports). Genuinely-dead
+  // non-entry symbols are untouched.
+  for (const file of pluginProdEntryFiles) prodEntries.add(file);
+  for (const node of graph.nodes) {
+    if (node.exported && pluginProdEntryFiles.has(node.file)) prodEntries.add(node.id);
+  }
   const sources = await readSources(files);
   const taintedFiles = findTaintedFiles(sources);
 
