@@ -40,9 +40,9 @@ None of the following is implemented yet.
 | Frameworks | Next.js, NestJS (DI decorators), template-based plugins |
 | Languages | Python (the polyglot bet — detectors reused, new symbol-graph adapter) |
 | Scale | Monorepo workspace-edge resolution |
-| Packaging | Published npm package + global `necro` command |
 
 ## Distribution
 
-The npm package (`@necrotool/necro`) and a global `necro` command are planned;
-today Necro is [installed from source](/necro/guide/installation/).
+Necro ships as [`@manehorizons/necro`](https://www.npmjs.com/package/@manehorizons/necro)
+on npm — `npm install -g @manehorizons/necro` or `npx -y @manehorizons/necro`.
+See the [installation guide](/necro/guide/installation/).

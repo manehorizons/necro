@@ -181,7 +181,7 @@ Register it with your agent (Claude Code example):
 ```json
 {
   "mcpServers": {
-    "necro": { "command": "necro", "args": ["mcp"] }
+    "necro": { "command": "npx", "args": ["-y", "@manehorizons/necro", "mcp"] }
   }
 }
 ```

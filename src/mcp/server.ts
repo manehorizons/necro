@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { VERSION } from "../version.js";
 import { registerScanTool } from "./tools/scan.js";
 import { registerVerifyTool, type VerifyToolDeps } from "./tools/verify.js";
 
@@ -12,7 +13,7 @@ export type ServerDeps = VerifyToolDeps;
  * the user's working tree and never wraps an LLM.
  */
 export function createNecroServer(deps: ServerDeps = {}): McpServer {
-  const server = new McpServer({ name: "necro", version: "0.0.0" });
+  const server = new McpServer({ name: "necro", version: VERSION });
   registerScanTool(server);
   registerVerifyTool(server, deps);
   return server;

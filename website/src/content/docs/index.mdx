@@ -48,15 +48,14 @@ combines them with fix reasoning across languages. Necro targets that gap:
 
 ## Try it
 
-The npm package is [planned](/necro/guide/roadmap/); today you install from source:
+Install from [npm](https://www.npmjs.com/package/@manehorizons/necro), or run it with no install at all:
 
 ```bash
-# install (from source)
-git clone https://github.com/manehorizons/necro
-cd necro && npm install && npm run build
+# global install
+npm install -g @manehorizons/necro
 
-# scan your project
-node dist/cli.js scan src/
+# scan your project (or: npx -y @manehorizons/necro scan src/)
+necro scan src/
 ```
 
 You'll get tiered findings, each with an evidence chain — see the

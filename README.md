@@ -4,13 +4,14 @@
 CLI that finds anti-pattern code and proposes LLM-assisted fixes — and refuses
 to guess where pure-static tools can't.
 
-> **Status: active development, pre-1.0.** Necro analyzes **TypeScript** across
+> **Status: v1.0 — published on [npm](https://www.npmjs.com/package/@manehorizons/necro).**
+> Necro analyzes **TypeScript** across
 > multiple axes — dead code (with confidence tiers, evidence chains, and the
 > `test-only` verdict), complexity, risk hotspots, and duplication — plus safe
 > dead-code removal (`fix`), LLM triage of ambiguous findings (`triage`),
 > LLM-assisted refactors (`refactor`), and a read-only [MCP server](#use-from-an-ai-agent-mcp)
 > for AI agents (`mcp`). SARIF output, `--fail-on` gating, more framework
-> plugins, Python, and a published npm package are on the [roadmap](#roadmap).
+> plugins, and Python are on the [roadmap](#roadmap).
 
 ## Why Necro
 
@@ -37,24 +38,31 @@ a binary alive/dead call and eat the false positive when unsure. Necro's edge is
 
 Requires **Node.js ≥ 20**.
 
-The npm package (`@necrotool/necro`) and a global `necro` command are
-[planned](#roadmap); for now, install from source:
+Install globally from npm:
+
+```bash
+npm install -g @manehorizons/necro
+necro scan src/
+```
+
+Or run it with no install (handy for agents and CI):
+
+```bash
+npx -y @manehorizons/necro scan src/
+```
+
+<details>
+<summary>Install from source instead</summary>
 
 ```bash
 git clone https://github.com/manehorizons/necro
 cd necro
 npm install
 npm run build      # bundles the CLI to dist/cli.js
-```
-
-Run it with Node (optionally alias it):
-
-```bash
 node dist/cli.js scan src/
-# or:
-alias necro="node $(pwd)/dist/cli.js"
-necro scan src/
 ```
+
+</details>
 
 ## Quickstart
 
@@ -153,7 +161,7 @@ Register it with your agent (Claude Code example):
 ```json
 {
   "mcpServers": {
-    "necro": { "command": "necro", "args": ["mcp"] }
+    "necro": { "command": "npx", "args": ["-y", "@manehorizons/necro", "mcp"] }
   }
 }
 ```
@@ -301,7 +309,6 @@ tests and clear acceptance criteria match how the codebase is built.
 | Frameworks | Next.js, NestJS (DI), template-based plugins |
 | Languages | Python (detectors reused, new symbol-graph adapter) |
 | Scale | Monorepo workspace-edge resolution |
-| Packaging | Published npm package + global `necro` command |
 
 ## License
 

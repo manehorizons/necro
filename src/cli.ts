@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { Command } from "commander";
 import { loadConfig } from "./config.js";
+import { VERSION } from "./version.js";
 import { scan } from "./engine/index.js";
 import { runFix } from "./fix/index.js";
 import { renderComplexity } from "./report/complexity.js";
@@ -42,7 +43,7 @@ const program = new Command();
 program
   .name("necro")
   .description("Find anti-pattern code and propose LLM-assisted fixes.")
-  .version("0.0.0");
+  .version(VERSION);
 
 program
   .command("scan")

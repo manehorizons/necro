@@ -7,11 +7,23 @@ sidebar:
 
 Necro requires **Node.js ≥ 20**.
 
-:::note[npm package is planned]
-A published package (`@necrotool/necro`) with a global `necro` command is
-[planned](/necro/guide/roadmap/) but not yet available. For now, install from
-source.
-:::
+## From npm (recommended)
+
+Install the global `necro` command:
+
+```bash
+npm install -g @manehorizons/necro
+necro scan src/
+```
+
+Or run it without installing — ideal for agents and CI:
+
+```bash
+npx -y @manehorizons/necro scan src/
+```
+
+The rest of this guide writes commands as `necro …`; substitute
+`npx -y @manehorizons/necro …` if you prefer not to install globally.
 
 ## From source
 
@@ -22,27 +34,13 @@ npm install
 npm run build
 ```
 
-This produces a bundled CLI at `dist/cli.js`. Run it with Node:
-
-```bash
-node dist/cli.js scan src/
-```
-
-For convenience you can alias it:
-
-```bash
-alias necro="node $(pwd)/dist/cli.js"
-necro scan src/
-```
-
-The rest of this guide writes commands as `necro …`; substitute
-`node dist/cli.js …` if you haven't set up the alias.
+This produces a bundled CLI at `dist/cli.js`; run it with `node dist/cli.js scan src/`.
 
 ## Verify
 
 ```bash
-node dist/cli.js --version
-node dist/cli.js scan --help
+necro --version
+necro scan --help
 ```
 
 Next: run your first scan in the [Quickstart](/necro/guide/quickstart/).
