@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { VERSION } from "../version.js";
+import { registerExplainTool } from "./tools/explain.js";
 import { registerScanTool } from "./tools/scan.js";
 import { registerVerifyTool, type VerifyToolDeps } from "./tools/verify.js";
 
@@ -16,6 +17,7 @@ export function createNecroServer(deps: ServerDeps = {}): McpServer {
   const server = new McpServer({ name: "necro", version: VERSION });
   registerScanTool(server);
   registerVerifyTool(server, deps);
+  registerExplainTool(server);
   return server;
 }
 

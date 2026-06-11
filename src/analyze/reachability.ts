@@ -97,6 +97,50 @@ function union<T>(a: Set<T>, b: Set<T>): Set<T> {
   return new Set([...a, ...b]);
 }
 
+/**
+ * Reconstruct the shortest witness chain (`entry → … → target`) by breadth-first
+ * search with parent tracking, following only edges whose kind passes `allow`
+ * (the same predicate `computeReachability` uses, so a trace matches its verdict).
+ * Returns the chain of ids from the reaching seed to `target`, or `null` if no
+ * allowed path exists. A seed that is itself the target yields `[target]`.
+ */
+export function tracePath(
+  edges: SymbolEdge[],
+  entries: Set<string>,
+  target: string,
+  allow: (kind: SymbolEdge["kind"]) => boolean,
+): string[] | null {
+  if (entries.has(target)) return [target];
+
+  const adjacency = new Map<string, string[]>();
+  for (const edge of edges) {
+    if (!allow(edge.kind)) continue;
+    const list = adjacency.get(edge.from);
+    if (list) list.push(edge.to);
+    else adjacency.set(edge.from, [edge.to]);
+  }
+
+  const parent = new Map<string, string>();
+  const visited = new Set<string>(entries);
+  const queue: string[] = [...entries];
+  for (let head = 0; head < queue.length; head++) {
+    const current = queue[head] as string;
+    for (const next of adjacency.get(current) ?? []) {
+      if (visited.has(next)) continue;
+      visited.add(next);
+      parent.set(next, current);
+      if (next === target) {
+        const path = [target];
+        let cur: string | undefined = target;
+        while ((cur = parent.get(cur)) !== undefined) path.unshift(cur);
+        return path;
+      }
+      queue.push(next);
+    }
+  }
+  return null;
+}
+
 const TAINT_PATTERNS: RegExp[] = [
   /import\s*\(\s*`[^`]*\$\{/, // dynamic import with template interpolation
   /import\s*\(\s*[A-Za-z_$]/, // dynamic import of a variable

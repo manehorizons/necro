@@ -1,25 +1,13 @@
-import { readFile } from "node:fs/promises";
-import { relative } from "node:path";
 import { classify, type ClassifiedFinding } from "../analyze/classify.js";
 import { loadCoverage } from "../analyze/coverage/load.js";
 import { coverageFor } from "../analyze/coverage/lookup.js";
-import { computeReachability, findTaintedFiles } from "../analyze/reachability.js";
 import type { NecroConfig } from "../config.js";
-import { discoverFiles } from "../discover.js";
-import { globMatcher } from "../glob.js";
-import { buildSymbolGraph } from "../graph/symbol-graph.js";
-import type { SymbolEdge, SymbolNode } from "../graph/types.js";
-import { resolveEntries } from "../plugins/entry-resolver.js";
-import { createRepoContext, detectPlugins } from "../plugins/registry.js";
-import { createNextjsPlugin } from "../plugins/nextjs/index.js";
-import { createTestRunnerPlugin } from "../plugins/test-runner/index.js";
-import type { FrameworkPlugin } from "../plugins/types.js";
+import type { SymbolNode } from "../graph/types.js";
 import { sortWorstFirst } from "../report/sort.js";
 import type { LcovReport } from "../analyze/coverage/lcov.js";
 import type { HotspotEntry } from "../analyze/hotspots.js";
 import type { ComplexityFinding, DuplicationFinding } from "../syntactic/types.js";
-import { resolveProdEntries } from "./prod-entries.js";
-import { resolveWorkspaces } from "./workspaces.js";
+import { buildReachabilityModel } from "./model.js";
 
 /** A single anti-pattern finding (a classified dead/test-only symbol). */
 export type Finding = ClassifiedFinding;
@@ -40,8 +28,6 @@ export interface ScanOptions {
   complexity?: boolean;
 }
 
-const PLUGINS: FrameworkPlugin[] = [createTestRunnerPlugin(), createNextjsPlugin()];
-
 /**
  * Analyze the project at `targetPath`: discover files, build the symbol graph,
  * resolve entries (prod + framework-plugin test entries), run two-color
@@ -53,60 +39,10 @@ export async function scan(
   config: NecroConfig,
   opts: ScanOptions = {},
 ): Promise<ScanResult> {
-  const files = await discoverFiles(targetPath, config);
-  if (files.length === 0) return { findings: [], complexity: [], hotspots: [], duplication: [] };
-
-  const ctx = await createRepoContext(targetPath);
-  const detected = detectPlugins(PLUGINS, ctx);
-
-  // Workspace members: alias map (so cross-package refs resolve) + entry files
-  // (so executed member entries are rooted). Empty for single-package repos.
-  const workspaces = await resolveWorkspaces(targetPath);
-
-  // Plugin entries are split by kind: `test` globs seed test roots; `prod` globs
-  // (e.g. Next.js file-routing) seed prod roots.
-  const entrySpecs = resolveEntries(detected, ctx);
-  const relToRoot = (abs: string) => relative(targetPath, abs);
-
-  const testGlobs = entrySpecs.filter((e) => e.kind === "test").map((e) => e.glob);
-  const matchesTestGlob = globMatcher(testGlobs);
-  const isTestFile = (abs: string) => matchesTestGlob(relToRoot(abs));
-  const testEntries = new Set(files.filter(isTestFile));
-
-  const prodGlobs = entrySpecs.filter((e) => e.kind === "prod").map((e) => e.glob);
-  const matchesProdGlob = globMatcher(prodGlobs);
-  const pluginProdEntryFiles = new Set(files.filter((abs) => matchesProdGlob(relToRoot(abs))));
-
-  const graph = buildSymbolGraph(files, { isTestFile, packagePaths: workspaces.packagePaths });
-
-  const syntheticEdges: SymbolEdge[] = detected.flatMap((p) =>
-    p.resolveEdges(ctx, graph).map((e) => ({ from: e.from, to: e.to, kind: e.kind })),
-  );
-
-  const prodEntries = resolveProdEntries(targetPath, files);
-  // A framework entry file is invoked by convention, not imported — so root the
-  // symbols it *exports* (a file-path seed alone only roots module-top-level
-  // references, not the declared-but-unreferenced exports). Genuinely-dead
-  // non-entry symbols are untouched.
-  for (const file of pluginProdEntryFiles) prodEntries.add(file);
-  for (const node of graph.nodes) {
-    if (node.exported && pluginProdEntryFiles.has(node.file)) prodEntries.add(node.id);
-  }
-  // Workspace member entry files are prod roots (file-path semantics, matching
-  // the root package): keeps executed member entries alive. Cross-package
-  // *consumed* symbols stay alive via resolved references, not by rooting — so
-  // genuinely-unused member exports are still reported.
-  for (const entry of workspaces.entryFiles) prodEntries.add(entry);
-  const sources = await readSources(files);
-  const taintedFiles = findTaintedFiles(sources);
-
-  const reachability = computeReachability({
-    nodes: graph.nodes,
-    edges: [...graph.edges, ...syntheticEdges],
-    prodEntries,
-    testEntries,
-    taintedFiles,
-  });
+  const model = await buildReachabilityModel(targetPath, config);
+  if (model.files.length === 0)
+    return { findings: [], complexity: [], hotspots: [], duplication: [] };
+  const { graph, reachability, sources } = model;
 
   // Coverage is an optional, path-based signal (never runs the test suite).
   const coverageReport = await loadCoverage(targetPath, config);
@@ -186,10 +122,4 @@ async function analyzeHeavy(
   const duplication = findClones(fileTokens, config.duplication.minTokens);
 
   return { complexity, hotspots, duplication };
-}
-
-async function readSources(files: string[]): Promise<Array<{ file: string; text: string }>> {
-  return Promise.all(
-    files.map(async (file) => ({ file, text: await readFile(file, "utf8") })),
-  );
 }

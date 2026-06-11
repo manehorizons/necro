@@ -4,6 +4,8 @@ import { Command } from "commander";
 import { loadConfig } from "./config.js";
 import { VERSION } from "./version.js";
 import { scan } from "./engine/index.js";
+import { explain } from "./engine/explain.js";
+import { renderExplain } from "./report/explain.js";
 import { runFix } from "./fix/index.js";
 import { renderComplexity } from "./report/complexity.js";
 import { renderDuplication } from "./report/duplication.js";
@@ -21,6 +23,10 @@ interface ScanOptions {
   sarif?: string;
   /** Exit non-zero if a finding at/above this severity exists (high|medium|low). */
   failOn?: string;
+}
+
+interface ExplainOptions {
+  json?: boolean;
 }
 
 interface FixOptions {
@@ -99,6 +105,26 @@ program
     if (failOn !== undefined && gate(full, failOn)) {
       process.exitCode = 1;
     }
+  });
+
+program
+  .command("explain")
+  .description("Explain why a symbol is alive, test-only, or dead (reachability trace)")
+  .argument("<symbol>", "symbol to explain: name, file:name, or file:line:name")
+  .option("--json", "emit the explanation as JSON")
+  .action(async (symbol: string, opts: ExplainOptions) => {
+    const target = resolve(process.cwd(), ".");
+    const config = await loadConfig(process.cwd());
+    const result = await explain(target, config, symbol);
+
+    if (opts.json) {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      console.log(renderExplain(result, process.cwd()));
+    }
+
+    // Non-zero when the query could not be pinned to a single symbol.
+    if (result.status !== "resolved") process.exitCode = 1;
   });
 
 program
