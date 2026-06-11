@@ -6,6 +6,12 @@ const DEFAULT_TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 export interface BuildOptions {
   /** Classify a file as test (vs prod). Defaults to a `.test.`/`.spec.` regex. */
   isTestFile?: (filePath: string) => boolean;
+  /**
+   * Workspace package name → absolute entry file. When present, fed to the
+   * ts-morph `paths` map so cross-package imports (`@scope/pkg`) resolve and the
+   * reference walk spans workspace members (monorepo FP reduction, §5).
+   */
+  packagePaths?: Map<string, string>;
 }
 
 export interface Declaration {
@@ -28,7 +34,10 @@ export function buildSymbolGraph(
   const isTestFile = opts.isTestFile ?? ((p) => DEFAULT_TEST_FILE.test(p));
   const project = new Project({
     skipAddingFilesFromTsConfig: true,
-    compilerOptions: { allowJs: true },
+    compilerOptions: {
+      allowJs: true,
+      ...workspacePathsOptions(opts.packagePaths),
+    },
   });
   for (const fp of filePaths) project.addSourceFileAtPath(fp);
 
@@ -62,6 +71,20 @@ export function buildSymbolGraph(
   }
 
   return { nodes, edges };
+}
+
+/**
+ * Translate a workspace package map into ts-morph `paths`/`baseUrl` so
+ * `@scope/pkg` imports resolve to the member entry file. Empty when there are no
+ * workspace packages — single-package repos get the exact options as before.
+ */
+function workspacePathsOptions(
+  packagePaths?: Map<string, string>,
+): { baseUrl: string; paths: Record<string, string[]> } | Record<string, never> {
+  if (!packagePaths || packagePaths.size === 0) return {};
+  const paths: Record<string, string[]> = {};
+  for (const [name, entry] of packagePaths) paths[name] = [entry];
+  return { baseUrl: ".", paths };
 }
 
 export function collectDeclarations(sf: import("ts-morph").SourceFile): Declaration[] {
