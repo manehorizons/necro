@@ -31,6 +31,7 @@
   ],
   "scripts": {
     "build": "esbuild src/cli.ts --bundle --platform=node --format=esm --packages=external --banner:js='#!/usr/bin/env node' --outfile=dist/cli.js",
+    "bench": "tsx src/bench/cli-bench.ts",
     "prepublishOnly": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -52,6 +53,7 @@
     "@types/node": "^20.19.42",
     "@types/picomatch": "^3.0.2",
     "esbuild": "^0.24.0",
+    "tsx": "^4.22.4",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"
   },
