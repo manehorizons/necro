@@ -9,6 +9,11 @@ export default defineConfig({
   site: "https://manehorizons.github.io",
   base: "/necro",
 
+  // The Accuracy page imports the committed benchmark snapshot from the repo
+  // root (`bench/results.json`, one level above this Astro project), so the
+  // published numbers have a single source of truth.
+  vite: { server: { fs: { allow: [".."] } } },
+
   integrations: [
     starlight({
       title: "Necro",

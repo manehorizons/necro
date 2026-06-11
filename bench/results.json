@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "methodologyVersion": 1,
+  "generatedAt": "2026-06-11T18:52:01.476Z",
+  "necroVersion": "1.1.0",
+  "model": "claude-opus-4-8",
+  "corpora": [
+    {
+      "id": "triage",
+      "metricKind": "precision-recall",
+      "sources": [
+        {
+          "repo": "honojs/hono",
+          "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+          "cases": 19
+        },
+        {
+          "repo": "trpc/trpc",
+          "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+          "cases": 29
+        }
+      ],
+      "n": 48,
+      "metrics": {
+        "precision": 1,
+        "recall": 0.4666666666666667,
+        "f1": 0.6363636363636364,
+        "truePositives": 7,
+        "falsePositives": 0,
+        "falseNegatives": 8
+      }
+    },
+    {
+      "id": "dup",
+      "metricKind": "pass-rate",
+      "sources": [
+        {
+          "repo": "trpc/trpc",
+          "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+          "cases": 4
+        },
+        {
+          "repo": "drizzle-team/drizzle-orm",
+          "sha": "48e5406027103a9fca6eb66417187c4a8b5c6aa3",
+          "cases": 8
+        }
+      ],
+      "n": 12,
+      "metrics": {
+        "passRate": 0.9166666666666666,
+        "passed": 11,
+        "total": 12
+      }
+    }
+  ]
+}

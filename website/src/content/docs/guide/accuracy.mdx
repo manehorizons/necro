@@ -1,0 +1,107 @@
+---
+title: Accuracy
+description: Necro's measured precision, recall, and refactor pass-rate on real-repo corpora — reproducible with one command.
+sidebar:
+  order: 4.5
+---
+
+import results from '../../../../../bench/results.json';
+
+export const triage = results.corpora.find((c) => c.id === 'triage');
+export const dup = results.corpora.find((c) => c.id === 'dup');
+export const pct = (x) => `${(x * 100).toFixed(0)}%`;
+export const measuredOn = results.generatedAt.slice(0, 10);
+export const srcLabel = (c) => c.sources.map((s) => `${s.repo}@${s.sha.slice(0, 7)}`).join(' + ');
+
+Most dead-code and anti-pattern tools ask you to trust them. Necro **measures**
+itself: every number on this page is computed by running Necro over a frozen,
+real-repo corpus with hand-verified ground truth, then scored automatically. The
+numbers below are not hand-typed — they are read directly from a committed
+benchmark snapshot you can regenerate yourself.
+
+:::note[Provenance]
+Measured on **{measuredOn}** · Necro **v{results.necroVersion}** · model
+**{results.model}** · regenerate with `npm run bench` (from a repo checkout).
+:::
+
+## Dead-code triage — precision &amp; recall
+
+The headline number. Necro's triage classifies genuinely-ambiguous `maybe`
+findings as dead or alive. The positive class is **"dead"**, so **precision** is
+what matters most: it measures how often Necro is *right when it calls code dead*.
+A false positive here — killing live production code — is the trust-killer that
+sinks static dead-code tools.
+
+| Metric | Value |
+| --- | --- |
+| **Precision** (dead class) | **{pct(triage.metrics.precision)}** |
+| **Recall** (dead class) | {pct(triage.metrics.recall)} |
+| **F1** | {triage.metrics.f1.toFixed(2)} |
+| True positives / False positives / False negatives | {triage.metrics.truePositives} / {triage.metrics.falsePositives} / {triage.metrics.falseNegatives} |
+| Cases | {triage.n} ({srcLabel(triage)}) |
+
+At **{pct(triage.metrics.precision)} precision** across {triage.n} real-repo
+cases, Necro made **{triage.metrics.falsePositives} false-positive calls** — it
+never told you to delete live code. Recall is deliberately the looser axis:
+Necro would rather quarantine an ambiguous symbol in the `maybe` tier than risk a
+wrong kill.
+
+## Duplication refactor — pass-rate
+
+A **different, structural** metric (not precision). For each real clone group,
+Necro proposes an extract-duplicate refactor; a proposal **passes** only if it
+extracts one shared exported function, collapses the duplication at every clone
+site, and preserves each call surface. No human grades the output — the scorer is
+mechanical.
+
+| Metric | Value |
+| --- | --- |
+| **Pass-rate** | **{pct(dup.metrics.passRate)}** |
+| Passed / total | {dup.metrics.passed} / {dup.metrics.total} |
+| Cases | {dup.n} ({srcLabel(dup)}) |
+
+## Methodology
+
+- **Corpora are real, frozen, and provenanced.** Cases are captured verbatim from
+  pinned commits of external TypeScript repositories (the SHAs above). The triage
+  corpus carries hand-verified ground-truth labels assigned by reading each
+  symbol's actual usage across the source tree; the duplication corpus is scored
+  structurally and needs no labels. Only case *selection* is a human step.
+- **Triage scoring.** Each case is a `maybe`-tier finding with its authentic
+  evidence chain. Necro classifies it with a location-weighted prompt; the
+  prediction is compared to ground truth. Precision/recall are computed on the
+  "dead" class.
+- **Duplication scoring.** Each case is a real clone group flagged by Necro's own
+  detector at its default `minTokens`. The model's extraction is lowered back to
+  the syntactic IR and checked: one shared function, every edited site collapsed
+  below the clone threshold, every signature preserved.
+- **Non-determinism caveat.** Both metrics put a language model in the loop, so a
+  given run is a **measured snapshot, not a guarantee** — re-running can move the
+  numbers by a few cases. Necro's internal regression gates are set as floors
+  *below* observed run-to-run minima for exactly this reason.
+
+## Reproduce it yourself
+
+The numbers above come from a committed snapshot. To regenerate it:
+
+```bash
+git clone https://github.com/manehorizons/necro && cd necro
+npm install
+export ANTHROPIC_API_KEY=sk-...   # the run calls the real model
+npm run bench                      # writes bench/results.json
+```
+
+`npm run bench` runs all {triage.n + dup.n} cases ({triage.n} triage +
+{dup.n} duplication) and writes a provenance-stamped `bench/results.json` — the
+same file this page reads.
+
+## Limitations &amp; honesty
+
+- **Sample size is modest** ({triage.n} triage + {dup.n} duplication cases). These
+  are authentic, deliberately-hard cases, not an exhaustive survey.
+- **Repo selection is curated.** Cases come from a handful of well-known TS repos;
+  results may differ on your codebase.
+- **No competitor comparison yet.** This page reports Necro's own measured
+  numbers. A fair head-to-head against other tools (run on the same corpus, scored
+  the same way) is planned as a follow-up — we'd rather publish nothing than an
+  unfair comparison.
