@@ -31,10 +31,14 @@ describe("necro MCP server", () => {
     expect(client.getServerVersion()?.name).toBe("necro");
   });
 
-  test("exposes exactly the two read-only tools — no mutating or LLM tool (AC-1, AC-4)", async () => {
+  test("exposes exactly the read-only tools — no mutating or LLM tool (AC-1, AC-4)", async () => {
     const client = await connectClient();
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(["necro_scan", "necro_verify"]);
+    expect(tools.map((t) => t.name).sort()).toEqual([
+      "necro_explain",
+      "necro_scan",
+      "necro_verify",
+    ]);
   });
 
   test("malformed tool input is a structured error and the server stays alive (AC-4)", async () => {
