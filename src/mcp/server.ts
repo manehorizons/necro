@@ -4,6 +4,7 @@ import { VERSION } from "../version.js";
 import { registerExplainTool } from "./tools/explain.js";
 import { registerScanTool } from "./tools/scan.js";
 import { registerVerifyTool, type VerifyToolDeps } from "./tools/verify.js";
+import { registerVerifyRemovalTool } from "./tools/verify-removal.js";
 
 /** Injectable dependencies (the verify worktree runner is faked in tests). */
 export type ServerDeps = VerifyToolDeps;
@@ -17,6 +18,7 @@ export function createNecroServer(deps: ServerDeps = {}): McpServer {
   const server = new McpServer({ name: "necro", version: VERSION });
   registerScanTool(server);
   registerVerifyTool(server, deps);
+  registerVerifyRemovalTool(server, deps);
   registerExplainTool(server);
   return server;
 }

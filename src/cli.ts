@@ -5,7 +5,9 @@ import { loadConfig } from "./config.js";
 import { VERSION } from "./version.js";
 import { scan } from "./engine/index.js";
 import { explain } from "./engine/explain.js";
+import { verifyRemovals } from "./engine/verify-removal.js";
 import { renderExplain } from "./report/explain.js";
+import { renderVerifyRemoval } from "./report/verify-removal.js";
 import { runFix } from "./fix/index.js";
 import { renderComplexity } from "./report/complexity.js";
 import { renderDuplication } from "./report/duplication.js";
@@ -27,6 +29,12 @@ interface ScanOptions {
 
 interface ExplainOptions {
   json?: boolean;
+}
+
+interface VerifyRemovalOptions {
+  json?: boolean;
+  /** Comma-separated check commands to run in each worktree. */
+  checks?: string;
 }
 
 interface FixOptions {
@@ -125,6 +133,30 @@ program
 
     // Non-zero when the query could not be pinned to a single symbol.
     if (result.status !== "resolved") process.exitCode = 1;
+  });
+
+program
+  .command("verify-removal")
+  .description("Verify whether deleting each symbol keeps the build green (isolated worktree per symbol)")
+  .argument("<symbols...>", "symbols to test-remove: name, file:name, or file:line:name")
+  .option("--json", "emit the per-symbol verdicts as JSON")
+  .option("--checks <list>", "comma-separated check commands (default: typecheck + tests)")
+  .action(async (symbols: string[], opts: VerifyRemovalOptions) => {
+    const target = resolve(process.cwd(), ".");
+    const config = await loadConfig(process.cwd());
+    const checks = opts.checks
+      ? opts.checks.split(",").map((c) => c.trim()).filter(Boolean)
+      : undefined;
+    const results = await verifyRemovals(target, config, symbols, {
+      repoRoot: process.cwd(),
+      checks,
+    });
+
+    if (opts.json) {
+      console.log(JSON.stringify(results, null, 2));
+    } else {
+      console.log(renderVerifyRemoval(results));
+    }
   });
 
 program

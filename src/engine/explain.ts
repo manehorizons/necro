@@ -108,8 +108,9 @@ export async function explain(
 /**
  * Resolve a query to candidate nodes. Accepts a full id (`file:line:name`), a
  * file-qualified name (`path:name`, matched by file suffix), or a bare `name`.
+ * Shared with `verify-removal`, which addresses symbols the same way.
  */
-function resolveQuery(nodes: SymbolNode[], query: string): SymbolNode[] {
+export function resolveQuery(nodes: SymbolNode[], query: string): SymbolNode[] {
   const exact = nodes.filter((n) => n.id === query);
   if (exact.length > 0) return exact;
 
