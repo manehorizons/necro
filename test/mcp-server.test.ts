@@ -38,6 +38,7 @@ describe("necro MCP server", () => {
       "necro_explain",
       "necro_scan",
       "necro_verify",
+      "necro_verify_removal",
     ]);
   });
 

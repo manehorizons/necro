@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { Project } from "ts-morph";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import type { ClassifiedFinding } from "../src/analyze/classify.js";
-import { planRemovals } from "../src/fix/remove.js";
+import { planRemovalOf, planRemovals } from "../src/fix/remove.js";
 import type { SymbolNode } from "../src/graph/types.js";
 
 let dir: string;
@@ -75,5 +75,34 @@ describe("planRemovals (AC-1, AC-5)", () => {
     await writeFile(file, `function maybeDead() {}\n`);
     const edits = planRemovals([finding(file, 1, "maybeDead", false)]);
     expect(edits).toEqual([]);
+  });
+});
+
+describe("planRemovalOf (AC-1)", () => {
+  test("removes an arbitrary named symbol regardless of dead-code eligibility", async () => {
+    const file = join(dir, "arb.ts");
+    // `usedFn` is live (exported + called); the agent asks "what if I delete it?".
+    await writeFile(
+      file,
+      `export function usedFn() {\n  return 1;\n}\nfunction keepFn() {\n  return usedFn();\n}\n`,
+    );
+    // usedFn's name is on line 1.
+    const edits = planRemovalOf([{ file, name: "usedFn", line: 1 }]);
+
+    expect(edits).toHaveLength(1);
+    expect(edits[0]?.after).not.toContain("function usedFn");
+    expect(edits[0]?.after).toContain("keepFn");
+    expect(functionsIn(edits[0]!.after)).toEqual(["keepFn"]);
+  });
+
+  test("planRemovals delegates to planRemovalOf — identical edits for the dead path", async () => {
+    const file = join(dir, "delegate.ts");
+    await writeFile(
+      file,
+      `export function live() {}\nfunction dead() {}\n`,
+    );
+    const viaPlanRemovals = planRemovals([finding(file, 2, "dead", true)]);
+    const viaPlanRemovalOf = planRemovalOf([{ file, name: "dead", line: 2 }]);
+    expect(viaPlanRemovals).toEqual(viaPlanRemovalOf);
   });
 });
