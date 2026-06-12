@@ -25,9 +25,10 @@ export function renderExplain(result: ExplainResult, srcRoot?: string): string {
     ].join("\n");
   }
 
-  const { symbol, reachability, tainted, witness, inbound } = result;
+  const { symbol, reachability, tainted, witness, inbound, narrative } = result;
   const taint = tainted ? "  (tainted: dynamic dispatch nearby)" : "";
   const header = `${symbol.name} is ${reachability}${taint}`;
+  const why = narrative ? ["", "Why:", narrative] : [];
 
   if (reachability === "dead") {
     const body = inbound.length
@@ -44,12 +45,13 @@ export function renderExplain(result: ExplainResult, srcRoot?: string): string {
     return [
       `${header} — unreachable from all production and test entries.`,
       ...body,
+      ...why,
     ].join("\n");
   }
 
   const chain = witness ?? [];
   const steps = chain.map((s: TraceNode) => `  → ${s.name}  ${loc(s.file, s.line)}`);
-  return [`${header}`, "Reachable via:", ...steps].join("\n");
+  return [`${header}`, "Reachable via:", ...steps, ...why].join("\n");
 }
 
 function shortHint(file: string | undefined): string {

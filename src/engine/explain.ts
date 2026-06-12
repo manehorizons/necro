@@ -1,6 +1,8 @@
 import { basename } from "node:path";
 import { type Reachability, tracePath } from "../analyze/reachability.js";
 import type { NecroConfig } from "../config.js";
+import type { NarrateClient } from "../explain/client.js";
+import { buildNarratePrompt, type NarrateSnippet } from "../explain/prompt.js";
 import type { SymbolNode } from "../graph/types.js";
 import { buildReachabilityModel } from "./model.js";
 
@@ -42,7 +44,16 @@ export type ExplainResult =
       witness: TraceNode[] | null;
       /** Referrers for a dead symbol (annotated by verdict); empty otherwise. */
       inbound: InboundRef[];
+      /** LLM prose explaining the verdict when `--narrate` is on; null otherwise
+       * or when the narrator was unavailable. Never overrides the verdict. */
+      narrative?: string | null;
     };
+
+/** Options for {@link explain}. */
+export interface ExplainOptions {
+  /** When set, attach an LLM narrative to a resolved result (additive). */
+  narrate?: NarrateClient;
+}
 
 /**
  * Explain why a symbol is alive, test-only, or dead by reconstructing its
@@ -53,6 +64,7 @@ export async function explain(
   targetPath: string,
   config: NecroConfig,
   query: string,
+  opts: ExplainOptions = {},
 ): Promise<ExplainResult> {
   const model = await buildReachabilityModel(targetPath, config);
   const matches = resolveQuery(model.graph.nodes, query);
@@ -94,7 +106,7 @@ export async function explain(
     inbound = inboundRefs(model.edges, node.id, nodeById, verdict, toTrace);
   }
 
-  return {
+  const out: Extract<ExplainResult, { status: "resolved" }> = {
     query,
     status: "resolved",
     symbol: toSymbol(node),
@@ -103,6 +115,56 @@ export async function explain(
     witness,
     inbound,
   };
+
+  if (opts.narrate) {
+    out.narrative = await narrate(opts.narrate, out, model.sources, witness, inbound, node);
+  }
+
+  return out;
+}
+
+/**
+ * Run the narrator over an already-resolved result. Additive and fault-tolerant:
+ * any narrator error degrades to `null` so the deterministic verdict survives.
+ */
+async function narrate(
+  client: NarrateClient,
+  result: Extract<ExplainResult, { status: "resolved" }>,
+  sources: Array<{ file: string; text: string }>,
+  witness: TraceNode[] | null,
+  inbound: InboundRef[],
+  node: SymbolNode,
+): Promise<string | null> {
+  try {
+    const textByFile = new Map(sources.map((s) => [s.file, s.text] as const));
+    const seen = new Set<string>();
+    const snippets: NarrateSnippet[] = [];
+    const traceNodes: TraceNode[] = [
+      { id: node.id, name: node.name, file: node.file, line: node.line },
+      ...(witness ?? []),
+      ...inbound,
+    ];
+    for (const t of traceNodes) {
+      if (t.file === null || t.line === null || seen.has(t.id)) continue;
+      seen.add(t.id);
+      const snippet = sliceSnippet(textByFile.get(t.file), t.line);
+      if (snippet) snippets.push({ name: t.name, location: `${t.file}:${t.line}`, code: snippet });
+    }
+    const prompt = buildNarratePrompt(result, snippets);
+    const prose = await client.narrate(prompt);
+    return prose.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/** A small window of source around a 1-based line (the declaration + a little context). */
+function sliceSnippet(text: string | undefined, line: number): string | null {
+  if (!text) return null;
+  const lines = text.split("\n");
+  const start = Math.max(0, line - 1);
+  const end = Math.min(lines.length, line + 2);
+  return lines.slice(start, end).join("\n");
 }
 
 /**

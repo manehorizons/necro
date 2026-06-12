@@ -1,13 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { VERSION } from "../version.js";
-import { registerExplainTool } from "./tools/explain.js";
+import { registerExplainTool, type ExplainToolDeps } from "./tools/explain.js";
 import { registerScanTool } from "./tools/scan.js";
 import { registerVerifyTool, type VerifyToolDeps } from "./tools/verify.js";
 import { registerVerifyRemovalTool } from "./tools/verify-removal.js";
 
-/** Injectable dependencies (the verify worktree runner is faked in tests). */
-export type ServerDeps = VerifyToolDeps;
+/** Injectable dependencies (the verify runner + narrator are faked in tests). */
+export type ServerDeps = VerifyToolDeps & ExplainToolDeps;
 
 /**
  * Build the necro MCP server: a read-only, agent-callable surface over the
@@ -19,7 +19,7 @@ export function createNecroServer(deps: ServerDeps = {}): McpServer {
   registerScanTool(server);
   registerVerifyTool(server, deps);
   registerVerifyRemovalTool(server, deps);
-  registerExplainTool(server);
+  registerExplainTool(server, deps);
   return server;
 }
 

@@ -6,6 +6,8 @@ import { VERSION } from "./version.js";
 import { scan } from "./engine/index.js";
 import { explain } from "./engine/explain.js";
 import { verifyRemovals } from "./engine/verify-removal.js";
+import { createNarrateClient, type NarrateClient } from "./explain/client.js";
+import { MissingApiKeyError } from "./triage/client.js";
 import { renderExplain } from "./report/explain.js";
 import { renderVerifyRemoval } from "./report/verify-removal.js";
 import { runFix } from "./fix/index.js";
@@ -29,6 +31,7 @@ interface ScanOptions {
 
 interface ExplainOptions {
   json?: boolean;
+  narrate?: boolean;
 }
 
 interface VerifyRemovalOptions {
@@ -120,10 +123,25 @@ program
   .description("Explain why a symbol is alive, test-only, or dead (reachability trace)")
   .argument("<symbol>", "symbol to explain: name, file:name, or file:line:name")
   .option("--json", "emit the explanation as JSON")
+  .option("--narrate", "add an LLM plain-English explanation of the verdict (needs an API key)")
   .action(async (symbol: string, opts: ExplainOptions) => {
     const target = resolve(process.cwd(), ".");
     const config = await loadConfig(process.cwd());
-    const result = await explain(target, config, symbol);
+
+    // --narrate is additive: if no key (or the client can't be built), note it
+    // and fall back to the deterministic trace rather than failing.
+    let narrate: NarrateClient | undefined;
+    if (opts.narrate) {
+      try {
+        narrate = createNarrateClient(config.llm);
+      } catch (err) {
+        if (err instanceof MissingApiKeyError) {
+          console.error(`narrate skipped: ${err.message}`);
+        } else throw err;
+      }
+    }
+
+    const result = await explain(target, config, symbol, { narrate });
 
     if (opts.json) {
       console.log(JSON.stringify(result, null, 2));
