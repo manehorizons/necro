@@ -12,8 +12,10 @@ HANDOFF.md.resumed-*
 # Local scratch (eval/run output dumps)
 dumpfile
 
-# Local CADENCE session artifacts (handoff archive + intelligence context)
-.cadence/handoff/
+# Local CADENCE intelligence context (derived, regenerated). Handoff SESSION
+# docs are NOT ignored — they're committed by the /handoff skill so the other
+# PC / sibling worktrees can see them (see mane-horizons-cloud's 2026-07-08/09
+# handoff/resume overhaul for why the old blanket-ignore here was wrong).
 .cadence/intelligence/
 
 # Local pre-launch planning docs — kept local, not part of the shipped repo
