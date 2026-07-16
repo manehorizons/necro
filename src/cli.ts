@@ -178,6 +178,11 @@ program
     } else {
       console.log(renderVerifyRemoval(results));
     }
+
+    // Non-zero when any symbol's removal actually breaks the build — the
+    // headline CI-gating use case. Unresolved-only stays 0: it's "couldn't
+    // determine," not "unsafe."
+    if (results.some((r) => r.status === "red")) process.exitCode = 1;
   });
 
 program

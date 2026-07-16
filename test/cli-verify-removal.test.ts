@@ -73,9 +73,9 @@ describe("necro verify-removal", () => {
     expect(stdout).toMatch(/safe to remove|green/i);
   });
 
-  test("AC-4: renders a per-symbol red verdict when a check fails", async () => {
+  test("AC-1: renders a per-symbol red verdict when a check fails, and exits non-zero", async () => {
     const { code, stdout } = await run(["verify-removal", "orphan", "--checks", "false"], dir);
-    expect(code).toBe(0);
+    expect(code).toBe(1);
     expect(stdout).toMatch(/breaks the build|red/i);
   });
 
@@ -85,6 +85,16 @@ describe("necro verify-removal", () => {
       dir,
     );
     expect(code).toBe(0);
+    expect(stdout).toMatch(/unresolved/i);
+  });
+
+  test("AC-4: a red verdict still fails the run even alongside an unresolved symbol", async () => {
+    const { code, stdout } = await run(
+      ["verify-removal", "orphan", "doesNotExist", "--checks", "false"],
+      dir,
+    );
+    expect(code).toBe(1);
+    expect(stdout).toMatch(/breaks the build/i);
     expect(stdout).toMatch(/unresolved/i);
   });
 

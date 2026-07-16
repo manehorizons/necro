@@ -1,0 +1,23 @@
+{
+  "draftId": "30-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Added process.exitCode = 1 in the verify-removal CLI action when any verdict is \"red\", mirroring explain's existing exit-code pattern. No engine changes needed — RemovalVerdict already distinguishes green/red/unresolved.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-16T03:30:07.575Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "Flipped test/cli-verify-removal.test.ts's red-verdict test to assert exit code 1 (was asserting 0, which documented the bug). Watched it fail RED against unfixed code before implementing T1, then confirmed green.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-16T03:30:12.532Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "Added a mixed red+unresolved regression test proving a red verdict anywhere in a multi-symbol run still exits non-zero. Passed on first run (T1's .some() check already covers it) — full suite green: build+typecheck+435 passed/2 skipped test files.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-16T03:30:18.689Z"
+    }
+  }
+}

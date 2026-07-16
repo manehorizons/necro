@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "draftId": "30-01",
+  "completedAt": "2026-07-16T03:32:30.588Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-2",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-3",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-4",
+      "pass": true,
+      "evidence": "assertion"
+    }
+  ],
+  "gates": [
+    {
+      "gate": "draft-read",
+      "status": "ran"
+    },
+    {
+      "gate": "structural-verifier",
+      "status": "ran"
+    },
+    {
+      "gate": "boundary-scan",
+      "status": "skipped",
+      "skipReason": "boundaryEnforcement is not \"block\""
+    },
+    {
+      "gate": "build-test-must-pass",
+      "status": "skipped",
+      "skipReason": "no test command configured — build-test-must-pass cannot verify your tests ran; this settle will NOT confirm the suite passes. Set verification.testCommand in .cadence/config.json to enable real enforcement."
+    },
+    {
+      "gate": "test-coverage",
+      "status": "ran"
+    },
+    {
+      "gate": "interactive-verdict",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "deep-verify",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "code-review",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    },
+    {
+      "gate": "security-audit",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "Added process.exitCode = 1 in the verify-removal CLI action when any verdict is \"red\", mirroring explain's existing exit-code pattern. No engine changes needed — RemovalVerdict already distinguishes green/red/unresolved."
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "Flipped test/cli-verify-removal.test.ts's red-verdict test to assert exit code 1 (was asserting 0, which documented the bug). Watched it fail RED against unfixed code before implementing T1, then confirmed green."
+    },
+    {
+      "id": "T3",
+      "status": "DONE",
+      "notes": "Added a mixed red+unresolved regression test proving a red verdict anywhere in a multi-symbol run still exits non-zero. Passed on first run (T1's .some() check already covers it) — full suite green: build+typecheck+435 passed/2 skipped test files."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": [
+      "superpowers:test-driven-development"
+    ]
+  }
+}

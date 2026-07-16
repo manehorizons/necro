@@ -4,13 +4,13 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 29-verify-removal-gate
+**Active phase:** 30-verify-removal-exit-code
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 10%
-- Subagent spawns this session: 11
+- Token utilization: 11%
+- Subagent spawns this session: 12
 - Last handoff: SESSION-2026-07-16-slice1-fail-closed-entries-settled.md
 
 ## Counts
