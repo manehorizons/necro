@@ -1,0 +1,12 @@
+{
+  "case": "monorepo-member",
+  "baseline": "green",
+  "prodEntryCount": 1,
+  "entries": [
+    { "file": "packages/foo/src/index.ts", "source": "workspace" }
+  ],
+  "symbols": [
+    { "name": "orphanFoo", "file": "packages/foo/src/index.ts", "verdict": "dead", "tier": "certain", "autoFixEligible": true }
+  ],
+  "fix": { "write": false, "status": "preview", "exitCode": 0 }
+}

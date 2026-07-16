@@ -1,0 +1,13 @@
+{
+  "case": "dist-bin-tsconfig",
+  "baseline": "red",
+  "prodEntryCount": 1,
+  "entries": [
+    { "file": "src/cli.ts", "source": "mapped" }
+  ],
+  "symbols": [
+    { "name": "used", "file": "src/util.ts", "verdict": "alive" },
+    { "name": "orphan", "file": "src/util.ts", "verdict": "dead", "tier": "certain", "autoFixEligible": true }
+  ],
+  "fix": { "write": false, "status": "preview", "exitCode": 0 }
+}

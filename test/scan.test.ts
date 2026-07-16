@@ -68,6 +68,16 @@ describe("scan (end-to-end)", () => {
     const tiers = findings.map((f) => (f.verdict === "test-only" ? "test-only" : f.tier));
     expect(tiers.indexOf("certain")).toBeLessThan(tiers.indexOf("test-only"));
   });
+
+  test("diagnostics.entryResolution reports the resolved entry and its source (AC-2)", async () => {
+    await write("package.json", JSON.stringify({ name: "fx" }));
+    await write("src/index.ts", `export function main() {}\n`);
+
+    const { diagnostics } = await scan(dir, DEFAULT_CONFIG);
+    expect(diagnostics.entryResolution.prodEntryCount).toBe(1);
+    expect(diagnostics.entryResolution.sources).toEqual([{ file: "src/index.ts", source: "convention" }]);
+    expect(diagnostics.entryResolution.collapsed).toBe(false);
+  });
 });
 
 describe("scan with coverage ingestion", () => {

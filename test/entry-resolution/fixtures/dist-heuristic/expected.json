@@ -1,0 +1,12 @@
+{
+  "case": "dist-heuristic",
+  "baseline": "green",
+  "prodEntryCount": 1,
+  "entries": [
+    { "file": "src/index.ts" }
+  ],
+  "symbols": [
+    { "name": "orphan", "file": "src/index.ts", "verdict": "dead", "tier": "certain", "autoFixEligible": true }
+  ],
+  "fix": { "write": false, "status": "preview", "exitCode": 0 }
+}

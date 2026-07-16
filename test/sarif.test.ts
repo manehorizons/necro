@@ -110,4 +110,22 @@ describe("SARIF 2.1.0 reporter", () => {
     expect(log.version).toBe("2.1.0");
     expect(results(log)).toEqual([]);
   });
+
+  test("entryResolution diagnostics surface as run properties (AC-2)", () => {
+    const log: any = toSarif(
+      {
+        ...empty,
+        diagnostics: {
+          entryResolution: {
+            prodEntryCount: 1,
+            sources: [{ file: "src/cli.ts", source: "mapped" }],
+            collapsed: false,
+          },
+        },
+      },
+      { srcRoot: SRC },
+    );
+    expect(log.runs[0].properties.entryResolution.prodEntryCount).toBe(1);
+    expect(log.runs[0].properties.entryResolution.sources[0].source).toBe("mapped");
+  });
 });

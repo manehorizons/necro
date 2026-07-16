@@ -1,0 +1,7 @@
+{
+  "name": "scripts-entry-fixture",
+  "version": "1.0.0",
+  "scripts": {
+    "bench": "tsx src/bench.ts"
+  }
+}

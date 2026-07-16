@@ -10,6 +10,9 @@ export interface NecroConfig {
   ignore: string[];
   /** Path to an lcov coverage report (relative to scan target or absolute). */
   coveragePath?: string;
+  /** Globs (relative to the scan target) declaring production entry points —
+   * the escape hatch for the fail-closed entry-resolution warning (§2.2). */
+  entries?: string[];
   /** Syntactic-detector thresholds (always resolved; defaults applied per key). */
   complexity: ComplexityThresholds;
   /** Risk-hotspot ranking options. */
@@ -79,6 +82,7 @@ interface RawConfig {
   include?: string[];
   ignore?: string[];
   coveragePath?: string;
+  entries?: string[];
   complexity?: Partial<ComplexityThresholds>;
   hotspots?: Partial<HotspotOptions>;
   duplication?: Partial<DuplicationOptions>;
@@ -96,6 +100,7 @@ export async function loadConfig(cwd: string): Promise<NecroConfig> {
     include: user.include ?? DEFAULT_CONFIG.include,
     ignore: user.ignore ?? DEFAULT_CONFIG.ignore,
     coveragePath: user.coveragePath,
+    entries: user.entries,
     complexity: { ...DEFAULT_COMPLEXITY, ...(user.complexity ?? {}) },
     hotspots: { ...DEFAULT_HOTSPOTS, ...(user.hotspots ?? {}) },
     duplication: { ...DEFAULT_DUPLICATION, ...(user.duplication ?? {}) },

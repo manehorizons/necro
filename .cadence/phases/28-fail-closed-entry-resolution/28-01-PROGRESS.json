@@ -1,0 +1,89 @@
+{
+  "draftId": "28-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-16T01:52:53.007Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/engine/entry-mapping.ts",
+        "/home/thomas/projects/necro/src/engine/prod-entries.ts",
+        "/home/thomas/projects/necro/src/engine/model.ts",
+        "/home/thomas/projects/necro/test/entry-mapping.test.ts",
+        "/home/thomas/projects/necro/test/entry-resolution.test.ts"
+      ],
+      "updatedAt": "2026-07-16T01:56:41.882Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/config.test.ts",
+        "/home/thomas/projects/necro/src/config.ts",
+        "/home/thomas/projects/necro/src/engine/prod-entries.ts",
+        "/home/thomas/projects/necro/src/engine/model.ts"
+      ],
+      "updatedAt": "2026-07-16T01:59:03.500Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/engine/model.ts",
+        "/home/thomas/projects/necro/test/scan.test.ts",
+        "/home/thomas/projects/necro/src/engine/index.ts",
+        "/home/thomas/projects/necro/test/report.test.ts",
+        "/home/thomas/projects/necro/test/sarif.test.ts",
+        "/home/thomas/projects/necro/src/report/json.ts",
+        "/home/thomas/projects/necro/src/report/sarif.ts",
+        "/home/thomas/projects/necro/src/report/terminal.ts",
+        "/home/thomas/projects/necro/src/cli.ts"
+      ],
+      "updatedAt": "2026-07-16T02:06:06.917Z"
+    },
+    "T5": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/classify.test.ts",
+        "/home/thomas/projects/necro/src/analyze/classify.ts",
+        "/home/thomas/projects/necro/src/engine/index.ts",
+        "/home/thomas/projects/necro/test/entry-resolution.test.ts"
+      ],
+      "updatedAt": "2026-07-16T02:08:01.493Z"
+    },
+    "T6": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/fix.test.ts",
+        "/home/thomas/projects/necro/src/fix/index.ts",
+        "/home/thomas/projects/necro/src/cli.ts",
+        "/home/thomas/projects/necro/test/entry-resolution.test.ts"
+      ],
+      "updatedAt": "2026-07-16T02:11:51.296Z"
+    },
+    "T7": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/README.md",
+        "/home/thomas/projects/necro/CHANGELOG.md"
+      ],
+      "updatedAt": "2026-07-16T02:13:05.730Z"
+    },
+    "T8": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/.cadence/phases/28-fail-closed-entry-resolution/28-01-DRAFT.md"
+      ],
+      "updatedAt": "2026-07-16T02:16:00.780Z"
+    }
+  }
+}

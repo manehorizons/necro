@@ -124,6 +124,45 @@ necro refactor src/ --type extract-duplicate   # lift a shared function out of a
 prints proposals — it never edits your files — and each is verified
 (typecheck + tests) in a throwaway git worktree before you see it.
 
+#### `fix` exit codes
+
+`fix` uses a stable exit-code taxonomy so scripts and CI can branch on the
+outcome without parsing output:
+
+| Exit | Meaning |
+|---|---|
+| `0` | written, preview, or nothing to fix |
+| `1` | unexpected error |
+| `2` | refused — the git working tree has uncommitted changes (pass `--force` to override) |
+| `3` | refused — 0 production entry points resolved (see **Fail-closed entry resolution** below) |
+
+If both conditions hold (a dirty tree *and* unseeded reachability), exit `3`
+wins — you need to fix entry resolution before a dirty-tree override is even
+meaningful.
+
+#### Fail-closed entry resolution
+
+Necro seeds its dead-code sweep from your package's production entry points
+(`package.json` `main`/`module`/`bin`/`exports`, dist→src mapped via
+`tsconfig.json` `outDir`/`rootDir` when the manifest points at build output,
+`package.json` `scripts` values, conventional names like `src/index.ts`, and
+workspace member entries). If **none** of these resolve on a non-empty
+codebase, reachability is unseeded — Necro can't tell what's actually dead —
+so it fails closed: every dead-code finding is demoted to `maybe`
+(never auto-fix eligible), a warning banner explains why, and `fix --write`
+refuses with exit `3` instead of guessing. `necro scan` always reports what it
+resolved and where from, under `diagnostics.entryResolution` (also in
+`--json` and `--sarif` output as `runs[0].properties.entryResolution`).
+
+To resolve the warning, do any one of:
+
+1. Point `package.json` `main`/`module`/`bin`/`exports` at your real entry
+   file (add a `tsconfig.json` `outDir`/`rootDir` so Necro can map `dist/`
+   back to `src/`).
+2. Add an `entries` field to `necro.config.json` (see **Configuration**).
+3. Use a conventional entry filename (`index.ts`, `src/index.ts`, `main.ts`,
+   `src/main.ts`).
+
 ### Output modes
 
 ```bash
@@ -177,13 +216,20 @@ Necro runs zero-config. To customize which files it analyzes, add a
 ```json
 {
   "include": ["**/*.ts", "**/*.tsx"],
-  "ignore": ["**/node_modules/**", "**/dist/**"]
+  "ignore": ["**/node_modules/**", "**/dist/**"],
+  "entries": ["src/server.ts"]
 }
 ```
 
 Each key you set **replaces** its default. Declaration files (`*.d.ts`) and the
 `node_modules`, `.git`, `dist`, `build`, and `coverage` directories are always
 skipped.
+
+`entries` is globs (relative to the scan target) declaring production entry
+points directly — the canonical fix for the fail-closed warning banner when
+none of Necro's automatic resolution (manifest, dist→src mapping, scripts,
+conventional names, workspaces) finds one. Matched files are added as prod
+roots with source `"config"` in `diagnostics.entryResolution`.
 
 ## How it works
 

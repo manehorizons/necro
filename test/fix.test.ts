@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { DEFAULT_CONFIG } from "../src/config.js";
-import { runFix } from "../src/fix/index.js";
+import { fixExitCode, runFix } from "../src/fix/index.js";
 
 const exec = promisify(execFile);
 let dir: string;
@@ -90,5 +90,45 @@ describe("runFix", () => {
     const result = await runFix(dir, DEFAULT_CONFIG, { write: true, force: true });
     expect(result.status).toBe("written");
     expect(await util()).not.toContain("deadFn");
+  });
+
+  test("refuses with refused-no-entries when reachability is unseeded, before the nothing-to-fix check (AC-3)", async () => {
+    // No manifest entry, no conventional name — 0 prod entries on a non-empty graph.
+    await write("package.json", JSON.stringify({ name: "no-entries-fx" }));
+    await write("src/cli.ts", `function orphan(): number {\n  return 1;\n}\n`);
+
+    const result = await runFix(dir, DEFAULT_CONFIG, { write: true });
+    expect(result.status).toBe("refused-no-entries");
+    expect(await readFile(join(dir, "src/cli.ts"), "utf8")).toContain("orphan"); // disk untouched
+  });
+
+  test("refused-no-entries wins over refused-dirty (AC-4)", async () => {
+    await write("package.json", JSON.stringify({ name: "no-entries-fx" }));
+    await write("src/cli.ts", `function orphan(): number {\n  return 1;\n}\n`);
+    await exec("git", ["init", "-q"], { cwd: dir });
+    await exec("git", ["config", "user.email", "t@example.com"], { cwd: dir });
+    await exec("git", ["config", "user.name", "T"], { cwd: dir });
+    await exec("git", ["add", "-A"], { cwd: dir });
+    await exec("git", ["commit", "-q", "-m", "init"], { cwd: dir });
+    await write("extra.txt", "dirty");
+
+    const result = await runFix(dir, DEFAULT_CONFIG, { write: true });
+    expect(result.status).toBe("refused-no-entries");
+  });
+});
+
+describe("fixExitCode (AC-5)", () => {
+  test("written/preview/nothing-to-fix exit 0", () => {
+    expect(fixExitCode("written")).toBe(0);
+    expect(fixExitCode("preview")).toBe(0);
+    expect(fixExitCode("nothing-to-fix")).toBe(0);
+  });
+
+  test("refused-dirty exits 2", () => {
+    expect(fixExitCode("refused-dirty")).toBe(2);
+  });
+
+  test("refused-no-entries exits 3", () => {
+    expect(fixExitCode("refused-no-entries")).toBe(3);
   });
 });

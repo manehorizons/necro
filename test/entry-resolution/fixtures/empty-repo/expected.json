@@ -1,0 +1,8 @@
+{
+  "case": "empty-repo",
+  "baseline": "green",
+  "prodEntryCount": 0,
+  "entries": [],
+  "symbols": [],
+  "fix": { "write": false, "status": "nothing-to-fix", "exitCode": 0 }
+}

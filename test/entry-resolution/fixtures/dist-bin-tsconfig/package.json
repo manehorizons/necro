@@ -1,0 +1,5 @@
+{
+  "name": "dist-bin-tsconfig-fixture",
+  "version": "1.0.0",
+  "bin": "dist/cli.js"
+}

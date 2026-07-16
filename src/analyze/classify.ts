@@ -37,6 +37,14 @@ export interface ClassifyInput {
    * `coverage: not available` and tiers are unaffected — identical to phase 01.
    */
   coverage?: (node: SymbolNode) => CoverageStatus;
+  /**
+   * Zero production entry points resolved on a non-empty graph (§2.1) —
+   * reachability is unseeded, so every `dead` finding is demoted to `maybe`,
+   * never auto-fix eligible, with a truthful evidence signal prepended.
+   * `test-only` findings are unaffected (they were reached via test entries,
+   * which don't depend on prod-entry resolution).
+   */
+  entryCollapse?: boolean;
 }
 
 /**
@@ -71,13 +79,15 @@ export function classify(input: ClassifyInput): ClassifiedFinding[] {
 
     const cov = coverageOf(node);
     const isPublicApi = publicApiIds.has(node.id);
-    const tier = deadTier(node, result, isPublicApi, cov);
+    const collapse = input.entryCollapse ?? false;
+    const tier = collapse ? "maybe" : deadTier(node, result, isPublicApi, cov);
+    const evidence = deadEvidence(node, result, isPublicApi, cov);
     findings.push({
       node,
       verdict: "dead",
       tier,
-      autoFixEligible: tier === "certain",
-      evidence: deadEvidence(node, result, isPublicApi, cov),
+      autoFixEligible: collapse ? false : tier === "certain",
+      evidence: collapse ? [ENTRY_COLLAPSE_SIGNAL, ...evidence] : evidence,
     });
   }
 
@@ -87,6 +97,11 @@ export function classify(input: ClassifyInput): ClassifiedFinding[] {
 const COVERAGE_UNAVAILABLE: EvidenceSignal = {
   ok: null,
   text: "coverage: not available",
+};
+
+const ENTRY_COLLAPSE_SIGNAL: EvidenceSignal = {
+  ok: false,
+  text: "0 production entry points resolved — reachability unseeded",
 };
 
 /**

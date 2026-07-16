@@ -1,0 +1,29 @@
+{
+  "draftId": "24-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "resolveWorkspaces (npm/yarn workspaces + pnpm-workspace.yaml) → packagePaths map + entryFiles. 5 unit tests pass.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-11T21:23:28.629Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "Spike confirmed ts-morph paths (baseUrl '.' + absolute entry) resolves cross-package refs. buildSymbolGraph.packagePaths → compilerOptions paths. usedCrossPackage alive, trulyUnused dead.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-11T21:23:34.164Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "Engine roots workspace member entry files (file-path semantics). appMain alive; no-op for single-package repos.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-11T21:23:39.084Z"
+    },
+    "T4": {
+      "status": "DONE_WITH_CONCERNS",
+      "notes": "Corpus is a SYNTHESIZED structural monorepo fixture, not a vendored real-repo slice as the DRAFT specified — a real cross-package slice can't stay minimal/self-contained/deterministic (the FP is structural). Documented in SOURCES.md. AC-1/2/3 tests pass; full suite 340 green.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-11T21:23:46.390Z"
+    }
+  }
+}

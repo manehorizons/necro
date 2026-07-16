@@ -1,0 +1,12 @@
+{
+  "case": "config-entries",
+  "baseline": "red",
+  "prodEntryCount": 1,
+  "entries": [
+    { "file": "src/server.ts", "source": "config" }
+  ],
+  "symbols": [
+    { "name": "handler", "file": "src/handler.ts", "verdict": "alive" }
+  ],
+  "fix": { "write": false, "status": "nothing-to-fix", "exitCode": 0 }
+}

@@ -1,0 +1,19 @@
+{
+  "draftId": "19-19",
+  "converged": true,
+  "attempts": 0,
+  "maxAttempts": 3,
+  "history": [
+    {
+      "at": "2026-06-10T23:12:40.984Z",
+      "pass": true,
+      "findingsCount": 0,
+      "provider": "mock",
+      "verdict": "pass"
+    }
+  ],
+  "pass": true,
+  "provider": "mock",
+  "findings": 0,
+  "at": "2026-06-10T23:12:40.984Z"
+}

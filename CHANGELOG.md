@@ -4,6 +4,32 @@ All notable changes to `@manehorizons/necro` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] — Unreleased
+
+### Added
+- **Fail-closed entry resolution.** When zero production entry points resolve
+  on a non-empty codebase, `scan` demotes every dead-code finding to `maybe`
+  (never auto-fix eligible), prints a warning banner naming the fix, and
+  `fix --write` refuses (exit `3`) instead of guessing — closing a bug where
+  necro's own repo (and any `dist/`-pointing manifest with a non-conventional
+  source entry) collapsed to zero prod entries and made `fix --write` eligible
+  to mass-delete correct code.
+- `resolveProdEntries` now maps compiled manifest entries (`main`/`module`/
+  `bin`/`exports`) back to their TypeScript source via `tsconfig.json`
+  `outDir`/`rootDir` (one level of local `extends`), with a `dist|build|out →
+  src` heuristic fallback when there's no tsconfig — both existence-gated
+  against the scanned files, never guessing into undiscovered paths.
+- `package.json` `scripts` values are mined for additional entry-point tokens
+  (e.g. `"bench": "tsx src/bench.ts"`).
+- `necro.config.json` gains an `entries: string[]` field — globs declaring
+  production entry points directly, the canonical fix for the warning banner.
+- `scan` reports `diagnostics.entryResolution` (`prodEntryCount`, per-entry
+  `{file, source}`, `collapsed`) in terminal, `--json`, and `--sarif`
+  (`runs[0].properties.entryResolution`) output.
+- `fix`'s exit codes are now a documented public contract: `0`
+  written/preview/nothing-to-fix, `1` unexpected error, `2` refused-dirty,
+  `3` refused-no-entries (no-entries always wins over a dirty tree).
+
 ## [1.1.0] — 2026-06-11
 
 ### Added

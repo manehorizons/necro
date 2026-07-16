@@ -1,0 +1,12 @@
+{
+  "case": "exports-map",
+  "baseline": "red",
+  "prodEntryCount": 1,
+  "entries": [
+    { "file": "src/app.ts", "source": "mapped" }
+  ],
+  "symbols": [
+    { "name": "orphan", "file": "src/app.ts", "verdict": "dead", "tier": "certain", "autoFixEligible": true }
+  ],
+  "fix": { "write": false, "status": "preview", "exitCode": 0 }
+}

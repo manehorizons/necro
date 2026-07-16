@@ -1,8 +1,12 @@
+import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { describe, expect, test } from "vitest";
 import { VERSION } from "../src/version.js";
 import pkg from "../package.json";
+
+const exec = promisify(execFile);
 
 /** Repo-root-relative path resolver (test cwd-independent). */
 const root = (p: string): string => fileURLToPath(new URL(`../${p}`, import.meta.url));
@@ -37,5 +41,48 @@ describe("release / package shape", () => {
     expect(wf).toContain("secrets.NPM_TOKEN");
     // Guards a tag/package.json version mismatch before publishing.
     expect(wf).toMatch(/does not match package\.json version/);
+  });
+});
+
+describe("fail-closed entry resolution — CHANGELOG + boundary compliance", () => {
+  test("CHANGELOG documents the fail-closed entry-resolution slice under 1.2.0 Unreleased (AC-8)", () => {
+    const changelog = readFileSync(root("CHANGELOG.md"), "utf8");
+    expect(changelog).toContain("## [1.2.0] — Unreleased");
+    const section = changelog.slice(changelog.indexOf("## [1.2.0]"), changelog.indexOf("## [1.1.0]"));
+    expect(section).toMatch(/fail-closed entry resolution/i);
+    expect(section).toMatch(/entries.*string\[\]|"entries"/i);
+    expect(section).toMatch(/dist.*src|tsconfig/i);
+    expect(section).toMatch(/scripts/i);
+    expect(section).toMatch(/exit code/i);
+  });
+
+  test("this slice's changes stay within the Boundaries allowlist (AC-7)", async () => {
+    // Baseline commit recorded in 28-01-DRAFT.md's Baseline Evidence — the tree
+    // as it stood before this slice's implementation began.
+    const BASELINE_SHA = "9741c78";
+    const ALLOWLIST = [
+      /^src\/analyze\/classify\.ts$/,
+      /^src\/cli\.ts$/,
+      /^src\/config\.ts$/,
+      /^src\/engine\/index\.ts$/,
+      /^src\/engine\/model\.ts$/,
+      /^src\/engine\/prod-entries\.ts$/,
+      /^src\/engine\/entry-mapping\.ts$/,
+      /^src\/fix\/index\.ts$/,
+      /^src\/report\//,
+      /^test\//,
+      /^README\.md$/,
+      /^CHANGELOG\.md$/,
+      // CADENCE's own bookkeeping, updated by `cadence build task` — not a source change.
+      /^\.cadence\//,
+    ];
+
+    const { stdout } = await exec("git", ["diff", "--name-only", BASELINE_SHA, "--", "src", "test", "README.md", "CHANGELOG.md"], {
+      cwd: root(""),
+    });
+    const changed = stdout.split("\n").map((l) => l.trim()).filter(Boolean);
+    expect(changed.length).toBeGreaterThan(0); // the check itself must exercise real changes
+    const offenders = changed.filter((f) => !ALLOWLIST.some((re) => re.test(f)));
+    expect(offenders).toEqual([]);
   });
 });

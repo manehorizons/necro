@@ -1,0 +1,23 @@
+{
+  "draftId": "17-17",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Dropped select-L685/delete-L205/driver-L61; backfilled session-L314 (normalizeFieldValue, libsql+sql-js), session-L267 (txn wrapper, neon-serverless+netlify-db), session-L254 (txn wrapper, node-postgres+vercel-postgres) — captured verbatim from drizzle 48e5406, oracle-valid, near-identical sites. Corpus 12/2 repos (trpc 4, drizzle 8), no file >3. Deterministic guard + full non-live suite green (276 passed). Spare candidates for T2 swap (in /tmp/necro-scan/pool.json): dialect-L316, utils-L45, utils-L35, generate-L584. Live validation (T2) is the next, billable step.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T21:02:16.405Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "3 final live runs on curated corpus: 0.83/0.92/0.92 (mean 0.89, min 0.83), up from phase-16's 0.5/~0.69. Backfills cleared >=2/3: session-L314 3/3, session-L267 3/3, session-L112 2/3. session-L254 dropped after failing 2/2 pre-swap (divergent session-creation+pool-release), swapped for session-L112. Only remaining failure is utils-L303 flaking (model non-determinism, single-unit). DUP_REALREPO_PASS_RATE_GATE raised 0.5->0.7 (below 0.83 min, margin for 3 co-flaking borderline cases ~0.75). Calibration block in SOURCES.md + live comment replaced.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T21:17:26.189Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "Regression sweep (AC-4): git diff f10b902..HEAD shows NO src/ changes — scorer (evaluateDuplicateProposal/COLLAPSE_RATIO + all of src/refactor/eval.ts), DUP_SYSTEM_PROMPT/buildDuplicatePrompt, and the production runExtractDuplicate path byte-for-byte unchanged. eval-only confirmed (no production importer; only a doc comment in eval-capture.ts). Change confined to cases.json + SOURCES.md + the DUP_REALREPO_PASS_RATE_GATE constant/comment. SOURCES.md documents empirical (live-validated) curation + the measured non-viability of a static single-unit predicate + the detector root-cause (findClones crossing function boundaries, production-scope). Full non-live suite green (276 passed, 6 live-skipped); typecheck clean.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T21:17:35.031Z"
+    }
+  }
+}

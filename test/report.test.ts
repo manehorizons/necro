@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import type { ClassifiedFinding, Tier, Verdict } from "../src/analyze/classify.js";
 import { sortWorstFirst } from "../src/report/sort.js";
 import { toJson } from "../src/report/json.js";
-import { renderTerminal } from "../src/report/terminal.js";
+import { renderEntryCollapseBanner, renderTerminal } from "../src/report/terminal.js";
 
 function finding(
   name: string,
@@ -78,6 +78,24 @@ describe("toJson", () => {
     expect(parsed.complexity).toHaveLength(1);
     expect(parsed.complexity[0]).toMatchObject({ detector: "nesting", name: "tangled", value: 4 });
   });
+
+  test("emits diagnostics.entryResolution when provided (AC-2)", () => {
+    const json = toJson({
+      findings: [],
+      complexity: [],
+      hotspots: [],
+      duplication: [],
+      diagnostics: {
+        entryResolution: {
+          prodEntryCount: 1,
+          sources: [{ file: "src/cli.ts", source: "mapped" }],
+          collapsed: false,
+        },
+      },
+    });
+    const parsed = JSON.parse(json) as { diagnostics: { entryResolution: { prodEntryCount: number } } };
+    expect(parsed.diagnostics.entryResolution.prodEntryCount).toBe(1);
+  });
 });
 
 describe("renderTerminal", () => {
@@ -91,5 +109,22 @@ describe("renderTerminal", () => {
     expect(text).toContain("tier: certain");
     expect(text).toContain("tier: maybe");
     expect(text).toContain("✓ 0 static references");
+  });
+});
+
+describe("renderEntryCollapseBanner (AC-3)", () => {
+  test("renders nothing when reachability did not collapse", () => {
+    expect(
+      renderEntryCollapseBanner({ prodEntryCount: 1, sources: [], collapsed: false }),
+    ).toBeNull();
+  });
+
+  test("renders one banner naming the three remedies when collapsed", () => {
+    const banner = renderEntryCollapseBanner({ prodEntryCount: 0, sources: [], collapsed: true });
+    expect(banner).not.toBeNull();
+    expect(banner).toContain("0 production entry points resolved");
+    expect(banner).toMatch(/main|module|bin|exports/);
+    expect(banner).toMatch(/entries/);
+    expect(banner).toMatch(/index\.ts|conventional/);
   });
 });

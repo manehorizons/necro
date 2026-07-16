@@ -43,7 +43,7 @@
     "maxAttempts": 3
   },
   "specReview": {
-    "provider": "mock"
+    "provider": "host-cli"
   },
   "tier": {
     "quickFix": {
@@ -63,23 +63,25 @@
     "testGlobs": [
       "**/*.test.ts",
       "**/*.test.tsx"
-    ]
+    ],
+    "coverageMode": "assertion",
+    "coverageProfiles": []
   },
   "verifier": {
-    "provider": "mock",
+    "provider": "host-cli",
     "diffCapBytes": 262144
   },
   "perTaskVerifier": {
-    "provider": "mock"
+    "provider": "host-cli"
   },
   "codeReview": {
-    "provider": "mock"
+    "provider": "host-cli"
   },
   "planReview": {
-    "provider": "mock"
+    "provider": "host-cli"
   },
   "securityAudit": {
-    "provider": "mock"
+    "provider": "host-cli"
   },
   "notify": {
     "transport": "stderr"
@@ -90,5 +92,23 @@
   },
   "logging": {
     "level": "silent"
-  }
+  },
+  "handoff": {},
+  "recommendations": {
+    "autoArchive": true
+  },
+  "retro": {
+    "enabled": true,
+    "offerGithubIssue": true
+  },
+  "gates": {
+    "sealed": []
+  },
+  "resume": {
+    "crossWorktree": true,
+    "autoList": false,
+    "remoteCheck": true
+  },
+  "boundaryEnforcement": "warn",
+  "redundantWorkEnforcement": "warn"
 }

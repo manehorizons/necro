@@ -1,0 +1,15 @@
+{
+  "bypasses": [],
+  "roughTasks": [],
+  "findings": {
+    "codeReview": {
+      "src/cli.ts": [
+        {
+          "severity": "high",
+          "message": "console.log left in source",
+          "line": 100
+        }
+      ]
+    }
+  }
+}

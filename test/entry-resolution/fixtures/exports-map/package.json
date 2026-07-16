@@ -1,0 +1,9 @@
+{
+  "name": "exports-map-fixture",
+  "version": "1.0.0",
+  "exports": {
+    ".": {
+      "import": "./dist/app.js"
+    }
+  }
+}

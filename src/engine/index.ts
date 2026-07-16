@@ -7,10 +7,15 @@ import { sortWorstFirst } from "../report/sort.js";
 import type { LcovReport } from "../analyze/coverage/lcov.js";
 import type { HotspotEntry } from "../analyze/hotspots.js";
 import type { ComplexityFinding, DuplicationFinding } from "../syntactic/types.js";
-import { buildReachabilityModel } from "./model.js";
+import { buildReachabilityModel, type EntryResolution } from "./model.js";
 
 /** A single anti-pattern finding (a classified dead/test-only symbol). */
 export type Finding = ClassifiedFinding;
+
+/** Fail-closed entry-resolution diagnostics (§2.1), surfaced in terminal/JSON/SARIF. */
+export interface ScanDiagnostics {
+  entryResolution: EntryResolution;
+}
 
 export interface ScanResult {
   findings: Finding[];
@@ -20,6 +25,7 @@ export interface ScanResult {
   hotspots: HotspotEntry[];
   /** Copy-paste clone groups, worst-first by token length. */
   duplication: DuplicationFinding[];
+  diagnostics: ScanDiagnostics;
 }
 
 export interface ScanOptions {
@@ -41,7 +47,13 @@ export async function scan(
 ): Promise<ScanResult> {
   const model = await buildReachabilityModel(targetPath, config);
   if (model.files.length === 0)
-    return { findings: [], complexity: [], hotspots: [], duplication: [] };
+    return {
+      findings: [],
+      complexity: [],
+      hotspots: [],
+      duplication: [],
+      diagnostics: { entryResolution: model.entryResolution },
+    };
   const { graph, reachability, sources } = model;
 
   // Coverage is an optional, path-based signal (never runs the test suite).
@@ -51,7 +63,12 @@ export async function scan(
     : undefined;
 
   const findings = sortWorstFirst(
-    classify({ nodes: graph.nodes, reachability, coverage }),
+    classify({
+      nodes: graph.nodes,
+      reachability,
+      coverage,
+      entryCollapse: model.entryResolution.collapsed,
+    }),
   );
 
   const heavy =
@@ -63,6 +80,7 @@ export async function scan(
     complexity: heavy.complexity,
     hotspots: heavy.hotspots,
     duplication: heavy.duplication,
+    diagnostics: { entryResolution: model.entryResolution },
   };
 }
 

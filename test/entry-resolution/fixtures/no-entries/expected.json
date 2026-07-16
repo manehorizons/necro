@@ -1,0 +1,19 @@
+{
+  "case": "no-entries",
+  "baseline": "red",
+  "prodEntryCount": 0,
+  "entries": [],
+  "symbols": [
+    {
+      "name": "orphan",
+      "file": "src/cli.ts",
+      "verdict": "dead",
+      "tier": "maybe",
+      "autoFixEligible": false,
+      "evidenceContains": [
+        { "ok": false, "text": "0 production entry points resolved — reachability unseeded" }
+      ]
+    }
+  ],
+  "fix": { "write": true, "status": "refused-no-entries", "exitCode": 3 }
+}

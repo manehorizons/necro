@@ -17,6 +17,7 @@ export type FixResult =
   | { status: "nothing-to-fix" }
   | { status: "preview"; diff: string; count: number }
   | { status: "refused-dirty" }
+  | { status: "refused-no-entries" }
   | { status: "written"; count: number; files: string[] };
 
 /**
@@ -31,7 +32,14 @@ export async function runFix(
   opts: FixOptions,
 ): Promise<FixResult> {
   // fix only needs dead-code findings — skip the complexity (tree-sitter) axis.
-  const { findings } = await scan(targetPath, config, { complexity: false });
+  const { findings, diagnostics } = await scan(targetPath, config, { complexity: false });
+
+  // Fail-closed (§2): zero prod entries on a non-empty graph means reachability
+  // is unseeded — refuse before the nothing-to-fix check (the user must learn
+  // *why* nothing is eligible) and before the dirty-tree guard (no-entries wins,
+  // so refusal reasons never shadow each other).
+  if (diagnostics.entryResolution.collapsed) return { status: "refused-no-entries" };
+
   const edits = planRemovals(findings);
   if (edits.length === 0) return { status: "nothing-to-fix" };
 
@@ -49,4 +57,20 @@ export async function runFix(
 
   await Promise.all(edits.map((e) => writeFile(e.file, e.after)));
   return { status: "written", count, files: edits.map((e) => e.file) };
+}
+
+/**
+ * Public CLI exit-code taxonomy for `fix` (§2.5): 0 written/preview/
+ * nothing-to-fix, 2 refused-dirty, 3 refused-no-entries. (Exit 1, unexpected
+ * error, is set by the CLI's top-level catch — not reachable from a `FixResult`.)
+ */
+export function fixExitCode(status: FixResult["status"]): number {
+  switch (status) {
+    case "refused-dirty":
+      return 2;
+    case "refused-no-entries":
+      return 3;
+    default:
+      return 0;
+  }
 }

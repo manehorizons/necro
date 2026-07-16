@@ -1,0 +1,35 @@
+{
+  "draftId": "16-16",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "3 live-model DuplicateProposal fixtures captured last session (utils-L303 / count-L24 / query-builder-L90) under test/fixtures/refactor-dup-realrepo/proposals/. Edited-site residuals measured deterministically: utils-L303=0 (0.00), count-L24=115 (0.87), query-builder-L90=116 (0.87) vs group tokens 52/132/134 — calibrates COLLAPSE_RATIO=0.5. Case inputs snapshotted as .case.json so the regression tests are hermetic.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T19:49:47.747Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "collapsesDuplication now measures the largest residual clone among the model's edit replacements (findClones over per-edit pseudo-files), collapsed iff < c.tokens * COLLAPSE_RATIO. COLLAPSE_RATIO=0.5 exported + documented in src/refactor/eval.ts. Edited-site scope (not whole spliced files) removes the dialect-near-duplicate confound. Eval-only; production refactor path + DUP_SYSTEM_PROMPT untouched.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T19:49:57.863Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "refactor-eval.test.ts: new 'collapsesDuplication is measured on the edited sites (AC-1, AC-2)' block scores the 3 fixtures (utils-L303 passes; count-L24/query-builder-L90 fail) + a lazy extraction (fails) + a COLLAPSE_RATIO margin pin. refactor-dup-realrepo-corpus.test.ts: oracle still passRate=1; added a per-corpus lazy-extraction-fails sweep; dropped-edit assertion now attributes failure to extractsSharedFunction. Boundary proven to bite via a COLLAPSE_RATIO=1.0 mutation (2 tests fail). Network-free; 26 deterministic tests green.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T19:50:06.419Z"
+    },
+    "T5": {
+      "status": "DONE",
+      "notes": "Regression sweep (AC-4): git diff c66e3d0..HEAD confined to src/refactor/eval.ts (scorer) + tests + fixtures + SOURCES.md. DUP_SYSTEM_PROMPT/buildDuplicatePrompt and the production runExtractDuplicate path byte-for-byte unchanged (no prompt.ts commit; production duplicate path uses verify.ts, no eval import). evaluateDuplicateProposal has no production importer (only a doc comment in eval-capture.ts). Lazy import() SDK isolation preserved (tokens/duplication still dynamically imported). Full non-live suite green: 276 passed, 6 live-skipped; typecheck clean. AC-4 covered by the 'drives the unchanged production duplicate system prompt (AC-4)' test.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T20:04:56.953Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "3 live runs (claude-opus-4-8) on edited-site scorer + refined corpus: 0.75 / 0.75 / 0.58 (mean ~0.69, min 0.58). Scorer fix validated — utils-L303 recovered, dialect-L948 + session-L69 pass all 3. Floor held at 0.5 (below 0.58 min, parse-flake margin) — honestly NOT raised: the 3 consistent failures (select-L685, delete-L205, driver-L61) are multi-unit clone windows where the model correctly extracts the one reusable function but the detector's window bundles non-extractable class scaffolding (residual 0.66-0.89, overlapping the dropped pair's ~0.87, so no ratio separates them). Recorded in SOURCES.md + live-test comment. Corpus-input limitation, not a scorer/model defect; future corpus-refinement phase noted.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T20:23:19.878Z"
+    }
+  }
+}

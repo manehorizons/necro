@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>necro — full application audit · 2026-07-01</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page:#0d0d0d;
+    --surface:#1a1a19;
+    --raised:#212120;
+    --ink:#ffffff;
+    --ink-2:#c3c2b7;
+    --muted:#898781;
+    --hairline:rgba(255,255,255,0.10);
+    --grid:#2c2c2a;
+    --bone:#e8e4d8;
+    --accent:#9085e9;      /* spectral violet — categorical slot, validated on dark */
+    --data-blue:#3987e5;   /* categorical slot 1, validated on dark */
+    --data-aqua:#199e70;   /* categorical slot 2, validated on dark */
+    --high:#d03b3b;        /* status: critical  (3.62:1 on dark) */
+    --med:#ec835a;         /* status: serious   (6.60:1 on dark) */
+    --low:#fab219;         /* status: warning   (9.49:1 on dark) */
+    --good:#0ca30c;        /* status: good      (5.19:1 on dark) */
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --serif:"Instrument Serif",Georgia,serif;
+    --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--page);color:var(--ink-2);
+    font:16px/1.65 var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:0 28px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* ---------- header ---------- */
+  header{padding:64px 0 0}
+  .eyebrow{
+    font:500 12px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;
+    color:var(--muted);
+  }
+  .eyebrow .dot{color:var(--accent)}
+  h1{
+    font:400 clamp(56px,9vw,96px)/1 var(--serif);color:var(--bone);
+    margin:18px 0 6px;letter-spacing:-.01em;
+  }
+  h1 em{font-style:italic;color:var(--accent)}
+  .lede{max-width:620px;color:var(--ink-2);font-size:18px;margin-top:14px}
+  .meta-row{
+    display:flex;flex-wrap:wrap;gap:10px 28px;margin-top:26px;
+    font:400 13px var(--mono);color:var(--muted);
+  }
+  .meta-row b{color:var(--ink-2);font-weight:500}
+
+  /* ---------- verdict terminal (signature) ---------- */
+  .verdict{
+    margin-top:44px;background:var(--surface);
+    border:1px solid var(--hairline);border-radius:10px;overflow:hidden;
+  }
+  .verdict-bar{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 16px;border-bottom:1px solid var(--hairline);
+    font:400 12px var(--mono);color:var(--muted);
+  }
+  .verdict-bar .lights{display:flex;gap:6px}
+  .verdict-bar .lights i{width:9px;height:9px;border-radius:50%;background:var(--grid);display:block}
+  .verdict pre{
+    padding:22px 24px;font:400 13.5px/2 var(--mono);
+    white-space:pre-wrap;color:var(--ink-2);
+  }
+  .verdict .ok{color:var(--good)}
+  .verdict .bad{color:var(--high)}
+  .verdict .dim{color:var(--muted)}
+  .verdict .vd{color:var(--bone);font-weight:700}
+  .verdict .cmd{color:var(--accent)}
+
+  /* ---------- sections ---------- */
+  section{padding:72px 0 0}
+  .sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:8px}
+  h2{font:400 34px/1.15 var(--serif);color:var(--bone)}
+  .sec-note{color:var(--muted);font-size:14px;max-width:640px;margin:8px 0 30px}
+  p{margin-bottom:14px}
+  p b,li b{color:var(--ink);font-weight:600}
+  code{
+    font:400 .88em var(--mono);color:var(--bone);
+    background:var(--raised);border:1px solid var(--hairline);
+    border-radius:4px;padding:1px 5px;
+  }
+
+  /* ---------- stat tiles ---------- */
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .tile{
+    background:var(--surface);border:1px solid var(--hairline);
+    border-radius:10px;padding:20px 22px 18px;
+  }
+  .tile .v{font:400 40px/1.05 var(--serif);color:var(--ink)}
+  .tile .v small{font-size:20px;color:var(--muted)}
+  .tile .l{font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+  .tile .c{font-size:13px;color:var(--ink-2);margin-top:6px}
+  .tile.flag .v{color:var(--med)}
+  .tile.good-v .v{color:var(--good)}
+
+  /* ---------- severity chips ---------- */
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;
+    font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;
+    border:1px solid var(--hairline);border-radius:99px;padding:2px 10px 2px 8px;
+    white-space:nowrap;flex-shrink:0;
+  }
+  .chip i{width:7px;height:7px;border-radius:50%;display:block}
+  .chip.high{color:var(--high)} .chip.high i{background:var(--high)}
+  .chip.med{color:var(--med)}  .chip.med i{background:var(--med)}
+  .chip.low{color:var(--low)}  .chip.low i{background:var(--low)}
+  .chip.bug{color:var(--accent)} .chip.bug i{background:var(--accent)}
+
+  /* ---------- scorecard ---------- */
+  .score-grid{display:grid;grid-template-columns:230px 1fr 52px;gap:0 18px;align-items:center}
+  .score-grid .dim{
+    font:500 13.5px var(--sans);color:var(--ink-2);text-align:right;
+    padding:9px 0;white-space:nowrap;
+  }
+  .score-grid .track{position:relative;height:22px;background:var(--raised);border-radius:4px}
+  .score-grid .bar{
+    position:absolute;inset:0 auto 0 0;background:var(--data-blue);
+    border-radius:4px 3px 3px 4px;min-width:4px;
+  }
+  .score-grid .val{font:500 13px var(--mono);color:var(--ink);padding:9px 0}
+  .track:hover .tip,.track:focus-within .tip{opacity:1;transform:translateY(0)}
+  .tip{
+    position:absolute;left:12px;bottom:calc(100% + 8px);z-index:5;
+    background:var(--raised);border:1px solid var(--hairline);border-radius:8px;
+    box-shadow:0 8px 24px rgba(0,0,0,.5);
+    padding:10px 14px;font-size:12.5px;line-height:1.5;color:var(--ink-2);
+    width:340px;max-width:70vw;opacity:0;pointer-events:none;
+    transform:translateY(4px);transition:opacity .12s,transform .12s;
+  }
+  .tip b{color:var(--ink);display:block;margin-bottom:2px;font:500 12px var(--mono)}
+  .score-foot{font-size:12.5px;color:var(--muted);margin-top:14px}
+
+  /* ---------- bug cards ---------- */
+  .bugs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .bug-card{
+    background:var(--surface);border:1px solid var(--hairline);
+    border-left:3px solid var(--high);border-radius:10px;padding:20px 22px;
+  }
+  .bug-card.b2{border-left-color:var(--med)}
+  .bug-card h3{font:600 15.5px var(--sans);color:var(--ink);margin-bottom:8px}
+  .bug-card .where{font:400 12px var(--mono);color:var(--muted);margin-bottom:10px}
+  .bug-card p{font-size:14px;margin-bottom:10px}
+  .bug-card pre{
+    font:400 12px/1.8 var(--mono);color:var(--ink-2);
+    background:var(--page);border:1px solid var(--hairline);border-radius:6px;
+    padding:12px 14px;overflow-x:auto;white-space:pre;
+  }
+  .bug-card pre .bad{color:var(--high)}
+  .bug-card pre .dim{color:var(--muted)}
+
+  /* ---------- dimension cards ---------- */
+  .dims{display:grid;gap:16px}
+  .dim-card{
+    background:var(--surface);border:1px solid var(--hairline);
+    border-radius:10px;padding:24px 26px;
+  }
+  .dim-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .dim-head h3{font:400 23px var(--serif);color:var(--bone)}
+  .dim-head .grade{font:500 12px var(--mono);color:var(--muted)}
+  .dim-head .grade b{color:var(--ink);font-size:15px}
+  .dim-sum{font-size:14.5px;color:var(--ink-2);margin:10px 0 4px;max-width:860px}
+  .kudos{
+    font-size:13.5px;color:var(--muted);margin:10px 0 14px;
+    padding-left:14px;border-left:2px solid var(--good);
+  }
+  .kudos b{color:var(--good);font-weight:600}
+  ul.gaps{list-style:none;display:grid;gap:9px;margin-top:6px}
+  ul.gaps li{
+    display:flex;gap:12px;align-items:flex-start;
+    font-size:14px;line-height:1.55;
+  }
+  ul.gaps li .chip{margin-top:2px}
+  ul.gaps li code{font-size:.85em}
+
+  /* ---------- improvements ---------- */
+  .tier{margin-bottom:36px}
+  .tier-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+  .tier-head h3{font:400 24px var(--serif);color:var(--bone)}
+  .tier-head .tt{font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+  .tier-note{font-size:13.5px;color:var(--muted);margin-bottom:16px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{
+    font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);text-align:left;padding:8px 14px 8px 0;
+    border-bottom:1px solid var(--hairline);
+  }
+  td{padding:13px 14px 13px 0;border-bottom:1px solid var(--hairline);vertical-align:top}
+  td.n{font:400 17px var(--serif);color:var(--accent);white-space:nowrap;width:34px}
+  td.what b{color:var(--ink);font-weight:600;display:block;margin-bottom:2px}
+  td.what span{color:var(--ink-2);font-size:13.5px}
+  td.eff{white-space:nowrap;font:500 12px var(--mono);color:var(--muted);width:70px}
+  td.pay{color:var(--ink-2);font-size:13.5px;width:30%}
+  tr:hover td{background:rgba(255,255,255,0.015)}
+
+  /* ---------- 30 day plan ---------- */
+  .plan{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .wk{background:var(--surface);border:1px solid var(--hairline);border-radius:10px;padding:18px 20px}
+  .wk h4{font:500 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+  .wk ul{list-style:none;display:grid;gap:7px;font-size:13.5px}
+  .wk li::before{content:"→ ";color:var(--muted);font-family:var(--mono)}
+
+  footer{
+    margin-top:88px;padding:34px 0 56px;border-top:1px solid var(--hairline);
+    font-size:13px;color:var(--muted);
+  }
+  footer .cols{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+  footer h4{font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);margin-bottom:10px}
+  footer ul{list-style:none;display:grid;gap:5px}
+
+  @media (max-width:880px){
+    .tiles{grid-template-columns:repeat(2,1fr)}
+    .bugs{grid-template-columns:1fr}
+    .plan{grid-template-columns:repeat(2,1fr)}
+    .score-grid{grid-template-columns:150px 1fr 48px}
+    .score-grid .dim{font-size:12.5px;white-space:normal}
+    footer .cols{grid-template-columns:1fr}
+  }
+  @media (max-width:560px){
+    .tiles,.plan{grid-template-columns:1fr}
+    h1{font-size:52px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .tip{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <div class="eyebrow">Application audit <span class="dot">·</span> 2026-07-01 <span class="dot">·</span> full assessment</div>
+  <h1>necro<em>.</em></h1>
+  <p class="lede">A complete audit of <b>@manehorizons/necro</b> — onboarding, feature surface, architecture,
+  testing &amp; release, MCP/LLM integration, and measured accuracy — with every high-value improvement
+  identified and ranked.</p>
+  <div class="meta-row">
+    <span>audited at <b>8b78cdf</b> (HEAD, main)</span>
+    <span>local <b>v1.1.0</b> · npm latest <b>v1.1.0</b></span>
+    <span>src <b>~6.6k</b> lines · tests <b>~7.1k</b> lines</span>
+    <span>method <b>6 parallel audit agents + live CLI exercise</b></span>
+  </div>
+
+  <div class="verdict" aria-label="Audit verdict, styled as necro's own evidence-chain output">
+    <div class="verdict-bar"><span class="lights"><i></i><i></i><i></i></span>necro audit — evidence chain</div>
+    <pre><span class="cmd">$ necro audit /home/thomas/projects/necro</span>
+
+<span class="ok">✓</span> architecture     layered engine core · zero <span class="dim">any / @ts-ignore / TODO</span> in src · tsc --noEmit clean
+<span class="ok">✓</span> tests            385 passing, 0 failing, 4.4s · AC-traceable titles · offline/live split
+<span class="ok">✓</span> release          npm 1.1.0 published with provenance · 4-file tarball · shape pinned by test
+<span class="ok">✓</span> accuracy infra   SHA-pinned real-repo corpora · mechanical scorers · snapshot feeds docs
+<span class="bad">✗</span> ci               <span class="bad">no workflow runs tests or typecheck on push/PR</span> — only on release tags
+<span class="bad">✗</span> docs             README/CHANGELOG/site lag HEAD by six phases — 3 of 7 commands undocumented
+<span class="bad">✗</span> published gap    explain · verify-removal · --narrate · Next.js plugin · monorepo — <span class="bad">not on npm</span>
+
+<span class="dim">→</span> <span class="vd">verdict: alive and unusually healthy at the core — the gaps sit between HEAD and its users</span></pre>
+  </div>
+</header>
+
+<!-- ================= key numbers ================= -->
+<section class="wrap" id="numbers">
+  <div class="sec-head"><h2>The numbers</h2></div>
+  <p class="sec-note">Measured during this audit: the test suite was run in full, the CLI was exercised live
+  against a planted fixture, the MCP server was handshaken, and npm/GitHub state was checked directly.</p>
+  <div class="tiles">
+    <div class="tile good-v">
+      <div class="v">385</div>
+      <div class="l">tests passing</div>
+      <div class="c">0 failures · 4.40 s wall · 6 live-eval tests key-gated by design</div>
+    </div>
+    <div class="tile good-v">
+      <div class="v">1.00</div>
+      <div class="l">triage precision</div>
+      <div class="c">0 false "dead" verdicts on the 48-case real-repo corpus (hono + trpc)</div>
+    </div>
+    <div class="tile flag">
+      <div class="v">0.467</div>
+      <div class="l">triage recall</div>
+      <div class="c">▲ serious — 7 of 15 truly-dead cases caught; the accuracy frontier</div>
+    </div>
+    <div class="tile good-v">
+      <div class="v">0.917</div>
+      <div class="l">duplication pass-rate</div>
+      <div class="c">11 / 12 structural checks pass on the trpc + drizzle corpus</div>
+    </div>
+    <div class="tile flag">
+      <div class="v">5</div>
+      <div class="l">features stuck at head</div>
+      <div class="c">▲ serious — shipped after 1.1.0, absent from npm and all docs</div>
+    </div>
+    <div class="tile">
+      <div class="v">32</div>
+      <div class="l">audit findings</div>
+      <div class="c">4 high · 19 medium · 9 low — two are confirmed live bugs</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= executive summary ================= -->
+<section class="wrap" id="summary">
+  <div class="sec-head"><h2>Executive summary</h2></div>
+  <p><b>necro's core is in unusually good shape.</b> The codebase typechecks clean under maximal strictness with
+  zero escape hatches, the 385-test suite passes in under five seconds with acceptance-criteria-traceable titles,
+  the npm release pipeline is guarded and provenance-signed, and the accuracy story is backed by a real,
+  SHA-pinned eval harness rather than marketing copy. The engineering discipline here is the product's moat.</p>
+  <p><b>The problems are almost all at the boundary between the code and its users.</b> Everything shipped since
+  June 11 — <code>explain</code>, <code>verify-removal</code>, <code>explain --narrate</code>, the Next.js plugin,
+  monorepo support — is invisible: not on npm, not in the README, not in the CHANGELOG, and the docs site still
+  calls <code>explain</code> "planned." Meanwhile no CI workflow runs the (fast, free) test suite on push or PR,
+  so the safety net only exists at release time, and the live accuracy gates never fire anywhere.</p>
+  <p><b>Two real bugs were confirmed by exercising the CLI live:</b> <code>verify-removal</code> always exits 0
+  even when a removal breaks the build (defeating its headline CI use case), and <code>--checks</code> splits
+  naively on commas, shredding any check command containing one — and then misreports the mangled command's
+  failure as "removal breaks the build."</p>
+  <p><b>The highest-leverage week of work available:</b> add a CI test workflow, fix the two bugs, sync the docs
+  to HEAD, and cut v1.2.0. That single sequence converts about six weeks of already-finished feature work into
+  something users can actually install and trust.</p>
+</section>
+
+<!-- ================= scorecard ================= -->
+<section class="wrap" id="scorecard">
+  <div class="sec-head"><h2>Dimension scorecard</h2></div>
+  <p class="sec-note">Synthesized from the six audit tracks. Score reflects current state against what a tool
+  of this ambition needs — hover a bar for the one-line rationale.</p>
+
+  <div class="score-grid" role="img" aria-label="Bar chart of audit scores by dimension: Architecture and code health 92, Test suite 85, MCP and LLM integration 82, Release and distribution 78, Accuracy and evaluation 76, CLI features and UX 70, Onboarding and docs 62, CI automation 40. All scores out of 100.">
+    <div class="dim">Architecture &amp; code health</div>
+    <div class="track" tabindex="0"><div class="bar" style="width:92%"></div>
+      <div class="tip"><b>92 / 100</b>Layered engine shared by CLI/MCP/LLM paths; zero type escape hatches; largest file is 333 lines. Docked for missing lint enforcement and no library export surface.</div></div>
+    <div class="val">92</div>
+
+    <div class="dim">Test suite</div>
+    <div class="track" tabindex="0"><div class="bar" style="width:85%"></div>
+      <div class="tip"><b>85 / 100</b>385 tests, 0 failures, 4.4s, AC-tagged, clean offline/live split. Docked because coverage is entirely unmeasured — six modules are only indirectly exercised.</div></div>
+    <div class="val">85</div>
+
+    <div class="dim">MCP &amp; LLM integration</div>
+    <div class="track" tabindex="0"><div class="bar" style="width:82%"></div>
+      <div class="tip"><b>82 / 100</b>Current model (claude-opus-4-8), structured outputs, lazy SDK, key errors before any network call. Docked for no progress on minutes-long tools and zero cost visibility.</div></div>
+    <div class="val">82</div>
+
+    <div class="dim">Release &amp; distribution</div>
+    <div class="track" tabindex="0"><div class="bar" style="width:78%"></div>
+      <div class="tip"><b>78 / 100</b>Tag-guarded publish with provenance and a shape-pinning test. Docked because npm 1.1.0 now trails HEAD by five features and versioning/changelog are fully manual.</div></div>
+    <div class="val">78</div>
+
+    <div class="dim">Accuracy &amp; evaluation</div>
+    <div class="track" tabindex="0"><div class="bar" style="width:76%"></div>
+      <div class="tip"><b>76 / 100</b>Real-repo, SHA-pinned, provenance-stamped eval system — rare and valuable. Docked for recall 0.467 measured on just 15 positives, single-run snapshots, and no CI tripwire.</div></div>
+    <div class="val">76</div>
+
+    <div class="dim">CLI features &amp; UX</div>
+    <div class="track" tabindex="0"><div class="bar" style="width:70%"></div>
+      <div class="tip"><b>70 / 100</b>Seven commands across three evidence axes with a strong safety posture. Docked for two confirmed bugs, absolute-path/no-color output, no baseline mechanism, no progress feedback.</div></div>
+    <div class="val">70</div>
+
+    <div class="dim">Onboarding &amp; docs</div>
+    <div class="track" tabindex="0"><div class="bar" style="width:62%"></div>
+      <div class="tip"><b>62 / 100</b>Well-crafted README, live Starlight docs site, honest cost/opt-in framing — but all of it describes the product as of June 11. Three commands and two MCP tools are undocumented.</div></div>
+    <div class="val">62</div>
+
+    <div class="dim">CI automation</div>
+    <div class="track" tabindex="0"><div class="bar" style="width:40%"></div>
+      <div class="tip"><b>40 / 100</b>Docs deploy, a dogfood SARIF scan, and a release workflow exist — but nothing runs tests or typecheck on push/PR, and the live accuracy gates never run anywhere.</div></div>
+    <div class="val">40</div>
+  </div>
+  <p class="score-foot">Single measure, single hue (categorical slot 1, validated at 3:1+ on this surface); values are direct-labeled.</p>
+</section>
+
+<!-- ================= confirmed bugs ================= -->
+<section class="wrap" id="bugs">
+  <div class="sec-head"><h2>Confirmed bugs</h2></div>
+  <p class="sec-note">Both reproduced live during the audit against a planted fixture repo — these are observations,
+  not code-reading speculation.</p>
+  <div class="bugs">
+    <div class="bug-card">
+      <h3>verify-removal always exits 0 — even when removal breaks the build</h3>
+      <div class="where">src/cli.ts:162–178 · severity: high</div>
+      <p>The command prints the right verdict but never sets <code>process.exitCode</code>, unlike
+      <code>explain</code>. Its headline use case — CI-gating a deletion PR — silently cannot work; the only
+      workaround is parsing <code>--json</code> yourself.</p>
+      <pre><span class="bad">✗</span> used — removal breaks the build
+<span class="dim">$ echo $?</span>
+0   <span class="dim">← should be non-zero</span></pre>
+    </div>
+    <div class="bug-card b2">
+      <h3>--checks splits on every comma, shredding real commands</h3>
+      <div class="where">src/cli.ts:166 · severity: medium (corrupts verdicts)</div>
+      <p><code>opts.checks.split(",")</code> breaks any check command containing a comma — and the mangled
+      fragment's shell error is then reported as "removal breaks the build," a false verdict. Accept a repeatable
+      flag or a JSON array instead.</p>
+      <pre><span class="dim">--checks "node -e 'f(1,2)'"</span>
+/bin/sh: Syntax error: Unterminated quoted string
+<span class="bad">✗</span> used — removal breaks the build  <span class="dim">← wrong conclusion</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ================= findings by dimension ================= -->
+<section class="wrap" id="findings">
+  <div class="sec-head"><h2>Findings by dimension</h2></div>
+  <p class="sec-note">Each card: what's genuinely strong, then every gap with severity. 32 findings total —
+  4 high, 19 medium, 9 low.</p>
+
+  <div class="dims">
+
+    <div class="dim-card">
+      <div class="dim-head"><h3>Tests, CI &amp; release</h3><div class="grade">score <b>85 / 78 / 40</b></div></div>
+      <p class="dim-sum">The suite and the release pipeline are strengths; the automation between them is the
+      single biggest hole in the project.</p>
+      <p class="kudos"><b>Strong:</b> 385 tests in 4.4s with AC-traceable titles enforced by the CADENCE settle gate;
+      tag/version-mismatch guard + npm provenance + a test that pins the tarball shape; clean git hygiene and
+      correct API-key handling (env precedence, "No request was made").</p>
+      <ul class="gaps">
+        <li><span class="chip high"><i></i>High</span><span>No CI runs tests or typecheck on push/PR — <code>npm test</code> only executes inside the tag-triggered release job. A regression can sit on main undetected until release day. The live accuracy gates (<code>*.live.test.ts</code>) never run anywhere.</span></li>
+        <li><span class="chip high"><i></i>High</span><span>npm 1.1.0 predates five shipped features — <code>explain</code>, <code>verify-removal</code>, <code>--narrate</code>, the Next.js plugin, and monorepo support are uninstallable by users.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>Zero coverage tooling — no <code>@vitest/coverage-v8</code>, no thresholds; six modules (<code>discover</code>, <code>glob</code>, <code>prod-entries</code>, <code>parse</code>, MCP <code>scan</code>/<code>verify</code>) have no direct tests and their real coverage is unknowable.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>Single Node/OS everywhere (Node 20 / ubuntu); the <code>engines: &gt;=20</code> claim and the git-worktree-spawning paths are never exercised on Node 22/24, macOS, or Windows. No Dependabot/Renovate.</span></li>
+        <li><span class="chip low"><i></i>Low</span><span>.cadence phase dirs 15–27 are untracked while earlier phases are tracked — 13 phases of design history exist only on this machine. The stray <code>dumpfile</code> at the root is gitignored but untidy.</span></li>
+      </ul>
+    </div>
+
+    <div class="dim-card">
+      <div class="dim-head"><h3>CLI features &amp; UX</h3><div class="grade">score <b>70</b></div></div>
+      <p class="dim-sum">Seven commands across three evidence axes (reachability, syntactic, risk) with a genuinely
+      trustworthy safety posture — undermined by daily-touch output ergonomics and two bugs (above).</p>
+      <p class="kudos"><b>Strong:</b> evidence-chain output states verdict + reasoning + next step per finding;
+      <code>fix</code> previews by default, refuses dirty trees, and removes only <code>certain</code>-tier code;
+      valid SARIF 2.1.0 + <code>--fail-on</code> gates on the full result set (verified live); full 4-axis
+      self-scan of src in 2.3 s.</p>
+      <ul class="gaps">
+        <li><span class="chip med"><i></i>Med</span><span>No baseline or inline-suppression mechanism — <code>--fail-on medium</code> on a legacy repo fails on every pre-existing finding with no adoption ramp. Every comparable tool has one; this is the single biggest adoption blocker.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>Terminal output prints full absolute paths, has zero color, and gives no progress feedback — scans feel hung on large repos and lines are triple-width for no reason.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>Duplication display lists the same overlapping lines repeatedly (one group rendered as 8 near-identical <code>util.ts:31–33</code> entries) — the engine clamps windows correctly since phase 18; the report layer just doesn't merge them.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>"Polyglot" is aspirational — only the TypeScript grammar is loaded; plain <code>.js</code> works only via a hand-edited <code>include</code>. One language ships today.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span><code>--checks</code> comma-splitting (bug card above).</span></li>
+        <li><span class="chip low"><i></i>Low</span><span><code>--top abc</code> parses to NaN and silently shows everything; <code>necro.config.json</code> is resolved from cwd only, not walked up from the scan target.</span></li>
+      </ul>
+    </div>
+
+    <div class="dim-card">
+      <div class="dim-head"><h3>Onboarding &amp; documentation</h3><div class="grade">score <b>62</b></div></div>
+      <p class="dim-sum">A well-crafted README, a live Starlight docs site, and excellent help text — all frozen
+      at June 11. The product outran its own story by six phases.</p>
+      <p class="kudos"><b>Strong:</b> README leads with the "refuses to guess" differentiator, real quickstart output,
+      honest LLM cost/opt-in framing; every subcommand documents its defaults inline; no-key failures are friendly
+      and fire before any network call; MIT license, working MCP registration snippet.</p>
+      <ul class="gaps">
+        <li><span class="chip high"><i></i>High</span><span>Docs lag HEAD across the board: README omits 3 of 7 commands (<code>explain</code>, <code>verify-removal</code>, <code>--narrate</code>), says "two MCP tools" when four exist, and CHANGELOG ends at 1.1.0 with no Unreleased section despite 12+ feature commits since.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>The website's CLI reference contradicts itself — it calls <code>explain</code> "planned" on the same page that documents shipped flags; both roadmaps still list Next.js and monorepo support (shipped) as planned, and NestJS (descoped) as pending.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>The live docs site (manehorizons.github.io/necro, returning 200) is never linked from the README — newcomers are told to <code>nvm use 22 &amp;&amp; npm install</code> to build docs that are already online.</span></li>
+        <li><span class="chip low"><i></i>Low</span><span>No badges (npm/CI/license), "Status: v1.0" prose is stale, and the GitHub repo description field is empty — the repo sells itself short at every first touchpoint.</span></li>
+        <li><span class="chip low"><i></i>Low</span><span>No root CONTRIBUTING.md (guidance is split between README prose and a website page GitHub won't surface); the README's "CI integration" link dead-ends at the repo root.</span></li>
+      </ul>
+    </div>
+
+    <div class="dim-card">
+      <div class="dim-head"><h3>Architecture &amp; code health</h3><div class="grade">score <b>92</b></div></div>
+      <p class="dim-sum">The strongest dimension. A deterministic engine core shared by CLI, MCP, and LLM paths;
+      the largest file in the repo is the 333-line CLI wiring — a good sign.</p>
+      <p class="kudos"><b>Strong:</b> clean <code>tsc --noEmit</code> under <code>strict</code> +
+      <code>noUncheckedIndexedAccess</code>; zero <code>any</code>/<code>@ts-ignore</code>/TODO in src; lazy-loading
+      as a consistent design feature (SDK, tree-sitter, and command modules all dynamic-imported); dependency-injected
+      LLM clients so 74 test files run offline; scan and explain consume the same edge set so traces always match verdicts.</p>
+      <ul class="gaps">
+        <li><span class="chip med"><i></i>Med</span><span>No linter or formatter anywhere — consistency is currently maintained purely by discipline; the first outside contributor breaks it invisibly.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>Shared LLM plumbing (<code>lazyAnthropic</code>, <code>resolveApiKey</code>, <code>MissingApiKeyError</code>) lives under <code>triage/</code> and is imported by sibling commands; the request→find-text-block→parse sequence is repeated 4× across three clients.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>No library export surface — <code>package.json</code> has only <code>bin</code>. <code>scan()</code> and <code>buildReachabilityModel()</code> are clean APIs trapped behind a bundled CLI.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>Scaling wall: one <code>findReferencesAsNodes()</code> language-service search per declaration, single-threaded, re-paid from scratch every run — the dominant cost on a 5k-file monorepo.</span></li>
+        <li><span class="chip low"><i></i>Low</span><span>Even <code>necro --version</code> loads ts-morph (static import chain through <code>engine/model.ts</code>); and necro can't dogfood itself — its own <code>bin→dist</code> layout roots nothing in <code>src/</code>, yielding zero prod entries.</span></li>
+      </ul>
+    </div>
+
+    <div class="dim-card">
+      <div class="dim-head"><h3>MCP server &amp; LLM integration</h3><div class="grade">score <b>82</b></div></div>
+      <p class="dim-sum">Four read-only stdio tools, verified live (handshake, tools/list, clean shutdown). The LLM
+      layer is notably current: claude-opus-4-8 default, adaptive thinking, JSON-schema structured outputs — no
+      fragile text parsing anywhere.</p>
+      <p class="kudos"><b>Strong:</b> MCP tools are thin adapters over the same engine the CLI uses (a golden-equality
+      test forbids a fork); malformed model responses degrade to <code>unsure</code> instead of throwing; spend caps
+      exist (<code>maxFindings</code>, <code>--limit</code>); code goes to the API only via explicitly opt-in commands, and that's documented.</p>
+      <ul class="gaps">
+        <li><span class="chip med"><i></i>Med</span><span>No progress notifications or duration warnings on long-running tools — <code>necro_verify_removal</code> runs a full typecheck+test cycle per symbol; MCP clients with default 60s timeouts will abort it mid-run.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>MCP tools load config from the server's cwd, not the scan target — scanning a sibling project silently ignores that project's <code>necro.config.json</code>.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>No token/cost visibility — <code>response.usage</code> is never read, and <code>maxFindings</code> is uncapped by default, so a large-repo triage is unbounded spend.</span></li>
+        <li><span class="chip low"><i></i>Low</span><span>Only explicit API keys are accepted — <code>ANTHROPIC_AUTH_TOKEN</code> and CLI-login profiles that the zero-arg SDK client resolves automatically are rejected.</span></li>
+        <li><span class="chip low"><i></i>Low</span><span>No typed 429/connection error handling or partial-batch recovery (a rate-limited 200-finding run dies mid-batch); the "prompt-cached" comments are aspirational — no <code>cache_control</code> is ever set.</span></li>
+      </ul>
+    </div>
+
+    <div class="dim-card">
+      <div class="dim-head"><h3>Accuracy &amp; evaluation</h3><div class="grade">score <b>76</b></div></div>
+      <p class="dim-sum">A provenance-stamped eval system most tools this size never build: frozen corpora from
+      SHA-pinned real repos, mechanical scorers, and a committed snapshot the public Accuracy page reads directly —
+      no hand-typed numbers.</p>
+      <p class="kudos"><b>Strong:</b> precision 1.00 held after the phase-12 location-weighted prompt tuning
+      (up from an unstable 0.50–0.75); dup pass-rate gate raised 0.5→0.7 on observed minima; Next.js and monorepo
+      false positives driven 6→0 each in phases 23–24; deterministic corpus-integrity tests guard the harness itself.</p>
+      <ul class="gaps">
+        <li><span class="chip med"><i></i>Med</span><span>Recall is 0.467 measured on just 15 positive cases — it moves in 6.7% steps, and half of truly-dead code goes uncaught. The corpus needs more dead-positives before recall work is even measurable.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>Single-run snapshot with an LLM in the loop — no variance, confidence interval, or multi-run min/mean/max is tracked, so "measured" is one coin-flip deep.</span></li>
+        <li><span class="chip med"><i></i>Med</span><span>No competitor head-to-head (knip, ts-prune) despite the harness making one nearly free — the strongest credibility lever available, explicitly deferred in phase 22.</span></li>
+        <li><span class="chip low"><i></i>Low</span><span>The monorepo FP corpus is synthesized rather than vendored from a real repo (phase 24 settled DONE_WITH_CONCERNS) — weaker external validity than the triage/dup corpora.</span></li>
+        <li><span class="chip low"><i></i>Low</span><span>necro's own PR scan runs with <code>fail-on: ""</code> — the project doesn't gate itself with its own gate.</span></li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= improvements ================= -->
+<section class="wrap" id="improvements">
+  <div class="sec-head"><h2>High-value improvements</h2></div>
+  <p class="sec-note">Deduplicated across all six audit tracks and ranked by leverage — impact per unit of effort,
+  sequenced so each tier unblocks the next. Effort: S &lt; 1 day · M = days · L = week+.</p>
+
+  <div class="tier">
+    <div class="tier-head"><span class="tt">P0 · this week</span><h3>Restore trust in the pipeline</h3></div>
+    <p class="tier-note">Four items, three of them under a day. Together they close every high-severity finding.</p>
+    <table>
+      <thead><tr><th></th><th>Improvement</th><th>Effort</th><th>Why it's the highest leverage</th></tr></thead>
+      <tbody>
+        <tr><td class="n">1</td><td class="what"><b>Add ci.yml — typecheck + build + test on every push/PR</b><span>The deterministic suite runs in 4.4 s and needs no key. It is simply not wired to CI.</span></td><td class="eff">S</td><td class="pay">Closes the project's biggest safety hole for ~30 lines of YAML; every later change lands on a safety net.</td></tr>
+        <tr><td class="n">2</td><td class="what"><b>Fix verify-removal exit code</b><span>Set <code>process.exitCode</code> on any unsafe/error verdict — the pattern <code>explain</code> already uses. Distinguish "check failed to run" from "build broke."</span></td><td class="eff">S</td><td class="pay">Restores the command's headline use case: CI-gating deletion PRs.</td></tr>
+        <tr><td class="n">3</td><td class="what"><b>Fix --checks parsing</b><span>Repeatable flag (<code>--checks a --checks b</code>) or JSON array instead of comma-split.</span></td><td class="eff">S</td><td class="pay">Stops false "removal breaks the build" verdicts from mangled commands.</td></tr>
+        <tr><td class="n">4</td><td class="what"><b>Sync every doc surface to HEAD</b><span>CHANGELOG [Unreleased] for phases 22–27; README: 3 missing commands, 4 MCP tools, live-docs link, status line; website: fix the "explain is planned" contradiction, sync both roadmaps.</span></td><td class="eff">M</td><td class="pay">Six phases of finished work become visible; every downstream doc change hangs off the CHANGELOG entry.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tier">
+    <div class="tier-head"><span class="tt">P1 · this month</span><h3>Ship it, and make adoption smooth</h3></div>
+    <p class="tier-note">Cut the release, then remove the frictions that stop a stranger from adopting necro in CI.</p>
+    <table>
+      <thead><tr><th></th><th>Improvement</th><th>Effort</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td class="n">5</td><td class="what"><b>Cut v1.2.0</b><span>After #4 lands — the release pipeline already works; it just needs the tag.</span></td><td class="eff">S</td><td class="pay"><code>npm i -g @manehorizons/necro</code> finally delivers explain, verify-removal, --narrate, Next.js, monorepo.</td></tr>
+        <tr><td class="n">6</td><td class="what"><b>Baseline &amp; inline suppression</b><span><code>necro baseline</code> writes a snapshot; <code>scan</code> subtracts it; <code>// necro-ignore</code> for point exceptions.</span></td><td class="eff">M</td><td class="pay">The single biggest adoption blocker — <code>--fail-on</code> is unusable on any codebase with existing debt.</td></tr>
+        <tr><td class="n">7</td><td class="what"><b>Terminal polish: relative paths, TTY-aware color, stderr progress</b><span>Keep absolute paths in --json/SARIF; keep stderr-only progress so pipelines stay clean.</span></td><td class="eff">S</td><td class="pay">The highest daily-touch improvement per unit effort; also fixes the noisy duplication rendering (merge overlapping windows).</td></tr>
+        <tr><td class="n">8</td><td class="what"><b>Coverage + a scheduled live-accuracy gate</b><span><code>@vitest/coverage-v8</code> with thresholds in CI; a weekly keyed cron running the <code>*.live.test.ts</code> gates.</span></td><td class="eff">S</td><td class="pay">Turns the 0.8/0.7 accuracy floors into an actual regression tripwire; necro can even dogfood its own lcov ingestion.</td></tr>
+        <tr><td class="n">9</td><td class="what"><b>MCP hardening</b><span>Progress notifications + duration hints on <code>necro_scan</code>/<code>necro_verify_removal</code>; load config from the scan target; document all four tools with a <code>claude mcp add</code> one-liner.</span></td><td class="eff">M</td><td class="pay">The agent-tool surface is necro's wedge; today its two newest tools are undiscoverable and its longest one times out in default clients.</td></tr>
+        <tr><td class="n">10</td><td class="what"><b>Extract src/llm/</b><span>Move key/client plumbing out of <code>triage/</code>; one <code>structuredCall()</code> helper replaces the 4× repeated request/parse block; read <code>response.usage</code> while you're in there.</span></td><td class="eff">S</td><td class="pay">Fixes the dependency direction, dedupes ~60 lines, and gives every LLM command token/cost reporting for free.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tier">
+    <div class="tier-head"><span class="tt">P2 · this quarter</span><h3>Strategic bets</h3></div>
+    <p class="tier-note">Bigger swings, in the order the evidence supports them.</p>
+    <table>
+      <thead><tr><th></th><th>Improvement</th><th>Effort</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td class="n">11</td><td class="what"><b>Verified auto-removal loop</b><span>Compose scan → explain → verify-removal → fix into one guarded write path, so <code>fix</code> only deletes symbols that pass a per-symbol build-green check. This is the project's own top-ranked open recommendation (rec-20260612-001, scored 68/100).</span></td><td class="eff">L</td><td class="pay">Completes the product thesis: not "we found dead code" but "we removed it and proved the build stays green."</td></tr>
+        <tr><td class="n">12</td><td class="what"><b>Grow the triage corpus — especially dead-positives — and track run variance</b><span>Capture tooling and SHA-pinning already exist; add min/mean/max across N bench runs to the snapshot schema.</span></td><td class="eff">M</td><td class="pay">Recall (0.467) is the weakest measured number and currently moves in 6.7% steps — it can't improve until it can be measured.</td></tr>
+        <tr><td class="n">13</td><td class="what"><b>Competitor head-to-head (knip, ts-prune)</b><span>Same corpus, same mechanical scorers — deferred from phase 22.</span></td><td class="eff">M</td><td class="pay">The strongest credibility lever the eval harness enables; precision 1.00 vs named competitors is a launch story.</td></tr>
+        <tr><td class="n">14</td><td class="what"><b>Library export surface</b><span><code>exports</code> map + type declarations for <code>scan</code>, <code>buildReachabilityModel</code>, <code>explain</code>; tsc emit alongside the esbuild bundle.</span></td><td class="eff">M</td><td class="pay">Editors, CI wrappers, and other tools can embed necro; the internal seams already exist.</td></tr>
+        <tr><td class="n">15</td><td class="what"><b>Make "polyglot" true — or stop claiming it</b><span>Cheap now: auto-include <code>.js/.jsx/.mts/.cts</code> (works today with manual config). Real bet: a second language (Python) through the adapter seam the architecture already reserves.</span></td><td class="eff">S→L</td><td class="pay">Today the claim is one grammar deep; either direction resolves the credibility gap.</td></tr>
+        <tr><td class="n">16</td><td class="what"><b>Toolchain hygiene bundle</b><span>Biome (expect zero findings day one), Dependabot for npm + actions, CI matrix (Node 20/22/24 × ubuntu/macos), self-scan with a real <code>fail-on</code>.</span></td><td class="eff">S</td><td class="pay">Locks in the consistency currently maintained by hand; validates the engines claim on the platforms verify-removal's worktrees actually touch.</td></tr>
+        <tr><td class="n">17</td><td class="what"><b>Incremental symbol-graph cache</b><span>Persist the graph keyed by file content hashes; re-resolve references only for changed files + importers. Add a timing corpus to the bench harness first to justify it.</span></td><td class="eff">L</td><td class="pay">The highest performance ceiling — turns the per-run reference-walk cost into a one-time cost on large monorepos.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================= 30 day plan ================= -->
+<section class="wrap" id="plan">
+  <div class="sec-head"><h2>A 30-day sequence</h2></div>
+  <p class="sec-note">One workable ordering of P0 + P1 for a solo maintainer — each week's output unblocks the next.</p>
+  <div class="plan">
+    <div class="wk"><h4>Week 1</h4><ul>
+      <li>ci.yml on push/PR</li><li>verify-removal exit code</li><li>--checks parsing</li><li>CHANGELOG [Unreleased]</li>
+    </ul></div>
+    <div class="wk"><h4>Week 2</h4><ul>
+      <li>README + website sync</li><li>MCP docs: 4 tools + one-liner</li><li>Cut &amp; publish v1.2.0</li>
+    </ul></div>
+    <div class="wk"><h4>Week 3</h4><ul>
+      <li>Baseline + necro-ignore</li><li>Relative paths + color + progress</li><li>Merge duplicate clone windows</li>
+    </ul></div>
+    <div class="wk"><h4>Week 4</h4><ul>
+      <li>Coverage in CI + weekly live gate</li><li>Extract src/llm/ + usage reporting</li><li>MCP progress notifications</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ================= footer ================= -->
+<footer>
+  <div class="wrap cols">
+    <div>
+      <h4>Methodology</h4>
+      <p>Six parallel audit agents (onboarding/docs, CLI features, architecture, tests/CI/release, MCP/LLM,
+      bench/roadmap) with direct verification: the full test suite was executed (385 passed / 0 failed, 4.40 s),
+      the CLI was exercised live against a planted fixture (both bugs reproduced), the MCP server was handshaken
+      over stdio, the dark-mode chart palette was machine-validated for CVD separation and contrast, and npm /
+      GitHub state was queried directly. Accuracy figures come from the committed bench snapshot
+      (<code>bench/results.json</code>, generated 2026-06-11, model claude-opus-4-8).</p>
+    </div>
+    <div>
+      <h4>Primary evidence</h4>
+      <ul>
+        <li>src/cli.ts · src/engine/ · src/graph/symbol-graph.ts · src/triage/client.ts</li>
+        <li>src/mcp/server.ts + tools · src/bench/ · bench/results.json</li>
+        <li>.github/workflows/{release, docs, necro-scan}.yml</li>
+        <li>README.md · CHANGELOG.md · website/src/content/docs/</li>
+        <li>.cadence/phases/15–27 · .cadence/intelligence/recommendations.json</li>
+        <li>npm view @manehorizons/necro · gh repo view manehorizons/necro</li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap" style="margin-top:28px">
+    necro audit · 2026-07-01 · HEAD 8b78cdf · report generated by Claude Code — findings are evidence-linked; verify anything surprising against the cited files.
+  </div>
+</footer>
+
+</body>
+</html>

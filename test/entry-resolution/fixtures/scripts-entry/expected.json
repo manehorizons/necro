@@ -1,0 +1,12 @@
+{
+  "case": "scripts-entry",
+  "baseline": "red",
+  "prodEntryCount": 1,
+  "entries": [
+    { "file": "src/bench.ts", "source": "scripts" }
+  ],
+  "symbols": [
+    { "name": "helper", "file": "src/helper.ts", "verdict": "alive" }
+  ],
+  "fix": { "write": false, "status": "nothing-to-fix", "exitCode": 0 }
+}

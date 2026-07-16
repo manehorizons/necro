@@ -1,0 +1,93 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx @manehorizons/cadence-host-claude-code hook"
+          }
+        ],
+        "_managedBy": "cadence"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx @manehorizons/cadence-host-claude-code hook"
+          }
+        ],
+        "_managedBy": "cadence"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx @manehorizons/cadence-host-claude-code hook"
+          }
+        ],
+        "_managedBy": "cadence"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx @manehorizons/cadence-host-claude-code hook"
+          }
+        ],
+        "_managedBy": "cadence"
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx @manehorizons/cadence-host-claude-code hook"
+          }
+        ],
+        "_managedBy": "cadence"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx @manehorizons/cadence-host-claude-code hook"
+          }
+        ],
+        "_managedBy": "cadence"
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx @manehorizons/cadence-host-claude-code hook"
+          }
+        ],
+        "_managedBy": "cadence"
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx @manehorizons/cadence-host-claude-code hook"
+          }
+        ],
+        "_managedBy": "cadence"
+      }
+    ]
+  }
+}

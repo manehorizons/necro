@@ -10,14 +10,14 @@ import { createNarrateClient, type NarrateClient } from "./explain/client.js";
 import { MissingApiKeyError } from "./triage/client.js";
 import { renderExplain } from "./report/explain.js";
 import { renderVerifyRemoval } from "./report/verify-removal.js";
-import { runFix } from "./fix/index.js";
+import { fixExitCode, runFix } from "./fix/index.js";
 import { renderComplexity } from "./report/complexity.js";
 import { renderDuplication } from "./report/duplication.js";
 import { renderHotspots } from "./report/hotspots.js";
 import { toJson } from "./report/json.js";
 import { toSarif } from "./report/sarif.js";
 import { gate, isSeverity, SEVERITIES } from "./report/severity.js";
-import { renderTerminal } from "./report/terminal.js";
+import { renderEntryCollapseBanner, renderTerminal } from "./report/terminal.js";
 
 interface ScanOptions {
   json?: boolean;
@@ -89,17 +89,18 @@ program
     const target = resolve(process.cwd(), path);
     const config = await loadConfig(process.cwd());
     if (opts.coverage) config.coveragePath = opts.coverage;
-    const { findings, complexity, hotspots, duplication } = await scan(target, config);
+    const { findings, complexity, hotspots, duplication, diagnostics } = await scan(target, config);
 
     // SARIF and --fail-on consider the full result set, never the --top view.
-    const full = { findings, complexity, hotspots, duplication };
+    const full = { findings, complexity, hotspots, duplication, diagnostics };
     const top = opts.top ? Number.parseInt(opts.top, 10) : undefined;
     const shown = top && top > 0 ? findings.slice(0, top) : findings;
 
     if (opts.json) {
-      console.log(toJson({ findings: shown, complexity, hotspots, duplication }));
+      console.log(toJson({ findings: shown, complexity, hotspots, duplication, diagnostics }));
     } else {
       const sections = [
+        renderEntryCollapseBanner(diagnostics.entryResolution),
         renderTerminal(shown),
         renderComplexity(complexity),
         renderHotspots(hotspots),
@@ -205,10 +206,17 @@ program
           "Refused: the git working tree has uncommitted changes. Commit or stash first, or pass --force.",
         );
         break;
+      case "refused-no-entries":
+        console.error(
+          "Refused: 0 production entry points resolved — reachability is unseeded, so nothing is auto-fix eligible. " +
+            "Run `necro scan` for remedies (fix package.json main/bin/exports, add an \"entries\" config, or use a conventional entry filename).",
+        );
+        break;
       case "written":
         console.log(`Removed ${result.count} symbol(s) across ${result.files.length} file(s).`);
         break;
     }
+    process.exitCode = fixExitCode(result.status);
   });
 
 program

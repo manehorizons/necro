@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "draftId": "24-01",
+  "completedAt": "2026-06-11T21:23:55.722Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": true
+    },
+    {
+      "id": "AC-2",
+      "pass": true
+    },
+    {
+      "id": "AC-3",
+      "pass": true
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "resolveWorkspaces (npm/yarn workspaces + pnpm-workspace.yaml) → packagePaths map + entryFiles. 5 unit tests pass."
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "Spike confirmed ts-morph paths (baseUrl '.' + absolute entry) resolves cross-package refs. buildSymbolGraph.packagePaths → compilerOptions paths. usedCrossPackage alive, trulyUnused dead."
+    },
+    {
+      "id": "T3",
+      "status": "DONE",
+      "notes": "Engine roots workspace member entry files (file-path semantics). appMain alive; no-op for single-package repos."
+    },
+    {
+      "id": "T4",
+      "status": "DONE_WITH_CONCERNS",
+      "notes": "Corpus is a SYNTHESIZED structural monorepo fixture, not a vendored real-repo slice as the DRAFT specified — a real cross-package slice can't stay minimal/self-contained/deterministic (the FP is structural). Documented in SOURCES.md. AC-1/2/3 tests pass; full suite 340 green."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": []
+  },
+  "deepVerify": {
+    "AC-1": {
+      "pass": true,
+      "reason": "mock: 27 linked tests (test/bench-cli.test.ts:4)",
+      "provider": "mock"
+    },
+    "AC-2": {
+      "pass": true,
+      "reason": "mock: 23 linked tests (test/bench-page-contract.test.ts:23)",
+      "provider": "mock"
+    },
+    "AC-3": {
+      "pass": true,
+      "reason": "mock: 20 linked tests (test/bench-cli.test.ts:4)",
+      "provider": "mock"
+    }
+  },
+  "deepVerifyMeta": {
+    "diffProvided": false,
+    "diffBytes": 0,
+    "truncated": false,
+    "filesCount": 6,
+    "provider": "mock"
+  },
+  "codeReview": {}
+}

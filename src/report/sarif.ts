@@ -41,6 +41,9 @@ export interface SarifLog {
   runs: Array<{
     tool: { driver: { name: string; informationUri: string; semanticVersion: string; rules: SarifRule[] } };
     results: SarifResult[];
+    /** Free-form property bag (SARIF's `properties` extension point) — carries
+     * the fail-closed entry-resolution diagnostic (§2.1) when present. */
+    properties?: Record<string, unknown>;
   }>;
 }
 
@@ -135,6 +138,7 @@ export function toSarif(input: JsonInput, opts: { srcRoot: string }): SarifLog {
       {
         tool: { driver: { name: "necro", informationUri: INFO_URI, semanticVersion: VERSION, rules: RULES } },
         results,
+        ...(input.diagnostics ? { properties: { entryResolution: input.diagnostics.entryResolution } } : {}),
       },
     ],
   };

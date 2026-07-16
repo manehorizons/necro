@@ -1,0 +1,29 @@
+{
+  "draftId": "18-18",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Added UnitRange + optional FileTokens.units; per-token innermost-unit assignment + runEnd; units omitted → all -1 (one implicit unit). Covered by duplication.test.ts AC-2/AC-4 (green).",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T22:51:29.061Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "Window indexing skips straddling windows; greedy extension stops at a unit boundary for self and every group member (runEnd bound). duplication.test.ts AC-1 went RED→GREEN.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T22:51:30.362Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "engine/index.ts groups computed FunctionUnits per file into ranges and passes them into findClones; eval.ts fragment path left unit-less. scan-duplication.test.ts AC-1 integration test RED→GREEN.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T22:51:35.199Z"
+    },
+    "T4": {
+      "status": "DONE_WITH_CONCERNS",
+      "notes": "Synthetic AC-1/AC-2 boundary tests added + green (280 passed). Live AC-3 gate (0.7) NOT run: traced that the dup corpus is a static fixture (cases.json) and the only live-path findClones call is the unit-less residual scorer (AC-4, deterministically guarded) — the detector change is insensitive to the live eval by construction, so billable runs would re-measure model non-determinism, not this change. User approved skipping. AC-3 = pass-by-construction.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T22:51:38.240Z"
+    }
+  }
+}

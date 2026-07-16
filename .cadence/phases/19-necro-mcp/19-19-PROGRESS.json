@@ -1,0 +1,29 @@
+{
+  "draftId": "19-19",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "@modelcontextprotocol/sdk + zod added; createNecroServer()/runStdio() in src/mcp/server.ts; `necro mcp` CLI command. Handshake green via in-memory client + confirmed end-to-end against built binary (initialize → serverInfo necro).",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T23:12:13.911Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "necro_scan wraps scan()+toJson() with zod input {path,top,coverage}; golden-equality test asserts tool output === direct scan+toJson (no logic fork). readOnlyHint annotation.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T23:12:15.820Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "necro_verify maps {edits,checks?} to verifyEdits()+gitWorktreeRunner (DEFAULT_CHECKS reused), returns {ok,output}. Injected fake runner proves create→write→check→remove order, red-check→ok:false, teardown-always. Runner factory threaded via createNecroServer deps.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T23:12:22.243Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "zod schemas give the malformed-input error path (test: structured error + server survives a later valid call). \"Exactly two tools\" test nails AC-1/AC-4 (no mutating/LLM tool). README \"Use from an AI agent (MCP)\" stanza added. 288 passed / 6 skipped, typecheck + build clean.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-10T23:12:24.921Z"
+    }
+  }
+}

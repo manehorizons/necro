@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "draftId": "19-19",
+  "completedAt": "2026-06-10T23:12:40.985Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": true
+    },
+    {
+      "id": "AC-2",
+      "pass": true
+    },
+    {
+      "id": "AC-3",
+      "pass": true
+    },
+    {
+      "id": "AC-4",
+      "pass": true
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "@modelcontextprotocol/sdk + zod added; createNecroServer()/runStdio() in src/mcp/server.ts; `necro mcp` CLI command. Handshake green via in-memory client + confirmed end-to-end against built binary (initialize → serverInfo necro)."
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "necro_scan wraps scan()+toJson() with zod input {path,top,coverage}; golden-equality test asserts tool output === direct scan+toJson (no logic fork). readOnlyHint annotation."
+    },
+    {
+      "id": "T3",
+      "status": "DONE",
+      "notes": "necro_verify maps {edits,checks?} to verifyEdits()+gitWorktreeRunner (DEFAULT_CHECKS reused), returns {ok,output}. Injected fake runner proves create→write→check→remove order, red-check→ok:false, teardown-always. Runner factory threaded via createNecroServer deps."
+    },
+    {
+      "id": "T4",
+      "status": "DONE",
+      "notes": "zod schemas give the malformed-input error path (test: structured error + server survives a later valid call). \"Exactly two tools\" test nails AC-1/AC-4 (no mutating/LLM tool). README \"Use from an AI agent (MCP)\" stanza added. 288 passed / 6 skipped, typecheck + build clean."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": []
+  },
+  "deepVerify": {
+    "AC-1": {
+      "pass": true,
+      "reason": "mock: 22 linked tests (test/coverage-lcov.test.ts:22)",
+      "provider": "mock"
+    },
+    "AC-2": {
+      "pass": true,
+      "reason": "mock: 17 linked tests (test/classify.test.ts:78)",
+      "provider": "mock"
+    },
+    "AC-3": {
+      "pass": true,
+      "reason": "mock: 15 linked tests (test/classify.test.ts:89)",
+      "provider": "mock"
+    },
+    "AC-4": {
+      "pass": true,
+      "reason": "mock: 17 linked tests (test/churn.test.ts:28)",
+      "provider": "mock"
+    }
+  },
+  "deepVerifyMeta": {
+    "diffProvided": false,
+    "diffBytes": 0,
+    "truncated": false,
+    "filesCount": 8,
+    "provider": "mock"
+  },
+  "codeReview": {}
+}

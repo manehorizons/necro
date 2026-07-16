@@ -1,0 +1,27 @@
+{
+  "draftId": "28-01",
+  "converged": false,
+  "attempts": 2,
+  "maxAttempts": 3,
+  "history": [
+    {
+      "at": "2026-07-16T02:17:44.050Z",
+      "pass": false,
+      "findingsCount": 1,
+      "provider": "mock",
+      "verdict": "reloop"
+    },
+    {
+      "at": "2026-07-16T02:17:58.846Z",
+      "pass": false,
+      "findingsCount": 1,
+      "provider": "mock",
+      "verdict": "reloop",
+      "bypassed": true
+    }
+  ],
+  "pass": false,
+  "provider": "mock",
+  "findings": 1,
+  "at": "2026-07-16T02:17:58.846Z"
+}

@@ -15,10 +15,29 @@ import { createNextjsPlugin } from "../plugins/nextjs/index.js";
 import { createRepoContext, detectPlugins } from "../plugins/registry.js";
 import { createTestRunnerPlugin } from "../plugins/test-runner/index.js";
 import type { FrameworkPlugin } from "../plugins/types.js";
-import { resolveProdEntries } from "./prod-entries.js";
+import { resolveProdEntries, type EntrySource } from "./prod-entries.js";
 import { resolveWorkspaces } from "./workspaces.js";
 
 const PLUGINS: FrameworkPlugin[] = [createTestRunnerPlugin(), createNextjsPlugin()];
+
+/** One resolved production entry, for the `entryResolution` diagnostic (§2.1). */
+export interface EntryResolutionRecord {
+  /** Path relative to the scan target. */
+  file: string;
+  source: EntrySource;
+}
+
+/**
+ * Fail-closed diagnostic (§2.1): how many production entries resolved, where
+ * each came from, and whether reachability collapsed (zero entries on a
+ * non-empty graph — the condition `classify()` demotes every `dead` finding
+ * under, and `fix` refuses on).
+ */
+export interface EntryResolution {
+  prodEntryCount: number;
+  sources: EntryResolutionRecord[];
+  collapsed: boolean;
+}
 
 /**
  * The shared reachability substrate: the symbol graph, the entry seeds, the
@@ -40,6 +59,7 @@ export interface ReachabilityModel {
   reachability: ReachabilityResult[];
   /** File contents (read once; reused by the complexity axis). */
   sources: Array<{ file: string; text: string }>;
+  entryResolution: EntryResolution;
 }
 
 /**
@@ -49,9 +69,9 @@ export interface ReachabilityModel {
  */
 export async function buildReachabilityModel(
   targetPath: string,
-  _config: NecroConfig,
+  config: NecroConfig,
 ): Promise<ReachabilityModel> {
-  const files = await discoverFiles(targetPath, _config);
+  const files = await discoverFiles(targetPath, config);
   if (files.length === 0) {
     return {
       files,
@@ -62,6 +82,7 @@ export async function buildReachabilityModel(
       taintedFiles: new Set(),
       reachability: [],
       sources: [],
+      entryResolution: { prodEntryCount: 0, sources: [], collapsed: false },
     };
   }
 
@@ -92,7 +113,11 @@ export async function buildReachabilityModel(
     p.resolveEdges(ctx, graph).map((e) => ({ from: e.from, to: e.to, kind: e.kind })),
   );
 
-  const prodEntries = resolveProdEntries(targetPath, files);
+  const { entries: prodEntries, records: prodEntryRecords } = await resolveProdEntries(
+    targetPath,
+    files,
+    { configEntries: config.entries },
+  );
   // A framework entry file is invoked by convention, not imported — so root the
   // symbols it *exports* (a file-path seed alone only roots module-top-level
   // references, not the declared-but-unreferenced exports). Genuinely-dead
@@ -107,6 +132,15 @@ export async function buildReachabilityModel(
   // genuinely-unused member exports are still reported.
   for (const entry of workspaces.entryFiles) prodEntries.add(entry);
 
+  const toPosixRel = (abs: string) => relToRoot(abs).split("\\").join("/");
+  const entryResolution = buildEntryResolution({
+    prodEntryRecords,
+    pluginProdEntryFiles,
+    workspaceEntryFiles: workspaces.entryFiles,
+    graphHasNodes: graph.nodes.length > 0,
+    toPosixRel,
+  });
+
   const sources = await readSources(files);
   const taintedFiles = findTaintedFiles(sources);
 
@@ -119,7 +153,51 @@ export async function buildReachabilityModel(
     taintedFiles,
   });
 
-  return { files, graph, edges, prodEntries, testEntries, taintedFiles, reachability, sources };
+  return {
+    files,
+    graph,
+    edges,
+    prodEntries,
+    testEntries,
+    taintedFiles,
+    reachability,
+    sources,
+    entryResolution,
+  };
+}
+
+/**
+ * Merge every entry-resolution mechanism into one deduped, human-readable
+ * diagnostic (§2.1): `resolveProdEntries`'s manifest/mapped/convention/
+ * scripts/config records, plus framework-plugin and workspace-member roots
+ * (both file-path seeds added directly to `prodEntries` above, not through
+ * `resolveProdEntries`). First mechanism to claim a file wins its source label.
+ */
+function buildEntryResolution(input: {
+  prodEntryRecords: Array<{ file: string; source: EntrySource }>;
+  pluginProdEntryFiles: Set<string>;
+  workspaceEntryFiles: string[];
+  graphHasNodes: boolean;
+  toPosixRel: (abs: string) => string;
+}): EntryResolution {
+  const seen = new Set<string>();
+  const out: EntryResolutionRecord[] = [];
+  const add = (abs: string, source: EntrySource) => {
+    const file = input.toPosixRel(abs);
+    if (seen.has(file)) return;
+    seen.add(file);
+    out.push({ file, source });
+  };
+
+  for (const r of input.prodEntryRecords) add(r.file, r.source);
+  for (const file of input.pluginProdEntryFiles) add(file, "plugin");
+  for (const file of input.workspaceEntryFiles) add(file, "workspace");
+
+  return {
+    prodEntryCount: out.length,
+    sources: out,
+    collapsed: out.length === 0 && input.graphHasNodes,
+  };
 }
 
 async function readSources(

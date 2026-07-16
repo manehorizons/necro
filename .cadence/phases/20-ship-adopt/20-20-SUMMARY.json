@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "draftId": "20-20",
+  "completedAt": "2026-06-11T16:01:35.621Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": true
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "package.json: version 1.0.0, private:false, repository/homepage/bugs/keywords added, prepublishOnly:npm run build"
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "Dry-run tarball clean: 4 files (LICENSE, README, dist/cli.js, package.json), 32.7kB, no src/test/.env/dumpfile/docs/website. npm pkg fix normalized bin path. DEVIATION: --version was hardcoded 0.0.0 in src/cli.ts + src/mcp/server.ts; added src/version.ts sourcing version from package.json at build time (packaging, within boundary) so it tracks the bump. Suite 288 passed/6 skipped."
+    },
+    {
+      "id": "T3",
+      "status": "DONE",
+      "notes": "User ran npm login + npm publish --access public; @manehorizons/necro@1.0.0 live on registry (maintainer manehorizons). Release commit 7cd3df0 pushed to main; v1.0.0 annotated tag repointed to 7cd3df0 (old MVP marker preserved as mvp-feature-complete); both tags pushed. Repo made public."
+    },
+    {
+      "id": "T4",
+      "status": "DONE",
+      "notes": "Clean-room verified from published @manehorizons/necro@1.0.0 in /tmp (no clone): npm view→1.0.0, npx --version→1.0.0, scan --help works, MCP initialize handshake returns serverInfo{name:necro,version:1.0.0}, tools/list→[necro_scan,necro_verify]. AC-1 agent-install story real."
+    },
+    {
+      "id": "T5",
+      "status": "DONE",
+      "notes": "Flipped install story to npm/npx across README, installation.md, roadmap.md, index.mdx, cli.md. MCP snippets -> {command:npx, args:[-y,@manehorizons/necro,mcp]}. Removed 'pre-1.0' and shipped 'Packaging' roadmap rows. Done before publish so the npm-page README is correct on day one."
+    },
+    {
+      "id": "T6",
+      "status": "DONE",
+      "notes": "Added .github/workflows/release.yml: triggers on v* tags, guards tag==package.json version, npm ci + build + test + npm publish --access public via NODE_AUTH_TOKEN/secrets.NPM_TOKEN. Needs NPM_TOKEN repo secret set before first automated use (not needed for manual T3)."
+    },
+    {
+      "id": "T7",
+      "status": "DONE",
+      "notes": "Added test/release-shape.test.ts (4 tests, all tagged AC-1): public-scoped package shape, npm-page metadata, VERSION===package.json.version (no drift), release.yml publishes on v* with NPM_TOKEN + version guard. Full suite 292 passed/6 skipped."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": []
+  }
+}

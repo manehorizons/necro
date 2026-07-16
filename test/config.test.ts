@@ -68,6 +68,15 @@ describe("loadConfig", () => {
     expect(config.llm.maxFindings).toBeUndefined();
   });
 
+  test("entries is undefined by default, and passes through globs when set (AC-1)", async () => {
+    const def = await loadConfig(dir);
+    expect(def.entries).toBeUndefined();
+
+    await writeFile(join(dir, "necro.config.json"), JSON.stringify({ entries: ["src/server.ts"] }));
+    const config = await loadConfig(dir);
+    expect(config.entries).toEqual(["src/server.ts"]);
+  });
+
   test("a partial llm block overrides only the keys it sets, including apiKey (AC-5)", async () => {
     await writeFile(
       join(dir, "necro.config.json"),

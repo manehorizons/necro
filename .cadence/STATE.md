@@ -4,14 +4,14 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 14-refactor-realrepo-eval
+**Active phase:** 28-fail-closed-entry-resolution
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 0%
-- Subagent spawns this session: 0
-- Last handoff: SESSION-2026-06-09-phase-12-settled.md
+- Token utilization: 6%
+- Subagent spawns this session: 7
+- Last handoff: SESSION-2026-07-16-slice1-fail-closed-entries-settled.md
 
 ## Counts
 - Open drafts: 0
@@ -20,4 +20,4 @@
 
 ## Skill audit
 - Required: (none)
-- Invoked: (none)
+- Invoked: superpowers:test-driven-development

@@ -1,0 +1,23 @@
+{
+  "draftId": "23-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "SHA-pinned Next.js corpus (vercel/next.js @5b0aa04: page, layout, api route) + scaffold + SOURCES.md; tsconfig excludes test/fixtures. Baseline scan flags 6 false-dead.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-11T20:50:33.589Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "createNextjsPlugin + registered; engine splits entry globs by kind and roots exported symbols of matched prod-entry files. Corpus 6→0 false-dead. AC-1 + plugin unit tests pass.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-11T20:50:39.059Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "AC-2 regression test: non-Next single-package repo behavior unchanged; genuine dead code still flagged. Full suite 332 passed (was 325), tsc green.",
+      "touchedFiles": [],
+      "updatedAt": "2026-06-11T20:50:46.272Z"
+    }
+  }
+}

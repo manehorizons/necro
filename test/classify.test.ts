@@ -72,6 +72,65 @@ describe("classify", () => {
   });
 });
 
+describe("classify with entryCollapse (AC-3)", () => {
+  test("a private dead candidate that would be certain is demoted to maybe, not auto-fixable", () => {
+    const [f] = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead")],
+      entryCollapse: true,
+    });
+    expect(f?.verdict).toBe("dead");
+    expect(f?.tier).toBe("maybe");
+    expect(f?.autoFixEligible).toBe(false);
+  });
+
+  test("an exported (likely) dead candidate is also demoted to maybe", () => {
+    const [f] = classify({
+      nodes: [node("a", true)],
+      reachability: [reach("a", "dead")],
+      entryCollapse: true,
+    });
+    expect(f?.tier).toBe("maybe");
+    expect(f?.autoFixEligible).toBe(false);
+  });
+
+  test("prepends a truthful unseeded-reachability evidence signal ahead of the normal chain", () => {
+    const [f] = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead")],
+      entryCollapse: true,
+    });
+    expect(f?.evidence[0]).toEqual({
+      ok: false,
+      text: "0 production entry points resolved — reachability unseeded",
+    });
+    expect(f?.evidence.length).toBeGreaterThan(1); // the normal chain still follows
+  });
+
+  test("test-only findings are unaffected by entryCollapse", () => {
+    const [f] = classify({
+      nodes: [node("a", true)],
+      reachability: [reach("a", "test-only")],
+      entryCollapse: true,
+    });
+    expect(f?.verdict).toBe("test-only");
+    expect(f?.evidence[0]?.text).not.toBe("0 production entry points resolved — reachability unseeded");
+  });
+
+  test("entryCollapse: false (or omitted) is byte-identical to phase-01 behavior", () => {
+    const withFalse = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead")],
+      entryCollapse: false,
+    });
+    const omitted = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead")],
+    });
+    expect(withFalse).toEqual(omitted);
+  });
+});
+
 describe("classify with coverage", () => {
   const evidenceText = (f: { evidence: { text: string }[] }) => f.evidence.map((e) => e.text);
 
