@@ -2,8 +2,10 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import type { ClassifiedFinding } from "../src/analyze/classify.js";
 import { DEFAULT_CONFIG } from "../src/config.js";
-import { verifyRemovals } from "../src/engine/verify-removal.js";
+import { verifyFindings, verifyRemovals } from "../src/engine/verify-removal.js";
+import type { SymbolNode } from "../src/graph/types.js";
 import type { FileEdit, VerifyRunner } from "../src/refactor/verify.js";
 
 let dir: string;
@@ -97,5 +99,44 @@ describe("verify-removal engine", () => {
     expect(calls.roots).toHaveLength(2);
     // breaker's red verdict did not taint safe's green verdict (independence)
     expect(results.find((r) => r.symbol === "safe")?.status).toBe("green");
+  });
+});
+
+/** Wraps a real graph node as a minimal `ClassifiedFinding` (only `node` is read by `verifyFindings`). */
+function fakeFinding(node: SymbolNode): ClassifiedFinding {
+  return { node, verdict: "dead", tier: "certain", autoFixEligible: true, evidence: [] };
+}
+
+describe("verifyFindings (phase 29 T1)", () => {
+  test("verifies each finding's exact node id — green and red distinguished", async () => {
+    await writeFixture();
+    const calls = { roots: [] as string[], files: [] as string[][] };
+    const safeNode: SymbolNode = { id: `${join(dir, "src/util.ts")}:1:safe`, name: "safe", file: join(dir, "src/util.ts"), line: 1, exported: false };
+    const breakerNode: SymbolNode = { id: `${join(dir, "src/dep.ts")}:1:breaker`, name: "breaker", file: join(dir, "src/dep.ts"), line: 1, exported: true };
+
+    const results = await verifyFindings(dir, DEFAULT_CONFIG, [fakeFinding(safeNode), fakeFinding(breakerNode)], {
+      repoRoot: dir,
+      checks: ["typecheck"],
+      runnerFactory: fakeRunnerFactory("dep.ts", calls),
+    });
+
+    expect(results.find((r) => r.symbol === safeNode.id)?.status).toBe("green");
+    expect(results.find((r) => r.symbol === breakerNode.id)?.status).toBe("red");
+  });
+
+  test("a finding whose node no longer matches any graph symbol comes back unresolved", async () => {
+    await writeFixture();
+    const calls = { roots: [] as string[], files: [] as string[][] };
+    const staleNode: SymbolNode = { id: "does-not-exist:1:ghost", name: "ghost", file: "does-not-exist", line: 1, exported: false };
+
+    const results = await verifyFindings(dir, DEFAULT_CONFIG, [fakeFinding(staleNode)], {
+      repoRoot: dir,
+      checks: ["typecheck"],
+      runnerFactory: fakeRunnerFactory("dep.ts", calls),
+    });
+
+    expect(results).toEqual([
+      { symbol: "does-not-exist:1:ghost", status: "unresolved", output: "no matching symbol" },
+    ]);
   });
 });

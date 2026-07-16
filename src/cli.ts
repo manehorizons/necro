@@ -44,6 +44,8 @@ interface FixOptions {
   write?: boolean;
   force?: boolean;
   coverage?: string;
+  verify?: boolean;
+  checks?: string;
 }
 
 interface TriageOptions {
@@ -185,12 +187,25 @@ program
   .option("--write", "apply the removals to disk (default: preview only)")
   .option("--force", "bypass the dirty git-tree guard")
   .option("--coverage <path>", "path to an lcov report (default: coverage/lcov.info)")
+  .option(
+    "--verify",
+    "gate each removal on verify-removal's empirical build-green check (isolated worktree per symbol; slower)",
+  )
+  .option("--checks <list>", "comma-separated check commands for --verify (default: typecheck + tests)")
   .action(async (path: string, opts: FixOptions) => {
     const target = resolve(process.cwd(), path);
     const config = await loadConfig(process.cwd());
     if (opts.coverage) config.coveragePath = opts.coverage;
+    const checks = opts.checks
+      ? opts.checks.split(",").map((c) => c.trim()).filter(Boolean)
+      : undefined;
 
-    const result = await runFix(target, config, { write: opts.write, force: opts.force });
+    const result = await runFix(target, config, {
+      write: opts.write,
+      force: opts.force,
+      verify: opts.verify,
+      checks,
+    });
     switch (result.status) {
       case "nothing-to-fix":
         console.log("Nothing to fix — no certain-dead code found.");
@@ -199,6 +214,12 @@ program
         console.log(result.diff);
         console.log(
           `\n${result.count} symbol(s) would be removed. Re-run with --write to apply.`,
+        );
+        break;
+      case "preview-verified":
+        console.log(renderVerifyRemoval(result.verdicts));
+        console.log(
+          `\n${result.verdicts.filter((v) => v.status === "green").length} symbol(s) would be removed. Re-run with --write to apply.`,
         );
         break;
       case "refused-dirty":
@@ -214,6 +235,12 @@ program
         break;
       case "written":
         console.log(`Removed ${result.count} symbol(s) across ${result.files.length} file(s).`);
+        if (result.skipped.length > 0) {
+          console.log(`Skipped ${result.skipped.length} symbol(s) that failed verification:`);
+          for (const s of result.skipped) {
+            console.log(`  ✗ ${s.symbol} (${s.reason})${s.output ? ` — ${s.output.split("\n")[0]}` : ""}`);
+          }
+        }
         break;
     }
     process.exitCode = fixExitCode(result.status);

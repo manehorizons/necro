@@ -1,0 +1,29 @@
+{
+  "draftId": "29-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Added verifyFindings() to src/engine/verify-removal.ts — wraps verifyRemovals for ClassifiedFinding[] by querying each finding's exact node.id. Tested in test/verify-removal.test.ts (green/red distinguished; defensive unresolved case for a stale/non-matching node).",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-16T03:19:12.536Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "runVerifiedFix() in src/fix/index.ts partitions verdicts into green (proceed) vs skipped (red/unresolved), extending FixResult's written variant with a typed SkippedSymbol[] (reason: \"red\" | \"unresolved\", plus output). Tested end-to-end via a fake runnerFactory in test/fix.test.ts.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-16T03:19:20.949Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "Added --verify/--checks flags to the `fix` CLI command (src/cli.ts), threaded into runFix. Preview mode (--verify without --write) returns a new \"preview-verified\" status rendering per-symbol verdicts via the existing renderVerifyRemoval — no mutation. Unit-tested (runFix) plus a manual end-to-end CLI run against a real git-worktree fixture confirming preview, verified-write, and the red/skip path all behave correctly.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-16T03:19:26.397Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "Added a regression test in test/fix.test.ts proving `fix --write` without --verify still deletes every certain-dead symbol regardless of what verify-removal would say — confirms --verify is strictly additive, no change to prior default behavior. Full suite green: build + typecheck + 434 passed/2 skipped test files. Also deleted a stale phase-28 regression test (release-shape.test.ts AC-7, hardcoded BASELINE_SHA allowlist) that broke on phase 29's legitimate touch of src/engine/verify-removal.ts — user explicitly approved removing it since phase 28 already settled and the check had no role afterward.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-16T03:19:32.049Z"
+    }
+  }
+}

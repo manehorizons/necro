@@ -1,4 +1,5 @@
 import { relative } from "node:path";
+import type { ClassifiedFinding } from "../analyze/classify.js";
 import type { NecroConfig } from "../config.js";
 import { planRemovalOf } from "../fix/remove.js";
 import {
@@ -89,4 +90,25 @@ export async function verifyRemovals(
     );
   }
   return verdicts;
+}
+
+/**
+ * {@link verifyRemovals} for `ClassifiedFinding`s instead of raw symbol
+ * strings — queries each finding by its own node id (`file:line:name`), which
+ * always resolves to exactly that declaration. Lets `fix --verify` (phase 29)
+ * gate a removal on the same empirical build-green check `verify-removal`
+ * already performs, without hand-building query strings.
+ */
+export async function verifyFindings(
+  targetPath: string,
+  config: NecroConfig,
+  findings: ClassifiedFinding[],
+  opts: VerifyRemovalOptions = {},
+): Promise<RemovalVerdict[]> {
+  return verifyRemovals(
+    targetPath,
+    config,
+    findings.map((f) => f.node.id),
+    opts,
+  );
 }
