@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 2,
+  "revision": 1,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
@@ -15,9 +15,9 @@
   "decisions": [],
   "deferred": [],
   "session": {
-    "tokenUtilization": 0.10999999999999999,
-    "lastHandoff": "SESSION-2026-07-16-slice1-fail-closed-entries-settled.md",
-    "subagentSpawns": 12,
+    "tokenUtilization": 0.12999999999999998,
+    "lastHandoff": "SESSION-2026-07-16-phase29-30-settled-pushed.md",
+    "subagentSpawns": 15,
     "subagentBaselines": {}
   },
   "skillAudit": {
