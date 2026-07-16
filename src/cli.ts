@@ -19,6 +19,12 @@ import { toSarif } from "./report/sarif.js";
 import { gate, isSeverity, SEVERITIES } from "./report/severity.js";
 import { renderEntryCollapseBanner, renderTerminal } from "./report/terminal.js";
 
+// Commander coercion for a repeatable --checks flag: one command per
+// occurrence, so a check command containing a comma is never split.
+function collectChecks(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
+}
+
 interface ScanOptions {
   json?: boolean;
   top?: string;
@@ -36,8 +42,8 @@ interface ExplainOptions {
 
 interface VerifyRemovalOptions {
   json?: boolean;
-  /** Comma-separated check commands to run in each worktree. */
-  checks?: string;
+  /** Check commands to run in each worktree, one per --checks occurrence. */
+  checks?: string[];
 }
 
 interface FixOptions {
@@ -45,7 +51,7 @@ interface FixOptions {
   force?: boolean;
   coverage?: string;
   verify?: boolean;
-  checks?: string;
+  checks?: string[];
 }
 
 interface TriageOptions {
@@ -161,13 +167,16 @@ program
   .description("Verify whether deleting each symbol keeps the build green (isolated worktree per symbol)")
   .argument("<symbols...>", "symbols to test-remove: name, file:name, or file:line:name")
   .option("--json", "emit the per-symbol verdicts as JSON")
-  .option("--checks <list>", "comma-separated check commands (default: typecheck + tests)")
+  .option(
+    "--checks <cmd>",
+    "check command to run (repeatable; default: typecheck + tests)",
+    collectChecks,
+    [],
+  )
   .action(async (symbols: string[], opts: VerifyRemovalOptions) => {
     const target = resolve(process.cwd(), ".");
     const config = await loadConfig(process.cwd());
-    const checks = opts.checks
-      ? opts.checks.split(",").map((c) => c.trim()).filter(Boolean)
-      : undefined;
+    const checks = opts.checks?.length ? opts.checks : undefined;
     const results = await verifyRemovals(target, config, symbols, {
       repoRoot: process.cwd(),
       checks,
@@ -196,14 +205,17 @@ program
     "--verify",
     "gate each removal on verify-removal's empirical build-green check (isolated worktree per symbol; slower)",
   )
-  .option("--checks <list>", "comma-separated check commands for --verify (default: typecheck + tests)")
+  .option(
+    "--checks <cmd>",
+    "check command for --verify (repeatable; default: typecheck + tests)",
+    collectChecks,
+    [],
+  )
   .action(async (path: string, opts: FixOptions) => {
     const target = resolve(process.cwd(), path);
     const config = await loadConfig(process.cwd());
     if (opts.coverage) config.coveragePath = opts.coverage;
-    const checks = opts.checks
-      ? opts.checks.split(",").map((c) => c.trim()).filter(Boolean)
-      : undefined;
+    const checks = opts.checks?.length ? opts.checks : undefined;
 
     const result = await runFix(target, config, {
       write: opts.write,

@@ -110,4 +110,24 @@ describe("necro verify-removal", () => {
       ["doesNotExist", "unresolved"],
     ]);
   });
+
+  test("AC-1: repeated --checks flags each run as a separate check command", async () => {
+    const { code, stdout } = await run(
+      // last-flag-wins (the pre-fix behavior) would use only "true" and pass;
+      // accumulating both means the earlier "false" still fails the verdict.
+      ["verify-removal", "orphan", "--checks", "false", "--checks", "true"],
+      dir,
+    );
+    expect(code).toBe(1);
+    expect(stdout).toMatch(/breaks the build|red/i);
+  });
+
+  test("AC-2: a check command containing a comma is run verbatim, not split", async () => {
+    const { code, stdout } = await run(
+      ["verify-removal", "orphan", "--checks", "echo a,b"],
+      dir,
+    );
+    expect(code).toBe(0);
+    expect(stdout).toMatch(/safe to remove|green/i);
+  });
 });

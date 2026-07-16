@@ -1,0 +1,23 @@
+{
+  "draftId": "31-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Repeatable --checks flag on verify-removal via Commander accumulator (collectChecks); VerifyRemovalOptions.checks now string[]; opts.checks?.length ? opts.checks : undefined preserves the default-omitted path.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-16T21:45:07.793Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "Same repeatable --checks fix applied to fix --verify; FixOptions.checks now string[], reusing collectChecks.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-16T21:45:11.489Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "Added AC-1/AC-2 tests to test/cli-verify-removal.test.ts (repeated flags, comma passthrough) and new test/cli-fix.test.ts for AC-4 (fix had no prior CLI-level test file). Verified each test correctly RED under the old last-flag-wins/comma-split behavior before implementing the fix. Full suite: 439 passed, 6 skipped.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-16T21:45:16.807Z"
+    }
+  }
+}
