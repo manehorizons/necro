@@ -9,8 +9,8 @@
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 6%
-- Subagent spawns this session: 7
+- Token utilization: 8%
+- Subagent spawns this session: 9
 - Last handoff: SESSION-2026-07-16-slice1-fail-closed-entries-settled.md
 
 ## Counts
