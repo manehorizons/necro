@@ -3,7 +3,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { CallToolResultSchema } from "@modelcontextprotocol/sdk/types.js";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createNecroServer } from "../src/mcp/server.js";
 
 function textOf(result: { content?: Array<{ type: string; text?: string }> }): string {
@@ -82,5 +83,57 @@ describe("necro_verify_removal MCP tool", () => {
     ]);
     // the (faked) worktree was torn down for the resolved symbol
     expect(events).toContain("remove");
+  });
+
+  test("AC-3: description carries a duration hint for the per-symbol typecheck+test cycle", async () => {
+    const client = await connectClient();
+    const { tools } = await client.listTools();
+    const tool = tools.find((t) => t.name === "necro_verify_removal");
+    expect(tool?.description).toMatch(/minutes/);
+  });
+
+  test("AC-1: streams a progress notification per symbol when the caller opts in", async () => {
+    const { runner } = recordingRunner(true);
+    const client = await connectClient({ runnerFactory: () => runner });
+    const progress: Array<{ progress: number; total?: number; message?: string }> = [];
+
+    await client.callTool(
+      { name: "necro_verify_removal", arguments: { symbols: ["orphan", "doesNotExist"], path: dir, checks: ["typecheck"] } },
+      CallToolResultSchema,
+      { onprogress: (p) => progress.push(p) },
+    );
+
+    expect(progress).toHaveLength(2);
+    expect(progress[0]).toMatchObject({ progress: 1, total: 2, message: "orphan" });
+    expect(progress[1]).toMatchObject({ progress: 2, total: 2, message: "doesNotExist" });
+  });
+
+  test("AC-2: resolves necro.config.json from the target dir, not the server cwd", async () => {
+    await write("necro.config.json", JSON.stringify({ ignore: ["**/node_modules/**", "**/dist/**", "src/util.ts"] }));
+    const { runner } = recordingRunner(true);
+    const client = await connectClient({ runnerFactory: () => runner });
+    const result = await client.callTool({
+      name: "necro_verify_removal",
+      arguments: { symbols: ["orphan"], path: dir, checks: ["typecheck"] },
+    });
+    const parsed = JSON.parse(textOf(result as { content?: Array<{ type: string; text?: string }> }));
+    // src/util.ts (where `orphan` lives) is now ignored by the target's own config.
+    expect(parsed[0].status).toBe("unresolved");
+  });
+
+  test("AC-1: sends no progress notification when the caller does not opt in", async () => {
+    const { runner } = recordingRunner(true);
+    const client = await connectClient({ runnerFactory: () => runner });
+    const onerror = vi.fn();
+    client.onerror = onerror;
+
+    await client.callTool({
+      name: "necro_verify_removal",
+      arguments: { symbols: ["orphan"], path: dir, checks: ["typecheck"] },
+    });
+
+    // no onprogress opt-in was supplied, so the client never registered a progress
+    // token; if the server sent one anyway it would surface as a protocol onerror.
+    expect(onerror).not.toHaveBeenCalled();
   });
 });

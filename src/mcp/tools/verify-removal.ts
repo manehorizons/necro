@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { loadConfig } from "../../config.js";
+import { loadConfig, resolveConfigDir } from "../../config.js";
 import { verifyRemovals } from "../../engine/verify-removal.js";
 import type { VerifyToolDeps } from "./verify.js";
 
@@ -18,7 +18,7 @@ export function registerVerifyRemovalTool(server: McpServer, deps: VerifyToolDep
     {
       title: "Verify whether deleting symbols keeps the build green",
       description:
-        "Read-only w.r.t. your working tree. For each symbol, plan its removal and verify it in its own throwaway git worktree (checks default: typecheck + tests). Returns a per-symbol verdict: green (safe to delete), red (breaks the build), or unresolved. Use to confirm dead-code removals before you apply them.",
+        "Read-only w.r.t. your working tree. For each symbol, plan its removal and verify it in its own throwaway git worktree (checks default: typecheck + tests). Returns a per-symbol verdict: green (safe to delete), red (breaks the build), or unresolved. Runs a full typecheck+test cycle per symbol, so this can take from seconds to minutes depending on repo size and check commands — supports MCP progress notifications (send a progressToken) so long calls don't hit a client's default timeout. Use to confirm dead-code removals before you apply them.",
       inputSchema: {
         symbols: z
           .array(z.string())
@@ -29,13 +29,22 @@ export function registerVerifyRemovalTool(server: McpServer, deps: VerifyToolDep
       },
       annotations: { readOnlyHint: true },
     },
-    async ({ symbols, path, checks }) => {
+    async ({ symbols, path, checks }, extra) => {
       const target = resolve(process.cwd(), path ?? ".");
-      const config = await loadConfig(process.cwd());
+      const config = await loadConfig(await resolveConfigDir(target));
+      const progressToken = extra._meta?.progressToken;
       const results = await verifyRemovals(target, config, symbols, {
         repoRoot: process.cwd(),
         runnerFactory: deps.runnerFactory,
         checks: checks ?? deps.checks,
+        onProgress:
+          progressToken === undefined
+            ? undefined
+            : (symbol, index, total) =>
+                void extra.sendNotification({
+                  method: "notifications/progress",
+                  params: { progressToken, progress: index, total, message: symbol },
+                }),
       });
       return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
     },

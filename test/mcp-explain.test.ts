@@ -59,12 +59,25 @@ describe("necro_explain MCP tool", () => {
     })) as { content?: Array<{ type: string; text?: string }> };
 
     const viaTool = JSON.parse(textOf(result));
-    // The tool (like necro_scan / the CLI) loads config from the server cwd.
+    // The tool loads config relative to the scan target, not the server cwd.
     const viaEngine = JSON.parse(
-      JSON.stringify(await explain(dir, await loadConfig(process.cwd()), "helper")),
+      JSON.stringify(await explain(dir, await loadConfig(dir), "helper")),
     );
     expect(viaTool).toEqual(viaEngine);
     expect(viaTool.status).toBe("resolved");
     expect(viaTool.reachability).toBe("alive");
+  });
+
+  test("AC-2: resolves necro.config.json from the target dir, not the server cwd", async () => {
+    await write("necro.config.json", JSON.stringify({ ignore: ["**/node_modules/**", "**/dist/**", "src/util.ts"] }));
+    const client = await connectClient();
+    const result = (await client.callTool({
+      name: "necro_explain",
+      arguments: { symbol: "helper", path: dir },
+    })) as { content?: Array<{ type: string; text?: string }> };
+
+    const parsed = JSON.parse(textOf(result));
+    // src/util.ts (where `helper` lives) is now ignored by the target's own config.
+    expect(parsed.status).toBe("not-found");
   });
 });

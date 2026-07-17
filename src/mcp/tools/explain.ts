@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { LlmOptions } from "../../config.js";
-import { loadConfig } from "../../config.js";
+import { loadConfig, resolveConfigDir } from "../../config.js";
 import { explain } from "../../engine/explain.js";
 import { createNarrateClient, type NarrateClient } from "../../explain/client.js";
 import { MissingApiKeyError } from "../../triage/client.js";
@@ -43,7 +43,7 @@ export function registerExplainTool(server: McpServer, deps: ExplainToolDeps = {
     },
     async ({ symbol, path, narrate }) => {
       const target = resolve(process.cwd(), path ?? ".");
-      const config = await loadConfig(process.cwd());
+      const config = await loadConfig(await resolveConfigDir(target));
 
       // Additive: a missing key degrades to the deterministic trace, never a failure.
       let narrateClient: NarrateClient | undefined;

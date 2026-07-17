@@ -1,5 +1,5 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { readFile, stat } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import type { ComplexityThresholds } from "./syntactic/types.js";
 
 /** User-facing scan configuration. */
@@ -106,6 +106,22 @@ export async function loadConfig(cwd: string): Promise<NecroConfig> {
     duplication: { ...DEFAULT_DUPLICATION, ...(user.duplication ?? {}) },
     llm: { ...DEFAULT_LLM, ...(user.llm ?? {}) },
   };
+}
+
+/**
+ * Resolve the directory `loadConfig` should read `necro.config.json` from for
+ * a given scan target: `target` itself if it's a directory, its parent if it's
+ * a file, or its parent if `target` doesn't exist (e.g. a not-yet-created
+ * removal target). Lets MCP tools honor a scan target's own config instead of
+ * always reading from the server process's cwd.
+ */
+export async function resolveConfigDir(target: string): Promise<string> {
+  try {
+    const s = await stat(target);
+    return s.isDirectory() ? target : dirname(target);
+  } catch {
+    return dirname(target);
+  }
 }
 
 async function readJsonConfig(path: string): Promise<RawConfig> {

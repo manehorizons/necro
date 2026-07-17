@@ -2,7 +2,7 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { DEFAULT_COMPLEXITY, DEFAULT_CONFIG, DEFAULT_LLM, loadConfig } from "../src/config.js";
+import { DEFAULT_COMPLEXITY, DEFAULT_CONFIG, DEFAULT_LLM, loadConfig, resolveConfigDir } from "../src/config.js";
 
 let dir: string;
 
@@ -89,5 +89,22 @@ describe("loadConfig", () => {
     // untouched keys keep defaults
     expect(config.llm.model).toBe(DEFAULT_LLM.model);
     expect(config.llm.snippetRadius).toBe(DEFAULT_LLM.snippetRadius);
+  });
+});
+
+describe("resolveConfigDir (AC-2)", () => {
+  test("returns the directory itself when target is a directory (AC-2)", async () => {
+    expect(await resolveConfigDir(dir)).toBe(dir);
+  });
+
+  test("returns the parent directory when target is a file (AC-2)", async () => {
+    const file = join(dir, "a.ts");
+    await writeFile(file, "");
+    expect(await resolveConfigDir(file)).toBe(dir);
+  });
+
+  test("falls back to the parent directory when target does not exist (AC-2)", async () => {
+    const missing = join(dir, "does-not-exist");
+    expect(await resolveConfigDir(missing)).toBe(dir);
   });
 });

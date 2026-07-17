@@ -1,6 +1,7 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
@@ -79,13 +80,30 @@ describe("necro MCP server", () => {
       await writeFile(join(dir, "package.json"), JSON.stringify({ name: "fx" }));
       await writeFile(join(dir, "util.ts"), "function dead() { return 1; }\nexport const used = 2;\n");
 
-      const cfg = await loadConfig(process.cwd());
+      // The tool loads config relative to the scan target, not the server cwd.
+      const cfg = await loadConfig(dir);
       const { findings, complexity, hotspots, duplication } = await scan(dir, cfg);
       const expected = toJson({ findings, complexity, hotspots, duplication });
 
       const client = await connectClient();
       const result = await client.callTool({ name: "necro_scan", arguments: { path: dir } });
       expect(textOf(result as { content?: Array<{ type: string; text?: string }> })).toBe(expected);
+    });
+
+    test("resolves necro.config.json from the scan target, not the server cwd (AC-2)", async () => {
+      await writeFile(join(dir, "package.json"), JSON.stringify({ name: "fx" }));
+      await writeFile(join(dir, "ignored.ts"), "function dead() { return 1; }\n");
+      await writeFile(
+        join(dir, "necro.config.json"),
+        JSON.stringify({ ignore: ["**/node_modules/**", "**/dist/**", "ignored.ts"] }),
+      );
+
+      const client = await connectClient();
+      const result = await client.callTool({ name: "necro_scan", arguments: { path: dir } });
+      const parsed = JSON.parse(textOf(result as { content?: Array<{ type: string; text?: string }> })) as {
+        findings: Array<{ file?: string }>;
+      };
+      expect(parsed.findings.some((f) => f.file?.includes("ignored.ts"))).toBe(false);
     });
   });
 
@@ -119,6 +137,13 @@ describe("necro MCP server", () => {
       expect(tools.map((t) => t.name)).toContain("necro_verify");
     });
 
+    test("description carries a duration hint for the typecheck+test cycle (AC-3)", async () => {
+      const client = await connectClient();
+      const { tools } = await client.listTools();
+      const tool = tools.find((t) => t.name === "necro_verify");
+      expect(tool?.description).toMatch(/minutes/);
+    });
+
     test("applies edits in an isolated worktree, runs checks, tears down — green (AC-3)", async () => {
       const { runner, events } = recordingRunner(true);
       const client = await connectClient({ runnerFactory: () => runner });
@@ -144,6 +169,14 @@ describe("necro MCP server", () => {
       expect(out.ok).toBe(false);
       expect(out.output).toContain("TS1234");
       expect(events).toContain("remove"); // torn down despite the red check
+    });
+  });
+
+  describe("README MCP docs (AC-3)", () => {
+    test("shows a `claude mcp add` one-liner alongside the JSON registration snippet", async () => {
+      const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+      const readme = await readFile(join(repoRoot, "README.md"), "utf8");
+      expect(readme).toContain("claude mcp add necro -- npx -y @manehorizons/necro mcp");
     });
   });
 });

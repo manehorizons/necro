@@ -25,7 +25,7 @@ export function registerVerifyTool(server: McpServer, deps: VerifyToolDeps = {})
     {
       title: "Verify edits in an isolated worktree",
       description:
-        "Read-only w.r.t. your working tree. Apply full-file edits in a throwaway git worktree, run checks (default: typecheck + tests), and report pass/fail. Use to confirm an edit before you apply it yourself.",
+        "Read-only w.r.t. your working tree. Apply full-file edits in a throwaway git worktree, run checks (default: typecheck + tests), and report pass/fail. Runs a full typecheck+test cycle, so this can take from seconds to minutes depending on repo size and check commands. Use to confirm an edit before you apply it yourself.",
       inputSchema: {
         edits: z
           .array(z.object({ file: z.string(), content: z.string() }))

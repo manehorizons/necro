@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { loadConfig } from "../../config.js";
+import { loadConfig, resolveConfigDir } from "../../config.js";
 import { scan } from "../../engine/index.js";
 import { toJson } from "../../report/json.js";
 
@@ -27,7 +27,7 @@ export function registerScanTool(server: McpServer): void {
     },
     async ({ path, top, coverage }) => {
       const target = resolve(process.cwd(), path ?? ".");
-      const config = await loadConfig(process.cwd());
+      const config = await loadConfig(await resolveConfigDir(target));
       if (coverage) config.coveragePath = coverage;
       const { findings, complexity, hotspots, duplication } = await scan(target, config);
       const shown = top && top > 0 ? findings.slice(0, top) : findings;

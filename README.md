@@ -207,6 +207,12 @@ Four read-only tools are exposed:
 
 Register it with your agent (Claude Code example):
 
+```bash
+claude mcp add necro -- npx -y @manehorizons/necro mcp
+```
+
+Or by hand:
+
 ```json
 {
   "mcpServers": {
