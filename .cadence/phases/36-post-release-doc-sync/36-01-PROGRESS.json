@@ -1,0 +1,23 @@
+{
+  "draftId": "36-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "README.md line 7: \"Status: v1.1\" -> \"Status: v1.2\".",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T01:25:59.568Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "npm install --package-lock-only regenerated package-lock.json: root \"version\" and root-package \"version\" both 1.1.0->1.2.0, no dependency entries touched (git diff confirms only 2 version lines). npm ci --dry-run succeeds cleanly.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T01:26:17.583Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "gh workflow run docs.yml --ref main dispatched (run 29547451337, build+deploy both succeeded). New github-pages deployment sha 20a48e39... matches current HEAD exactly. curl https://manehorizons.github.io/necro/reference/cli/ now contains \"necro explain\" and \"necro verify-removal\" — live site confirmed current.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T01:27:56.868Z"
+    }
+  }
+}

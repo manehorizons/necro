@@ -4,12 +4,12 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 35-cut-v1.2.0
+**Active phase:** 36-post-release-doc-sync
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 28%
+- Token utilization: 29%
 - Subagent spawns this session: 23
 - Last handoff: SESSION-2026-07-16-phase29-30-settled-pushed.md
 
