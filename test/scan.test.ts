@@ -55,6 +55,23 @@ describe("scan (end-to-end)", () => {
     expect(byName(findings, "testUtil")?.verdict).toBe("test-only");
   });
 
+  test("AC-3: onProgress fires for the reachability and syntactic-axis phases", async () => {
+    await write("package.json", JSON.stringify({ name: "fixture", devDependencies: { vitest: "^2" } }));
+    await write("src/index.ts", `export function main() {}\n`);
+
+    const messages: string[] = [];
+    await scan(dir, DEFAULT_CONFIG, { onProgress: (m) => messages.push(m) });
+
+    expect(messages.length).toBeGreaterThanOrEqual(2);
+  });
+
+  test("omitting onProgress changes nothing (default behavior preserved)", async () => {
+    await write("package.json", JSON.stringify({ name: "fixture", devDependencies: { vitest: "^2" } }));
+    await write("src/index.ts", `export function main() {}\n`);
+    const { diagnostics } = await scan(dir, DEFAULT_CONFIG);
+    expect(diagnostics.entryResolution.prodEntryCount).toBe(1);
+  });
+
   test("sorts findings worst-first (certain before test-only)", async () => {
     await write("package.json", JSON.stringify({ name: "fx", devDependencies: { vitest: "^2" } }));
     await write("src/index.ts", `export {};\n`);

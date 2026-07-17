@@ -3,9 +3,9 @@ import type { EntryResolution } from "../engine/model.js";
 import { renderFindings } from "./evidence.js";
 
 /** Render the default human-readable report: a summary line plus evidence chains. */
-export function renderTerminal(findings: ClassifiedFinding[]): string {
+export function renderTerminal(findings: ClassifiedFinding[], root: string, color: boolean): string {
   if (findings.length === 0) return "no findings";
-  return `${summary(findings)}\n\n${renderFindings(findings)}`;
+  return `${summary(findings)}\n\n${renderFindings(findings, root, color)}`;
 }
 
 /**

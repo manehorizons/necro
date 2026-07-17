@@ -12,6 +12,7 @@ import {
   readBaseline,
   writeBaseline,
 } from "./baseline.js";
+import { supportsColor } from "./report/color.js";
 import { explain } from "./engine/explain.js";
 import { verifyRemovals } from "./engine/verify-removal.js";
 import { createNarrateClient, type NarrateClient } from "./explain/client.js";
@@ -105,7 +106,9 @@ program
     const target = resolve(process.cwd(), path);
     const config = await loadConfig(process.cwd());
     if (opts.coverage) config.coveragePath = opts.coverage;
-    const scanned = await scan(target, config);
+    const scanned = await scan(target, config, {
+      onProgress: (message) => process.stderr.write(`${message}\n`),
+    });
     const { hotspots, duplication, diagnostics } = scanned;
 
     // Baseline + `// necro-ignore` subtract before any consumer (terminal,
@@ -128,12 +131,14 @@ program
     if (opts.json) {
       console.log(toJson({ findings: shown, complexity, hotspots, duplication, diagnostics }));
     } else {
+      const root = process.cwd();
+      const color = supportsColor(process.stdout);
       const sections = [
         renderEntryCollapseBanner(diagnostics.entryResolution),
-        renderTerminal(shown),
-        renderComplexity(complexity),
-        renderHotspots(hotspots),
-        renderDuplication(duplication),
+        renderTerminal(shown, root, color),
+        renderComplexity(complexity, root),
+        renderHotspots(hotspots, root),
+        renderDuplication(duplication, root),
       ].filter(Boolean);
       console.log(sections.join("\n\n"));
     }
@@ -216,6 +221,8 @@ program
     const results = await verifyRemovals(target, config, symbols, {
       repoRoot: process.cwd(),
       checks,
+      onProgress: (symbol, index, total) =>
+        process.stderr.write(`[${index}/${total}] verifying ${symbol}...\n`),
     });
 
     if (opts.json) {

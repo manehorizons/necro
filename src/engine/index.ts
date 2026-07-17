@@ -32,6 +32,9 @@ export interface ScanOptions {
   /** Run the syntactic-detector (complexity) axis. Default true; `fix` sets
    * false so the dead-code path never pays tree-sitter's init cost. */
   complexity?: boolean;
+  /** Called once per major scan phase (e.g. for CLI stderr progress on large
+   * repos). Omit for today's silent behavior — this is opt-in, not ambient. */
+  onProgress?: (message: string) => void;
 }
 
 /**
@@ -45,6 +48,7 @@ export async function scan(
   config: NecroConfig,
   opts: ScanOptions = {},
 ): Promise<ScanResult> {
+  opts.onProgress?.("resolving reachability...");
   const model = await buildReachabilityModel(targetPath, config);
   if (model.files.length === 0)
     return {
@@ -71,10 +75,13 @@ export async function scan(
     }),
   );
 
-  const heavy =
-    opts.complexity === false
-      ? { complexity: [], hotspots: [], duplication: [] }
-      : await analyzeHeavy(sources, config, coverageReport, targetPath);
+  let heavy: { complexity: ComplexityFinding[]; hotspots: HotspotEntry[]; duplication: DuplicationFinding[] };
+  if (opts.complexity === false) {
+    heavy = { complexity: [], hotspots: [], duplication: [] };
+  } else {
+    opts.onProgress?.("analyzing complexity + duplication...");
+    heavy = await analyzeHeavy(sources, config, coverageReport, targetPath);
+  }
   return {
     findings,
     complexity: heavy.complexity,

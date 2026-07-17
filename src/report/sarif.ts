@@ -1,6 +1,6 @@
-import { isAbsolute, relative } from "node:path";
 import { VERSION } from "../version.js";
 import type { JsonInput } from "./json.js";
+import { toRelativePath } from "./paths.js";
 import {
   complexitySeverity,
   deadCodeSeverity,
@@ -63,16 +63,10 @@ const RULES: SarifRule[] = [
   { id: "hotspot", name: "Hotspot", shortDescription: { text: "Risk hotspot" }, helpUri: INFO_URI },
 ];
 
-/** Repo-relative, forward-slashed URI for a finding file path. */
-function toUri(file: string, srcRoot: string): string {
-  const rel = isAbsolute(file) ? relative(srcRoot, file) : file;
-  return rel.split("\\").join("/");
-}
-
 function physical(file: string, line: number, srcRoot: string): SarifPhysicalLocation {
   return {
     physicalLocation: {
-      artifactLocation: { uri: toUri(file, srcRoot) },
+      artifactLocation: { uri: toRelativePath(file, srcRoot) },
       // Findings carry no column; SARIF startColumn is 1-based, default to 1.
       region: { startLine: line, startColumn: 1 },
     },

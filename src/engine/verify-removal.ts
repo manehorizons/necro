@@ -38,6 +38,9 @@ export interface VerifyRemovalOptions {
    * Defaults to `targetPath` — pass the git toplevel when the target is a subdir.
    */
   repoRoot?: string;
+  /** Called before each symbol is verified (1-based `index`), e.g. for CLI
+   * stderr progress. Omit for today's silent behavior — opt-in, not ambient. */
+  onProgress?: (symbol: string, index: number, total: number) => void;
 }
 
 /**
@@ -60,7 +63,8 @@ export async function verifyRemovals(
   const model = await buildReachabilityModel(targetPath, config);
 
   const verdicts: RemovalVerdict[] = [];
-  for (const symbol of symbols) {
+  for (const [i, symbol] of symbols.entries()) {
+    opts.onProgress?.(symbol, i + 1, symbols.length);
     const matches = resolveQuery(model.graph.nodes, symbol);
     if (matches.length !== 1) {
       verdicts.push({

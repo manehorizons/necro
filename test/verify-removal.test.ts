@@ -100,6 +100,34 @@ describe("verify-removal engine", () => {
     // breaker's red verdict did not taint safe's green verdict (independence)
     expect(results.find((r) => r.symbol === "safe")?.status).toBe("green");
   });
+
+  test("AC-4: onProgress fires once per symbol, in order, with a stable total", async () => {
+    await writeFixture();
+    const calls = { roots: [] as string[], files: [] as string[][] };
+    const progress: Array<{ symbol: string; index: number; total: number }> = [];
+    await verifyRemovals(dir, DEFAULT_CONFIG, ["safe", "breaker"], {
+      repoRoot: dir,
+      checks: ["typecheck"],
+      runnerFactory: fakeRunnerFactory("dep.ts", calls),
+      onProgress: (symbol, index, total) => progress.push({ symbol, index, total }),
+    });
+
+    expect(progress).toEqual([
+      { symbol: "safe", index: 1, total: 2 },
+      { symbol: "breaker", index: 2, total: 2 },
+    ]);
+  });
+
+  test("omitting onProgress changes nothing (default behavior preserved)", async () => {
+    await writeFixture();
+    const calls = { roots: [] as string[], files: [] as string[][] };
+    const results = await verifyRemovals(dir, DEFAULT_CONFIG, ["safe"], {
+      repoRoot: dir,
+      checks: ["typecheck"],
+      runnerFactory: fakeRunnerFactory("dep.ts", calls),
+    });
+    expect(results[0]?.status).toBe("green");
+  });
 });
 
 /** Wraps a real graph node as a minimal `ClassifiedFinding` (only `node` is read by `verifyFindings`). */

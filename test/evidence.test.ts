@@ -20,7 +20,7 @@ describe("renderEvidenceChain", () => {
   test("renders a certain finding: header, passing signals, safe verdict", () => {
     const n = node("oldHelper", false);
     const [finding] = classify({ nodes: [n], reachability: [reach(n.id, "dead")] });
-    const text = renderEvidenceChain(finding!);
+    const text = renderEvidenceChain(finding!, "/", false);
 
     expect(text).toContain("oldHelper");
     expect(text).toContain("src/oldHelper.ts:42");
@@ -36,7 +36,7 @@ describe("renderEvidenceChain", () => {
       nodes: [n],
       reachability: [reach(n.id, "dead", true)],
     });
-    const text = renderEvidenceChain(finding!);
+    const text = renderEvidenceChain(finding!, "/", false);
 
     expect(text).toContain("tier: maybe");
     expect(text).toContain("✗");
@@ -48,6 +48,22 @@ describe("renderEvidenceChain", () => {
   });
 });
 
+describe("renderEvidenceChain color (AC-2)", () => {
+  test("color: true wraps the tier and glyph in ANSI codes", () => {
+    const n = node("oldHelper", false);
+    const [finding] = classify({ nodes: [n], reachability: [reach(n.id, "dead")] });
+    const text = renderEvidenceChain(finding!, "/", true);
+    expect(text).toContain("\x1b[");
+  });
+
+  test("color: false emits no ANSI codes", () => {
+    const n = node("oldHelper", false);
+    const [finding] = classify({ nodes: [n], reachability: [reach(n.id, "dead")] });
+    const text = renderEvidenceChain(finding!, "/", false);
+    expect(text).not.toContain("\x1b[");
+  });
+});
+
 describe("renderFindings", () => {
   test("renders multiple findings as separate boxes", () => {
     const a = node("oldHelper", false);
@@ -56,7 +72,7 @@ describe("renderFindings", () => {
       nodes: [a, b],
       reachability: [reach(a.id, "dead"), reach(b.id, "dead", true)],
     });
-    const text = renderFindings(findings);
+    const text = renderFindings(findings, "/", false);
 
     expect(text).toContain("oldHelper");
     expect(text).toContain("formatPayload");

@@ -100,11 +100,11 @@ describe("toJson", () => {
 
 describe("renderTerminal", () => {
   test("says so when there are no findings", () => {
-    expect(renderTerminal([])).toBe("no findings");
+    expect(renderTerminal([], "/", false)).toBe("no findings");
   });
 
   test("renders a summary line and the evidence chains", () => {
-    const text = renderTerminal([finding("a", "certain"), finding("b", "maybe")]);
+    const text = renderTerminal([finding("a", "certain"), finding("b", "maybe")], "/", false);
     expect(text).toMatch(/2 findings/);
     expect(text).toContain("tier: certain");
     expect(text).toContain("tier: maybe");

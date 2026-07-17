@@ -15,10 +15,10 @@ const entry: HotspotEntry = {
 
 describe("renderHotspots (AC-6)", () => {
   test("renders the auditable columns, worst-first", () => {
-    const out = renderHotspots([entry]);
+    const out = renderHotspots([entry], "/");
     expect(out).toContain("Risk hotspots");
     expect(out).toContain("risky");
-    expect(out).toContain("/src/risky.ts:1");
+    expect(out).toContain("src/risky.ts:1");
     expect(out).toContain("cx=5");
     expect(out).toContain("cov=0%");
     expect(out).toContain("crap=30");
@@ -26,6 +26,6 @@ describe("renderHotspots (AC-6)", () => {
   });
 
   test("empty when there are no hotspots", () => {
-    expect(renderHotspots([])).toBe("");
+    expect(renderHotspots([], "/")).toBe("");
   });
 });
