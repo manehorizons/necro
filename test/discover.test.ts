@@ -42,3 +42,32 @@ describe("discoverFiles (AC-1, AC-3)", () => {
     expect(names).toEqual(["real.cts", "real.mts"]);
   });
 });
+
+describe("discoverFiles — Python (AC-4)", () => {
+  test("DEFAULT_CONFIG.include does not contain .py — Python stays opt-in (regression guard)", () => {
+    expect(DEFAULT_CONFIG.include).not.toContain("**/*.py");
+  });
+
+  test("discovers .py when a user explicitly includes it, and skips .pyi stubs", async () => {
+    await writeFile(join(dir, "src", "real.py"), "");
+    await writeFile(join(dir, "src", "types.pyi"), "");
+
+    const config = { ...DEFAULT_CONFIG, include: [...DEFAULT_CONFIG.include, "**/*.py", "**/*.pyi"] };
+    const files = await discoverFiles(dir, config);
+    const names = files.map((f) => f.split("/").pop()).sort();
+    expect(names).toEqual(["real.py"]);
+  });
+
+  test("skips __pycache__, .venv, venv, .tox, and .eggs unconditionally", async () => {
+    for (const skipDir of ["__pycache__", ".venv", "venv", ".tox", ".eggs"]) {
+      await mkdir(join(dir, skipDir), { recursive: true });
+      await writeFile(join(dir, skipDir, "ghost.py"), "");
+    }
+    await writeFile(join(dir, "src", "real.py"), "");
+
+    const config = { ...DEFAULT_CONFIG, include: [...DEFAULT_CONFIG.include, "**/*.py"] };
+    const files = await discoverFiles(dir, config);
+    const names = files.map((f) => f.split("/").pop()).sort();
+    expect(names).toEqual(["real.py"]);
+  });
+});

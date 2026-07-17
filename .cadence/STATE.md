@@ -4,13 +4,13 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 42
+**Active phase:** 43
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 43%
-- Subagent spawns this session: 31
+- Token utilization: 46%
+- Subagent spawns this session: 38
 - Last handoff: SESSION-2026-07-17-phase-40-mcp-hardening-shipped.md
 
 ## Counts

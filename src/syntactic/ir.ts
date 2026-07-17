@@ -37,27 +37,43 @@ const FUNCTION_KINDS = new Set([
   "method_definition",
   "generator_function_declaration",
   "generator_function",
+  // Python
+  "function_definition",
+  "lambda",
 ]);
 
 /** Map a tree-sitter node type to a control category (the only language-aware step). */
 function categoryOf(node: TsNode): { category: ControlCategory; nests: boolean } | null {
   switch (node.type) {
     case "if_statement":
+    case "elif_clause": // Python: a sibling clause of `if`, not a nested if — its own branch
+    case "if_clause": // Python: comprehension `if` filter
       return { category: "branch", nests: true };
     case "for_statement":
     case "for_in_statement":
     case "while_statement":
     case "do_statement":
+    case "for_in_clause": // Python: comprehension `for`
       return { category: "loop", nests: true };
     case "switch_case":
+    case "case_clause": // Python: `match`/`case`
       return { category: "case", nests: true };
     case "catch_clause":
+    case "except_clause": // Python
       return { category: "catch", nests: true };
     case "ternary_expression":
+    case "conditional_expression": // Python: `a if b else c`
       return { category: "ternary", nests: true };
     case "binary_expression": {
       const op = node.childForFieldName("operator")?.text;
       if (op === "&&" || op === "||" || op === "??") return { category: "boolean", nests: false };
+      return null;
+    }
+    case "boolean_operator": {
+      // Python: `and`/`or` (mirrors JS's `&&`/`||`; `not` is left unmapped,
+      // matching how JS's unary `!` maps to nothing).
+      const op = node.childForFieldName("operator")?.text;
+      if (op === "and" || op === "or") return { category: "boolean", nests: false };
       return null;
     }
     default:

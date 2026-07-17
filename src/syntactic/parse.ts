@@ -2,15 +2,17 @@ import { createRequire } from "node:module";
 import { dirname, extname, join } from "node:path";
 import { Language, Parser } from "web-tree-sitter";
 
-type Grammar = "typescript" | "tsx";
+type Grammar = "typescript" | "tsx" | "python";
 
 const parserPromises = new Map<Grammar, Promise<Parser>>();
 let runtimeInit: Promise<void> | null = null;
 
-/** JSX can appear in `.tsx`/`.jsx`; every other extension parses as plain TypeScript. */
+/** JSX can appear in `.tsx`/`.jsx`; `.py` needs the Python grammar; every other extension parses as plain TypeScript. */
 function grammarFor(file: string): Grammar {
   const ext = extname(file);
-  return ext === ".tsx" || ext === ".jsx" ? "tsx" : "typescript";
+  if (ext === ".tsx" || ext === ".jsx") return "tsx";
+  if (ext === ".py") return "python";
+  return "typescript";
 }
 
 /**

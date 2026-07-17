@@ -1,0 +1,26 @@
+{
+  "specId": "43-00",
+  "converged": true,
+  "attempts": 1,
+  "maxAttempts": 3,
+  "history": [
+    {
+      "at": "2026-07-17T22:03:12.346Z",
+      "pass": false,
+      "findingsCount": 1,
+      "provider": "mock",
+      "verdict": "reloop"
+    },
+    {
+      "at": "2026-07-17T22:03:32.215Z",
+      "pass": true,
+      "findingsCount": 0,
+      "provider": "mock",
+      "verdict": "pass"
+    }
+  ],
+  "pass": true,
+  "provider": "mock",
+  "findings": 0,
+  "at": "2026-07-17T22:03:32.215Z"
+}

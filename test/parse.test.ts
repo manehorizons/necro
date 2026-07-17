@@ -33,4 +33,40 @@ describe("getParser (AC-2)", () => {
     const tree = parser.parse("export function f(a) { return a + 1; }\n");
     expect(tree?.rootNode.hasError).toBe(false);
   });
+
+  test("parses Python source covering every construct AC-1 lists, without error (AC-1)", async () => {
+    const parser = await getParser("/mod.py");
+    const src = `def top(a, b=1, *args, **kwargs):
+    if a:
+        pass
+    elif b:
+        pass
+    for x in range(10):
+        while x > 0:
+            x -= 1
+    try:
+        pass
+    except ValueError:
+        pass
+    y = a if b else b
+    z = a and b or not a
+    result = [i for i in range(10) if i > 5]
+    match a:
+        case 1:
+            pass
+        case _:
+            pass
+
+class Foo:
+    def method(self, x):
+        return x
+
+async def bar():
+    pass
+
+lam = lambda x: x + 1
+`;
+    const tree = parser.parse(src);
+    expect(tree?.rootNode.hasError).toBe(false);
+  });
 });

@@ -23,6 +23,10 @@ const LITERAL_KINDS = new Set([
   "template_chars",
   "true",
   "false",
+  // Python
+  "integer",
+  "float",
+  "string_content",
 ]);
 
 /**

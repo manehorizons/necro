@@ -3,12 +3,24 @@ import { join, relative } from "node:path";
 import type { NecroConfig } from "./config.js";
 import { globMatcher } from "./glob.js";
 
-const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "coverage"]);
+const SKIP_DIRS = new Set([
+  "node_modules",
+  ".git",
+  "dist",
+  "build",
+  "coverage",
+  // Python
+  "__pycache__",
+  ".venv",
+  "venv",
+  ".tox",
+  ".eggs",
+]);
 
 /**
  * Walk `target` and return absolute paths of source files matching
  * `config.include` and not `config.ignore`. Declaration files (`*.d.ts`,
- * `*.d.mts`, `*.d.cts`) are skipped.
+ * `*.d.mts`, `*.d.cts`, `*.pyi`) are skipped.
  */
 export async function discoverFiles(
   target: string,
@@ -31,6 +43,7 @@ export async function discoverFiles(
       }
       if (!entry.isFile()) continue;
       if (/\.d\.(ts|mts|cts)$/.test(entry.name)) continue;
+      if (entry.name.endsWith(".pyi")) continue;
       const rel = relative(target, abs);
       if (include(rel) && !ignore(rel)) out.push(abs);
     }
