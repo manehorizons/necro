@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 277,
+  "revision": 295,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
@@ -15,9 +15,9 @@
   "decisions": [],
   "deferred": [],
   "session": {
-    "tokenUtilization": 0.46000000000000024,
-    "lastHandoff": "SESSION-2026-07-17-phase-40-mcp-hardening-shipped.md",
-    "subagentSpawns": 38,
+    "tokenUtilization": 0.5700000000000003,
+    "lastHandoff": "SESSION-2026-07-17-phase-43-python-syntactic-axis-shipped.md",
+    "subagentSpawns": 44,
     "subagentBaselines": {}
   },
   "skillAudit": {

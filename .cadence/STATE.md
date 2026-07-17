@@ -9,9 +9,9 @@
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 46%
-- Subagent spawns this session: 38
-- Last handoff: SESSION-2026-07-17-phase-40-mcp-hardening-shipped.md
+- Token utilization: 57%
+- Subagent spawns this session: 44
+- Last handoff: SESSION-2026-07-17-phase-43-python-syntactic-axis-shipped.md
 
 ## Counts
 - Open drafts: 0
