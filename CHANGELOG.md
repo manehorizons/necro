@@ -4,7 +4,7 @@ All notable changes to `@manehorizons/necro` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/).
 
-## [1.2.0] — Unreleased
+## [1.2.0] — 2026-07-17
 
 ### Added
 - **Fail-closed entry resolution.** When zero production entry points resolve

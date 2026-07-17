@@ -1,0 +1,33 @@
+{
+  "draftId": "35-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "package.json version bumped 1.1.0 -> 1.2.0. git diff shows only that single line changed.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T01:18:16.763Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "CHANGELOG.md heading finalized: \"## [1.2.0] — Unreleased\" -> \"## [1.2.0] — 2026-07-17\". git diff confirms single-line change, no bullet content touched.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/CHANGELOG.md"
+      ],
+      "updatedAt": "2026-07-17T01:18:29.641Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "Confirmed red first: npx vitest run test/release-shape.test.ts failed exactly at L46's toContain(\"## [1.2.0] — Unreleased\") after T1/T2. Relaxed to expect(changelog).toMatch(/## \\[1\\.2\\.0\\][^\\n]*\\n/) — all 5 tests in the file now pass, L47-52 content checks untouched.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/release-shape.test.ts"
+      ],
+      "updatedAt": "2026-07-17T01:18:50.965Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "npm run typecheck && npm run build && npm test all pass. 439 passed, 6 skipped (matches baseline). dist/cli.js rebuilt at 1.2.0.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T01:19:10.948Z"
+    }
+  }
+}

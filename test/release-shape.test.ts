@@ -43,7 +43,7 @@ describe("release / package shape", () => {
 describe("fail-closed entry resolution — CHANGELOG + boundary compliance", () => {
   test("CHANGELOG documents the fail-closed entry-resolution slice under 1.2.0 Unreleased (AC-8)", () => {
     const changelog = readFileSync(root("CHANGELOG.md"), "utf8");
-    expect(changelog).toContain("## [1.2.0] — Unreleased");
+    expect(changelog).toMatch(/## \[1\.2\.0\][^\n]*\n/);
     const section = changelog.slice(changelog.indexOf("## [1.2.0]"), changelog.indexOf("## [1.1.0]"));
     expect(section).toMatch(/fail-closed entry resolution/i);
     expect(section).toMatch(/entries.*string\[\]|"entries"/i);
