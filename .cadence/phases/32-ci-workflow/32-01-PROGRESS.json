@@ -1,0 +1,17 @@
+{
+  "draftId": "32-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Added .github/workflows/ci.yml (push:main + pull_request triggers; checkout@v5 + setup-node@v5 node20/npm-cache; npm ci, npm run typecheck, npm run build, npm test). YAML parses via python3 yaml.safe_load; all four run: commands verified against package.json scripts block.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T00:37:00.622Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "git diff --stat confirms docs.yml/necro-scan.yml/release.yml untouched, only ci.yml added (new file). Ran npm run typecheck && npm run build && npm test locally: all green (439 passed, 6 skipped, unchanged from baseline).",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T00:37:04.679Z"
+    }
+  }
+}
