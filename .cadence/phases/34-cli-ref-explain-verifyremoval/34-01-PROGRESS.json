@@ -1,0 +1,23 @@
+{
+  "draftId": "34-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Inserted `## necro explain` section (L100-127) between scan and verify-removal: usage fence, Arguments table (<symbol>), Options table (--json, --narrate w/ ANTHROPIC_API_KEY note + graceful degradation), Exit code note (0 resolved / 1 unresolved). All sourced from src/cli.ts L131-163.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T01:06:17.289Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "Inserted `## necro verify-removal` section (L129-158) between explain and fix: usage fence, Arguments table (<symbols...>), Options table (--json, --checks repeatable + comma-verbatim note), Exit code note (1 any red, 0 otherwise). All sourced from src/cli.ts L165-195.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T01:06:22.881Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "git diff --stat: 60 insertions, 0 deletions — pure insertion, confirming no existing sections (scan/fix/triage/refactor/mcp, MCP table, opt-in note) were touched. New sections use the same heading structure (### Arguments/### Options/### Exit code) as ## necro fix.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T01:06:30.918Z"
+    }
+  }
+}

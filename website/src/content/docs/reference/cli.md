@@ -97,6 +97,66 @@ using one unified scale across all four axes:
 likely-dead and complexity; `--fail-on low` fails on anything. `--fail-on` and
 `--sarif` compose with `--json` and the human report.
 
+## `necro explain`
+
+Explain why a symbol is alive, test-only, or dead — traces the reachability
+witness chain for an alive symbol, or annotated inbound referrers for a dead
+one. Read-only; never edits your files.
+
+```
+necro explain <symbol> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<symbol>` | Symbol to explain: `name`, `file:name`, or `file:line:name`. |
+
+### Options
+
+| Option | Description |
+|---|---|
+| `--json` | Emit the explanation as JSON. |
+| `--narrate` | Add an LLM plain-English explanation of the verdict (needs `ANTHROPIC_API_KEY`). Additive — the deterministic trace still renders, and `--json` output carries `narrative: null`, if the key is missing. |
+| `-h`, `--help` | Show help for `explain`. |
+
+### Exit code
+
+`explain` exits `0` when the symbol resolves to a single match, `1` when the
+query is ambiguous or can't be resolved.
+
+## `necro verify-removal`
+
+Verify whether deleting each named symbol keeps the build green. For every
+symbol, `verify-removal` plans its removal and checks it independently in its
+own throwaway git worktree (your working tree is never touched) — the
+empirical backbone behind `fix --write --verify`.
+
+```
+necro verify-removal <symbols...> [options]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `<symbols...>` | One or more symbols to test-remove: `name`, `file:name`, or `file:line:name`. |
+
+### Options
+
+| Option | Description |
+|---|---|
+| `--json` | Emit the per-symbol verdicts as JSON. |
+| `--checks <cmd>` | Check command to run after the simulated removal (repeatable — pass `--checks` multiple times to run several commands; default: typecheck + tests). A command containing a comma runs verbatim, not split. |
+| `-h`, `--help` | Show help for `verify-removal`. |
+
+### Exit code
+
+`verify-removal` exits `1` if any symbol's removal breaks the build (a `red`
+verdict) — the headline CI-gating use case. An all-`unresolved` or all-`green`
+result exits `0`; "couldn't determine" is not treated as unsafe.
+
 ## `necro fix`
 
 Safely remove `certain`-dead code. `fix` reuses the same detection as `scan`,
