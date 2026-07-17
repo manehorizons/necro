@@ -1,0 +1,39 @@
+{
+  "draftId": "37-00",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T01:45:04.521Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/cli.ts",
+        "/home/thomas/projects/necro/src/baseline.ts",
+        "/home/thomas/projects/necro/test/cli-baseline.test.ts"
+      ],
+      "updatedAt": "2026-07-17T01:47:55.099Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T01:47:55.297Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T01:47:55.480Z"
+    },
+    "T5": {
+      "status": "DONE",
+      "notes": "",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T01:47:55.678Z"
+    }
+  }
+}

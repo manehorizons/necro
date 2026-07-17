@@ -1,9 +1,17 @@
 import { writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { Command } from "commander";
 import { loadConfig } from "./config.js";
 import { VERSION } from "./version.js";
 import { scan } from "./engine/index.js";
+import {
+  complexityKey,
+  DEFAULT_BASELINE_FILE,
+  findingKey,
+  isIgnored,
+  readBaseline,
+  writeBaseline,
+} from "./baseline.js";
 import { explain } from "./engine/explain.js";
 import { verifyRemovals } from "./engine/verify-removal.js";
 import { createNarrateClient, type NarrateClient } from "./explain/client.js";
@@ -97,7 +105,20 @@ program
     const target = resolve(process.cwd(), path);
     const config = await loadConfig(process.cwd());
     if (opts.coverage) config.coveragePath = opts.coverage;
-    const { findings, complexity, hotspots, duplication, diagnostics } = await scan(target, config);
+    const scanned = await scan(target, config);
+    const { hotspots, duplication, diagnostics } = scanned;
+
+    // Baseline + `// necro-ignore` subtract before any consumer (terminal,
+    // --json, SARIF, --fail-on) sees the result — filter once, upstream.
+    const baselineKeys = await readBaseline(join(target, DEFAULT_BASELINE_FILE));
+    const ignoreCache = new Map<string, string[]>();
+    const findings: typeof scanned.findings = [];
+    for (const f of scanned.findings) {
+      if (baselineKeys?.has(findingKey(f))) continue;
+      if (await isIgnored(f.node.file, f.node.line, ignoreCache)) continue;
+      findings.push(f);
+    }
+    const complexity = scanned.complexity.filter((c) => !baselineKeys?.has(complexityKey(c)));
 
     // SARIF and --fail-on consider the full result set, never the --top view.
     const full = { findings, complexity, hotspots, duplication, diagnostics };
@@ -125,6 +146,21 @@ program
     if (failOn !== undefined && gate(full, failOn)) {
       process.exitCode = 1;
     }
+  });
+
+program
+  .command("baseline")
+  .description(
+    "Snapshot current dead-code and complexity findings so they stop gating --fail-on",
+  )
+  .argument("[path]", "directory or file to scan", ".")
+  .action(async (path: string) => {
+    const target = resolve(process.cwd(), path);
+    const config = await loadConfig(process.cwd());
+    const { findings, complexity } = await scan(target, config);
+    const keys = [...findings.map(findingKey), ...complexity.map(complexityKey)];
+    await writeBaseline(join(target, DEFAULT_BASELINE_FILE), keys);
+    console.log(`baseline: ${keys.length} finding(s) recorded`);
   });
 
 program
