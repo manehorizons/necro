@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 126,
+  "revision": 128,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
@@ -15,8 +15,8 @@
   "decisions": [],
   "deferred": [],
   "session": {
-    "tokenUtilization": 0.3300000000000001,
-    "lastHandoff": "SESSION-2026-07-17-v1.2.0-shipped-docs-synced.md",
+    "tokenUtilization": 0.34000000000000014,
+    "lastHandoff": "SESSION-2026-07-17-phase-38-terminal-polish-shipped.md",
     "subagentSpawns": 24,
     "subagentBaselines": {}
   },
