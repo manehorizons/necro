@@ -1,0 +1,38 @@
+name: Live accuracy gate
+
+# Runs the LLM-backed accuracy eval suites (triage + refactor/duplicate) against
+# the real Anthropic API on a weekly schedule, plus on-demand via workflow_dispatch,
+# so a real accuracy regression trips CI instead of drifting silently. These tests
+# self-skip (test.runIf) when ANTHROPIC_API_KEY is absent, so a repo without the
+# secret configured still completes green with the checks skipped.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-accuracy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Live accuracy eval
+        run: npx vitest run test/triage-eval.live.test.ts test/refactor-eval.live.test.ts
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
