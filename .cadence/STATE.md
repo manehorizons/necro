@@ -9,8 +9,8 @@
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 29%
-- Subagent spawns this session: 23
+- Token utilization: 30%
+- Subagent spawns this session: 24
 - Last handoff: SESSION-2026-07-16-phase29-30-settled-pushed.md
 
 ## Counts
