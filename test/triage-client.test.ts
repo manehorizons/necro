@@ -3,7 +3,8 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { DEFAULT_LLM } from "../src/config.js";
-import { MissingApiKeyError, createTriageClient, resolveApiKey } from "../src/triage/client.js";
+import { MissingApiKeyError, resolveApiKey } from "../src/llm/client.js";
+import { createTriageClient } from "../src/triage/client.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -48,10 +49,37 @@ describe("SDK isolation (AC-5)", () => {
     }
   });
 
-  test("the triage client loads the SDK only via `import type` + dynamic import (AC-5)", async () => {
+  test("the triage client never references the SDK directly — only via src/llm/client.ts (AC-5)", async () => {
     const text = await readFile(join(root, "src/triage/client.ts"), "utf8");
+    expect(text).not.toContain("@anthropic-ai/sdk");
+  });
+
+  test("src/llm/client.ts loads the SDK only via `import type` + dynamic import (AC-5)", async () => {
+    const text = await readFile(join(root, "src/llm/client.ts"), "utf8");
     // a runtime static import would be `import X from "@anthropic-ai/sdk"`
     expect(text).not.toMatch(/^import\s+(?!type\b)[^\n]*@anthropic-ai\/sdk/m);
     expect(text).toContain('import("@anthropic-ai/sdk")'); // lazy
+  });
+});
+
+vi.mock("@anthropic-ai/sdk", () => ({
+  default: class FakeAnthropic {
+    messages = {
+      create: vi.fn(async () => ({
+        content: [{ type: "text", text: JSON.stringify({ verdict: "likely-dead", reasoning: "r" }) }],
+        usage: { input_tokens: 11, output_tokens: 22 },
+      })),
+    };
+  },
+}));
+
+describe("onUsage callback (AC-4)", () => {
+  test("classify() reports token usage from the mocked response (AC-4)", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "sk-present");
+    const usages: Array<{ inputTokens: number; outputTokens: number }> = [];
+    const client = createTriageClient(DEFAULT_LLM, { onUsage: (u) => usages.push(u) });
+    const result = await client.classify({ system: "sys", user: "usr" });
+    expect(result).toEqual({ verdict: "likely-dead", reasoning: "r" });
+    expect(usages).toEqual([{ inputTokens: 11, outputTokens: 22 }]);
   });
 });

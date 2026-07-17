@@ -1,0 +1,54 @@
+{
+  "draftId": "41-00",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Created src/llm/client.ts (lazyAnthropic, resolveApiKey, MissingApiKeyError moved verbatim from triage/client.ts; added structuredCall<T> per AC-2). test/llm-client.test.ts: 7 tests red→green, npx tsc --noEmit clean.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T03:34:48.635Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "triage/client.ts rewired onto src/llm/client.ts's structuredCall; createTriageClient takes optional {onUsage}. test/triage-client.test.ts: SDK-isolation tests updated to point at src/llm/client.ts, added onUsage-fires test via vi.mock(@anthropic-ai/sdk). 9/9 tests green. Remaining tsc errors (T3-T5's files still import moved symbols from triage/client.js) are expected until those tasks land.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/triage/client.ts",
+        "/home/thomas/projects/necro/test/triage-client.test.ts"
+      ],
+      "updatedAt": "2026-07-17T03:36:38.117Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "refactor/client.ts rewired onto src/llm/client.ts's structuredCall (propose + proposeDuplicate); createRefactorClient takes optional {onUsage}. test/refactor-client.test.ts: SDK-isolation test updated to src/llm/client.ts, added onUsage tests for both propose (success path) and proposeDuplicate (malformed-response path, confirming usage reports even on parse failure). 6/6 tests green, plus refactor.test.ts/refactor-duplicate.test.ts/refactor-eval.test.ts (40 total) unaffected.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/refactor/client.ts",
+        "/home/thomas/projects/necro/test/refactor-client.test.ts"
+      ],
+      "updatedAt": "2026-07-17T03:38:03.967Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "explain/client.ts rewired onto src/llm/client.ts's structuredCall; createNarrateClient takes optional {onUsage}. Refined structuredCall to only JSON-parse the text block when `schema` is given (narrate has none) so free-form prose is handed to `parse` untouched, exactly preserving narrate's original text.trim() behavior — avoided a subtle behavior change where prose that happens to be valid JSON would otherwise get mis-parsed. test/explain-narrate-client.test.ts: import fixed to src/llm/client.ts, added onUsage test via vi.mock. 3/3 + explain-narrate.test.ts (4) + mcp-explain-narrate.test.ts (2) all green.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/explain/client.ts",
+        "/home/thomas/projects/necro/src/llm/client.ts",
+        "/home/thomas/projects/necro/test/explain-narrate-client.test.ts"
+      ],
+      "updatedAt": "2026-07-17T03:39:21.632Z"
+    },
+    "T5": {
+      "status": "DONE",
+      "notes": "cli.ts: both MissingApiKeyError references now use the top-level ./llm/client.js import (removed the shadowing local re-import in the triage action, removed the separate dynamic import in the refactor action). Wired onUsage on createTriageClient/createRefactorClient to accumulate a running {inputTokens,outputTokens} total; print `tokens: N in / M out` to stderr after each command's report (only when at least one call happened — res.triaged.length>0 / res.outcomes.length>0 — both god-function and extract-duplicate refactor branches covered). mcp/tools/explain.ts: import switched to ../../llm/client.js. npm run build, npx tsc --noEmit, npm test (499 passed/6 pre-existing skips), and npx vitest run --coverage (100% stmts/funcs/lines on the six tracked modules, exit 0) all green.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/mcp/tools/explain.ts",
+        "/home/thomas/projects/necro/src/cli.ts"
+      ],
+      "updatedAt": "2026-07-17T03:41:33.636Z"
+    },
+    "T6": {
+      "status": "DONE",
+      "notes": "Final regression pass: grep -rn \"triage/client\" src confirms zero stray references to the moved symbols (only TriageClient/createTriageClient remain, which correctly still live in triage/client.ts). npm run build, npm run typecheck, npm test all green (499 passed, 6 pre-existing skips). Manually verified necro triage still degrades correctly with no API key (unchanged message/behavior).",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T03:42:01.879Z"
+    }
+  }
+}

@@ -5,7 +5,7 @@ import type { LlmOptions } from "../../config.js";
 import { loadConfig, resolveConfigDir } from "../../config.js";
 import { explain } from "../../engine/explain.js";
 import { createNarrateClient, type NarrateClient } from "../../explain/client.js";
-import { MissingApiKeyError } from "../../triage/client.js";
+import { MissingApiKeyError } from "../../llm/client.js";
 
 /** Injectable dependencies for the explain tool (the narrator is faked in tests). */
 export interface ExplainToolDeps {

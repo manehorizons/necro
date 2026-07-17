@@ -1,6 +1,6 @@
 import type { LlmOptions } from "../config.js";
+import { lazyAnthropic, type LlmUsage, MissingApiKeyError, resolveApiKey, structuredCall } from "../llm/client.js";
 import type { DuplicationFinding } from "../syntactic/types.js";
-import { lazyAnthropic, MissingApiKeyError, resolveApiKey } from "../triage/client.js";
 import {
   DUP_PROPOSAL_SCHEMA,
   type DuplicateProposalResult,
@@ -21,16 +21,21 @@ export interface RefactorClient {
   proposeDuplicate(prompt: RefactorPrompt, finding: DuplicationFinding): Promise<DuplicateProposalResult>;
 }
 
+export interface RefactorClientOptions {
+  /** Called once per model call with that call's token usage. */
+  onUsage?: (usage: LlmUsage) => void;
+}
+
 /** A unified diff plus rationale is larger than a triage verdict. */
 const MAX_TOKENS = 8192;
 
 /**
  * Build the real Claude-backed refactor client. The key is resolved up front and
  * a {@link MissingApiKeyError} is thrown **before** the SDK is imported or any
- * request is made. The SDK is loaded lazily via the shared {@link lazyAnthropic}
- * helper, so `scan`/`fix` never pull it in.
+ * request is made. The SDK is loaded lazily via the shared `../llm/client.js`
+ * helpers, so `scan`/`fix` never pull it in.
  */
-export function createRefactorClient(llm: LlmOptions): RefactorClient {
+export function createRefactorClient(llm: LlmOptions, opts: RefactorClientOptions = {}): RefactorClient {
   const apiKey = resolveApiKey(llm);
   if (!apiKey) throw new MissingApiKeyError("refactor");
 
@@ -38,47 +43,31 @@ export function createRefactorClient(llm: LlmOptions): RefactorClient {
 
   return {
     async propose(prompt: RefactorPrompt): Promise<ProposalResult> {
-      const client = await getClient();
-      const res = await client.messages.create({
+      const { result, usage } = await structuredCall(getClient, {
         model: llm.model,
-        max_tokens: MAX_TOKENS,
-        thinking: { type: "adaptive" },
-        output_config: {
-          format: { type: "json_schema", schema: PROPOSAL_SCHEMA as Record<string, unknown> },
-        },
+        maxTokens: MAX_TOKENS,
+        thinking: true,
+        schema: PROPOSAL_SCHEMA,
         system: prompt.system,
-        messages: [{ role: "user", content: prompt.user }],
+        user: prompt.user,
+        parse: parseProposal,
       });
-      const text = res.content.find((b) => b.type === "text");
-      if (!text || text.type !== "text") return parseProposal(undefined);
-      return parseProposal(jsonOrText(text.text));
+      opts.onUsage?.(usage);
+      return result;
     },
 
     async proposeDuplicate(prompt: RefactorPrompt, finding: DuplicationFinding): Promise<DuplicateProposalResult> {
-      const client = await getClient();
-      const res = await client.messages.create({
+      const { result, usage } = await structuredCall(getClient, {
         model: llm.model,
-        max_tokens: MAX_TOKENS,
-        thinking: { type: "adaptive" },
-        output_config: {
-          format: { type: "json_schema", schema: DUP_PROPOSAL_SCHEMA as Record<string, unknown> },
-        },
+        maxTokens: MAX_TOKENS,
+        thinking: true,
+        schema: DUP_PROPOSAL_SCHEMA,
         system: prompt.system,
-        messages: [{ role: "user", content: prompt.user }],
+        user: prompt.user,
+        parse: (raw) => parseDuplicateProposal(raw, finding),
       });
-      const text = res.content.find((b) => b.type === "text");
-      if (!text || text.type !== "text") return parseDuplicateProposal(undefined, finding);
-      return parseDuplicateProposal(jsonOrText(text.text), finding);
+      opts.onUsage?.(usage);
+      return result;
     },
   };
-}
-
-/** Parse model text as JSON, falling back to the raw string (so the schema
- * parser can record a precise failure reason rather than crashing). */
-function jsonOrText(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
 }

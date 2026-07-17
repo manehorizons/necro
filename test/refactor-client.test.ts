@@ -3,8 +3,9 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { DEFAULT_LLM } from "../src/config.js";
-import { MissingApiKeyError } from "../src/triage/client.js";
+import { MissingApiKeyError } from "../src/llm/client.js";
 import { createRefactorClient } from "../src/refactor/client.js";
+import type { DuplicationFinding } from "../src/syntactic/types.js";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -32,9 +33,51 @@ describe("SDK isolation — refactor path (AC-6)", () => {
     }
   });
 
-  test("the refactor client never statically imports the SDK (AC-6)", async () => {
+  test("the refactor client never references the SDK directly — only via src/llm/client.ts (AC-6)", async () => {
     const text = await readFile(join(root, "src/refactor/client.ts"), "utf8");
-    // a runtime static import would be `import X from "@anthropic-ai/sdk"`
-    expect(text).not.toMatch(/^import\s+(?!type\b)[^\n]*@anthropic-ai\/sdk/m);
+    expect(text).not.toContain("@anthropic-ai/sdk");
+  });
+});
+
+vi.mock("@anthropic-ai/sdk", () => ({
+  default: class FakeAnthropic {
+    messages = {
+      create: vi.fn(async () => ({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ summary: "s", newFunctions: ["f"], replacement: "code", rationale: "r" }),
+          },
+        ],
+        usage: { input_tokens: 111, output_tokens: 222 },
+      })),
+    };
+  },
+}));
+
+describe("onUsage callback (AC-4)", () => {
+  test("propose() reports token usage from the mocked response (AC-4)", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "sk-present");
+    const usages: Array<{ inputTokens: number; outputTokens: number }> = [];
+    const client = createRefactorClient(DEFAULT_LLM, { onUsage: (u) => usages.push(u) });
+    const result = await client.propose({ system: "sys", user: "usr" });
+    expect(result).toEqual({
+      ok: true,
+      proposal: { summary: "s", newFunctions: ["f"], replacement: "code", rationale: "r" },
+    });
+    expect(usages).toEqual([{ inputTokens: 111, outputTokens: 222 }]);
+  });
+
+  test("proposeDuplicate() reports token usage even on a malformed response (AC-4)", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "sk-present");
+    // The shared mock above returns a god-function-shaped payload, which fails
+    // duplicate-proposal validation (no sharedFunction/edits) — usage must still
+    // be reported on that failed-parse path (AC-4's "including malformed responses").
+    const finding: DuplicationFinding = { tokens: 50, locations: [{ file: "a.ts", startLine: 1, endLine: 5 }] };
+    const usages: Array<{ inputTokens: number; outputTokens: number }> = [];
+    const client = createRefactorClient(DEFAULT_LLM, { onUsage: (u) => usages.push(u) });
+    const result = await client.proposeDuplicate({ system: "sys", user: "usr" }, finding);
+    expect(result.ok).toBe(false);
+    expect(usages).toEqual([{ inputTokens: 111, outputTokens: 222 }]);
   });
 });

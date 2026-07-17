@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
-  "revision": 177,
+  "revision": 209,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
-  "activePhase": "40",
+  "activePhase": "41",
   "activeDraft": null,
   "activeSpec": null,
   "loopPosition": "IDLE",
   "tier": null,
-  "draftReadAt": "2026-07-17T03:03:30.284Z",
+  "draftReadAt": "2026-07-17T03:33:13.233Z",
   "openDrafts": [],
   "decisions": [],
   "deferred": [],
   "session": {
-    "tokenUtilization": 0.4100000000000002,
+    "tokenUtilization": 0.4200000000000002,
     "lastHandoff": "SESSION-2026-07-17-phase-40-mcp-hardening-shipped.md",
-    "subagentSpawns": 29,
+    "subagentSpawns": 30,
     "subagentBaselines": {}
   },
   "skillAudit": {

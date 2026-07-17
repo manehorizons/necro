@@ -16,7 +16,7 @@ import { supportsColor } from "./report/color.js";
 import { explain } from "./engine/explain.js";
 import { verifyRemovals } from "./engine/verify-removal.js";
 import { createNarrateClient, type NarrateClient } from "./explain/client.js";
-import { MissingApiKeyError } from "./triage/client.js";
+import { MissingApiKeyError } from "./llm/client.js";
 import { renderExplain } from "./report/explain.js";
 import { renderVerifyRemoval } from "./report/verify-removal.js";
 import { fixExitCode, runFix } from "./fix/index.js";
@@ -316,13 +316,20 @@ program
     const config = await loadConfig(process.cwd());
 
     // Lazy: only loaded on the triage path, never by scan/fix.
-    const { createTriageClient, MissingApiKeyError } = await import("./triage/client.js");
+    const { createTriageClient } = await import("./triage/client.js");
     const { runTriage } = await import("./triage/index.js");
     const { renderTriage, toTriageJson } = await import("./report/triage.js");
 
+    const usage = { inputTokens: 0, outputTokens: 0 };
     let client: import("./triage/client.js").TriageClient;
     try {
-      client = createTriageClient(config.llm); // throws before any network call if no key
+      // throws before any network call if no key
+      client = createTriageClient(config.llm, {
+        onUsage: (u) => {
+          usage.inputTokens += u.inputTokens;
+          usage.outputTokens += u.outputTokens;
+        },
+      });
     } catch (err) {
       if (err instanceof MissingApiKeyError) {
         console.error(err.message);
@@ -344,6 +351,9 @@ program
 
     const res = await runTriage(findings, config.llm, client);
     console.log(opts.json ? toTriageJson(res) : renderTriage(res));
+    if (res.triaged.length > 0) {
+      console.error(`tokens: ${usage.inputTokens} in / ${usage.outputTokens} out`);
+    }
   });
 
 program
@@ -369,11 +379,17 @@ program
 
     // Lazy: only loaded on the refactor path, never by scan/fix.
     const { createRefactorClient } = await import("./refactor/client.js");
-    const { MissingApiKeyError } = await import("./triage/client.js");
 
+    const usage = { inputTokens: 0, outputTokens: 0 };
     let client: import("./refactor/client.js").RefactorClient;
     try {
-      client = createRefactorClient(config.llm); // throws before any network call if no key
+      // throws before any network call if no key
+      client = createRefactorClient(config.llm, {
+        onUsage: (u) => {
+          usage.inputTokens += u.inputTokens;
+          usage.outputTokens += u.outputTokens;
+        },
+      });
     } catch (err) {
       if (err instanceof MissingApiKeyError) {
         console.error(err.message);
@@ -403,6 +419,9 @@ program
       const { renderExtractDuplicate, toExtractDuplicateJson } = await import("./report/refactor.js");
       const res = await runExtractDuplicate(scanResult.duplication, config.llm, client, { limit, verifyRunner });
       console.log(opts.json ? toExtractDuplicateJson(res) : renderExtractDuplicate(res));
+      if (res.outcomes.length > 0) {
+        console.error(`tokens: ${usage.inputTokens} in / ${usage.outputTokens} out`);
+      }
       return;
     }
 
@@ -410,6 +429,9 @@ program
     const { renderRefactor, toRefactorJson } = await import("./report/refactor.js");
     const res = await runRefactor(scanResult.complexity, config.llm, client, { limit, verifyRunner });
     console.log(opts.json ? toRefactorJson(res) : renderRefactor(res));
+    if (res.outcomes.length > 0) {
+      console.error(`tokens: ${usage.inputTokens} in / ${usage.outputTokens} out`);
+    }
   });
 
 program
