@@ -1,0 +1,35 @@
+{
+  "draftId": "33-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "README.md: version line v1.0->v1.1; MCP section now lists all 4 tools (scan/verify/verify_removal/explain) with descriptions sourced from src/mcp/tools/*.ts; Roadmap moved explain/verify-removal/Next.js/monorepo into Available today, removed Next.js and monorepo from Planned table (NestJS retained in Planned).",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-17T00:52:45.557Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "website/src/content/docs/reference/cli.md: opt-in/cost note no longer calls explain/SARIF/--fail-on planned (both already shipped, explain now listed as free/local except --narrate); MCP tools table expanded to all 4 tools with input/return columns sourced from src/mcp/tools/*.ts. Note: this file has no standalone \"## necro explain\" / \"## necro verify-removal\" command-reference sections (only scan/fix/triage/refactor/mcp do) — out of scope for AC-3 as approved, but worth a follow-up rec since the CLI commands themselves aren't documented outside the MCP section.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/website/src/content/docs/reference/cli.md"
+      ],
+      "updatedAt": "2026-07-17T00:53:37.065Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "website/src/content/docs/guide/roadmap.md: added necro explain (+ --narrate) and necro verify-removal bullets to Available today; MCP bullet updated to 4 tools; added Framework plugins bullet (Next.js, monorepo). Planned table's Frameworks row now only NestJS+template-plugins; Scale row (monorepo) removed entirely since nothing else was under it.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/website/src/content/docs/guide/roadmap.md"
+      ],
+      "updatedAt": "2026-07-17T00:54:01.733Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "CHANGELOG.md: appended 6 bullets under the existing [1.2.0] Unreleased > Added heading covering explain, --narrate, verify-removal (+exit-code fix), fix --write --verify gate, --checks repeatable-flag fix, and ci.yml. git diff shows a single hunk touching only that section; released sections untouched.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/CHANGELOG.md"
+      ],
+      "updatedAt": "2026-07-17T00:54:28.774Z"
+    }
+  }
+}

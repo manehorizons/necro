@@ -4,7 +4,7 @@
 CLI that finds anti-pattern code and proposes LLM-assisted fixes — and refuses
 to guess where pure-static tools can't.
 
-> **Status: v1.0 — published on [npm](https://www.npmjs.com/package/@manehorizons/necro).**
+> **Status: v1.1 — published on [npm](https://www.npmjs.com/package/@manehorizons/necro).**
 > Necro analyzes **TypeScript** across
 > multiple axes — dead code (with confidence tiers, evidence chains, and the
 > `test-only` verdict), complexity, risk hotspots, and duplication — plus safe
@@ -190,13 +190,20 @@ edits your files and never wraps an LLM**:
 necro mcp        # serves over stdio
 ```
 
-Two read-only tools are exposed:
+Four read-only tools are exposed:
 
 - **`necro_scan`** — the same findings as `necro scan --json` (dead-code tiers +
   evidence chains, complexity, hotspots, duplication).
 - **`necro_verify`** — apply a set of `{file, content}` edits in a throwaway git
   worktree, run checks (default: typecheck + tests), and report `{ok, output}`.
   Your working tree is never touched.
+- **`necro_verify_removal`** — for each named symbol, plan its deletion and
+  verify independently in its own throwaway worktree; returns a per-symbol
+  verdict (green/red/unresolved) so you can confirm a dead-code removal is
+  safe before applying it.
+- **`necro_explain`** — trace why a symbol is alive, test-only, or dead (the
+  same JSON as `necro explain --json`); set `narrate: true` for an additive
+  LLM plain-English explanation (needs an API key, degrades gracefully without one).
 
 Register it with your agent (Claude Code example):
 
@@ -344,7 +351,14 @@ tests and clear acceptance criteria match how the codebase is built.
 - **`triage`**: LLM resolution of `maybe` findings (opt-in, Anthropic API).
 - **`refactor`**: LLM god-function splits and extract-duplicate, verified in a
   scratch worktree.
-- **`mcp`**: a read-only MCP server (`necro_scan`, `necro_verify`) for AI agents.
+- **`explain`**: traces why a symbol is alive, test-only, or dead, with an
+  optional `--narrate` LLM plain-English layer (opt-in, Anthropic API).
+- **`verify-removal`**: per-symbol build-green check in a throwaway worktree —
+  confirms a removal is safe before you apply it.
+- **`mcp`**: a read-only MCP server (`necro_scan`, `necro_verify`,
+  `necro_verify_removal`, `necro_explain`) for AI agents.
+- **Framework plugins**: Next.js (roots App-Router entry exports) and
+  monorepo workspace-edge resolution.
 - Output: terminal, `--json`, `--top N`.
 
 **Planned** (not yet implemented):
@@ -354,9 +368,8 @@ tests and clear acceptance criteria match how the codebase is built.
 | Detectors | Cross-language & fuzzy (Type-3) clones; god-function responsibility clustering |
 | Scoring | Per-line & recency-weighted churn, ownership weighting |
 | Fixes | `test-only` auto-apply; cascading re-analysis after a fix |
-| Frameworks | Next.js, NestJS (DI), template-based plugins |
+| Frameworks | NestJS (DI), template-based plugins |
 | Languages | Python (detectors reused, new symbol-graph adapter) |
-| Scale | Monorepo workspace-edge resolution |
 
 ## License
 

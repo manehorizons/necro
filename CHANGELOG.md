@@ -29,6 +29,28 @@ adheres to [Semantic Versioning](https://semver.org/).
 - `fix`'s exit codes are now a documented public contract: `0`
   written/preview/nothing-to-fix, `1` unexpected error, `2` refused-dirty,
   `3` refused-no-entries (no-entries always wins over a dirty tree).
+- **`necro explain <symbol>`** (CLI + MCP `necro_explain`). Traces the
+  reachability witness chain for an alive symbol, or annotated inbound
+  referrers for a dead one — the same structured result over CLI, `--json`,
+  and the MCP tool (no logic fork).
+- **`--narrate`** on `explain` (CLI + MCP `narrate: true`). Adds an additive
+  LLM plain-English explanation of the verdict; degrades gracefully (static
+  trace still renders, `narrative: null` in `--json`) when no API key is set.
+- **`necro verify-removal <symbols...>`** (CLI + MCP `necro_verify_removal`).
+  For each named symbol, plans its removal and verifies independently in its
+  own throwaway git worktree — a per-symbol green/red/unresolved verdict
+  proving a deletion keeps the build green before you apply it. `verify-removal`
+  now exits non-zero when any symbol comes back red (previously always
+  exited `0`, even on a red verdict).
+- **`fix --write --verify`**: gates automatic removal on `verify-removal`'s
+  per-symbol build-green check — only symbols that verify green are deleted;
+  red or unresolved symbols are skipped, not removed blind.
+- `fix --checks` and `verify-removal --checks` now accept a repeatable flag
+  (`--checks "npm test" --checks "npm run lint"`) instead of comma-splitting a
+  single value — a check command containing a comma is now run verbatim.
+- **CI**: `.github/workflows/ci.yml` runs `typecheck` + `build` + `test` on
+  every push to `main` and every pull request, closing the gap where the test
+  suite previously only ran in the tag-triggered release job.
 
 ## [1.1.0] — 2026-06-11
 

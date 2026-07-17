@@ -185,12 +185,14 @@ wraps an LLM** on this path.
 necro mcp
 ```
 
-Two read-only tools are exposed:
+Four read-only tools are exposed:
 
 | Tool | Input | Returns |
 |---|---|---|
 | `necro_scan` | `{ path?, top?, coverage? }` | The same JSON as `necro scan --json` — dead-code tiers + evidence chains, complexity, hotspots, duplication. |
 | `necro_verify` | `{ edits: {file, content}[], checks? }` | Applies the full-file edits in a throwaway git worktree, runs the checks (default: typecheck + tests), and returns `{ ok, output }`. Your working tree is never touched. |
+| `necro_verify_removal` | `{ symbols: string[], path?, checks? }` | For each symbol, plans its removal and verifies it in its own throwaway git worktree. Returns a per-symbol verdict — green (safe to delete), red (breaks the build), or unresolved. |
+| `necro_explain` | `{ symbol, path?, narrate? }` | The same JSON as `necro explain --json` — the reachability witness chain for a symbol. Set `narrate: true` for an additive LLM plain-English explanation (needs an API key, degrades gracefully without one). |
 
 Register it with your agent (Claude Code example):
 
@@ -203,8 +205,9 @@ Register it with your agent (Claude Code example):
 ```
 
 :::note[Opt-in & cost]
-`scan`, `fix`, and `mcp` are fully local and free. `triage` and `refactor` call
-the Anthropic API and run only when you invoke them — set `ANTHROPIC_API_KEY`
-first. An `explain` command, SARIF output, and `--fail-on` gating are
-[planned](/necro/guide/roadmap/).
+`scan`, `fix`, `explain`, `verify-removal`, and `mcp` are fully local and free
+(`explain --narrate` is the one opt-in exception — see below). `triage` and
+`refactor` call the Anthropic API and run only when you invoke them — set
+`ANTHROPIC_API_KEY` first. SARIF output and `--fail-on` gating are shipped;
+see [CI integration](/necro/guide/ci-integration/).
 :::
