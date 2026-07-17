@@ -4,7 +4,7 @@
 CLI that finds anti-pattern code and proposes LLM-assisted fixes — and refuses
 to guess where pure-static tools can't.
 
-> **Status: v1.1 — published on [npm](https://www.npmjs.com/package/@manehorizons/necro).**
+> **Status: v1.2 — published on [npm](https://www.npmjs.com/package/@manehorizons/necro).**
 > Necro analyzes **TypeScript** across
 > multiple axes — dead code (with confidence tiers, evidence chains, and the
 > `test-only` verdict), complexity, risk hotspots, and duplication — plus safe
