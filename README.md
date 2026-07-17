@@ -228,15 +228,15 @@ Necro runs zero-config. To customize which files it analyzes, add a
 
 ```json
 {
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.mts", "**/*.cts"],
   "ignore": ["**/node_modules/**", "**/dist/**"],
   "entries": ["src/server.ts"]
 }
 ```
 
-Each key you set **replaces** its default. Declaration files (`*.d.ts`) and the
-`node_modules`, `.git`, `dist`, `build`, and `coverage` directories are always
-skipped.
+Each key you set **replaces** its default. Declaration files (`*.d.ts`,
+`*.d.mts`, `*.d.cts`) and the `node_modules`, `.git`, `dist`, `build`, and
+`coverage` directories are always skipped.
 
 `entries` is globs (relative to the scan target) declaring production entry
 points directly — the canonical fix for the fail-closed warning banner when

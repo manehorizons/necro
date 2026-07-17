@@ -68,6 +68,19 @@ describe("loadConfig", () => {
     expect(config.llm.maxFindings).toBeUndefined();
   });
 
+  test("default include covers the whole JS/TS extension family (AC-1)", async () => {
+    const config = await loadConfig(dir);
+    expect(config.include).toEqual(
+      expect.arrayContaining(["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.mts", "**/*.cts"]),
+    );
+  });
+
+  test("a user-specified include fully replaces the default, no merge (AC-4)", async () => {
+    await writeFile(join(dir, "necro.config.json"), JSON.stringify({ include: ["**/*.vue"] }));
+    const config = await loadConfig(dir);
+    expect(config.include).toEqual(["**/*.vue"]);
+  });
+
   test("entries is undefined by default, and passes through globs when set (AC-1)", async () => {
     const def = await loadConfig(dir);
     expect(def.entries).toBeUndefined();

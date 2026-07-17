@@ -67,7 +67,7 @@ function categoryOf(node: TsNode): { category: ControlCategory; nests: boolean }
 
 /** Lower every function in a source file to the syntactic IR. */
 export async function lowerSource(file: string, source: string): Promise<FunctionUnit[]> {
-  const parser = await getParser();
+  const parser = await getParser(file);
   const tree = parser.parse(source);
   if (!tree) return [];
 

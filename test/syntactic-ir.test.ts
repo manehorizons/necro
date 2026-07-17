@@ -38,4 +38,25 @@ describe("lowerSource (AC-1)", () => {
     const units = await lowerSource("/z.ts", "function outer() {\n  function inner() {}\n}\n");
     expect(units.map((u) => u.name).sort()).toEqual(["inner", "outer"]);
   });
+
+  test("a .jsx file with conditional JSX rendering parses via the tsx grammar and finds both a boolean (&&) and a ternary control node (AC-2)", async () => {
+    // Regression guard: the plain `typescript` grammar mis-parses `<span>` as a
+    // type assertion and swallows the ternary entirely (confirmed manually —
+    // before the tsx-grammar dispatch fix this test found only the `boolean`
+    // node, never `ternary`).
+    const src = [
+      "export function Panel({ show, name }) {", // line 1
+      "  return (",
+      '    <div className="panel">',
+      "      {show && <span>{name}</span>}",
+      "      {show ? <strong>{name}</strong> : null}",
+      "    </div>",
+      "  );",
+      "}",
+    ].join("\n");
+
+    const [unit] = await lowerSource("/panel.jsx", src);
+    const categories = unit!.controlNodes.map((c) => c.category).sort();
+    expect(categories).toEqual(["boolean", "ternary"]);
+  });
 });

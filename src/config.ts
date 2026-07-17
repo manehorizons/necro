@@ -69,7 +69,7 @@ export const DEFAULT_LLM: LlmOptions = {
 };
 
 export const DEFAULT_CONFIG: NecroConfig = {
-  include: ["**/*.ts", "**/*.tsx"],
+  include: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.mts", "**/*.cts"],
   ignore: ["**/node_modules/**", "**/dist/**"],
   complexity: DEFAULT_COMPLEXITY,
   hotspots: DEFAULT_HOTSPOTS,

@@ -4,6 +4,24 @@ All notable changes to `@manehorizons/necro` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Default file discovery now covers the whole JS/TS extension family.**
+  `include` defaults to `["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx",
+  "**/*.mts", "**/*.cts"]` (was `.ts`/`.tsx` only) — plain JS and JSX no
+  longer need a hand-edited config to be scanned. Declaration-file skipping
+  widened to match (`*.d.ts`, `*.d.mts`, `*.d.cts`).
+
+### Fixed
+- **JSX mis-parse in `.tsx`/`.jsx` files.** The syntactic parser used the
+  plain `typescript` tree-sitter grammar for every file, which reads JSX
+  (`<div>...</div>`) as a TypeScript type assertion — corrupting control-flow
+  and token extraction inside any function containing JSX (`hasError: true`).
+  The parser now dispatches to the `tsx` grammar for `.tsx`/`.jsx` files
+  (already bundled via `tree-sitter-wasms`, no new dependency) and the plain
+  `typescript` grammar for everything else.
+
 ## [1.2.0] — 2026-07-17
 
 ### Added

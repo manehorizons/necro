@@ -30,8 +30,8 @@ const LITERAL_KINDS = new Set([
  * literals → `LIT`, comments dropped, everything else keyed by its token kind.
  * This is the only duplication code that names tree-sitter/TS constructs.
  */
-export async function tokenize(_file: string, source: string): Promise<Token[]> {
-  const parser = await getParser();
+export async function tokenize(file: string, source: string): Promise<Token[]> {
+  const parser = await getParser(file);
   const tree = parser.parse(source);
   if (!tree) return [];
 

@@ -1,0 +1,52 @@
+{
+  "draftId": "42-00",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "parse.ts dispatches typescript vs tsx grammar by extension (extname .tsx/.jsx -> tsx, else typescript); ir.ts/tokens.ts pass file through. test/parse.test.ts: 4/4 green (hasError false for JSX in .tsx/.jsx, plain .ts/.js unaffected). tsc --noEmit clean.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/parse.test.ts",
+        "/home/thomas/projects/necro/src/syntactic/parse.ts",
+        "/home/thomas/projects/necro/src/syntactic/ir.ts",
+        "/home/thomas/projects/necro/src/syntactic/tokens.ts"
+      ],
+      "updatedAt": "2026-07-17T21:38:06.076Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "DEFAULT_CONFIG.include widened to [**/*.ts, **/*.tsx, **/*.js, **/*.jsx, **/*.mts, **/*.cts] in src/config.ts. test/config.test.ts: 2 new red->green tests (widened defaults; user include still full-replaces, no merge). Full suite: 505 passed/6 pre-existing skips, tsc --noEmit clean.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/config.test.ts",
+        "/home/thomas/projects/necro/src/config.ts"
+      ],
+      "updatedAt": "2026-07-17T21:38:55.145Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "discoverFiles now skips .d.ts/.d.mts/.d.cts (regex /\\.d\\.(ts|mts|cts)$/), was hardcoded to .d.ts only. New test/discover.test.ts: 2/2 green (widened discovery + declaration-file skip). entry-resolution.test.ts (23 tests) unaffected. tsc --noEmit clean.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/discover.test.ts",
+        "/home/thomas/projects/necro/src/discover.ts"
+      ],
+      "updatedAt": "2026-07-17T21:39:41.718Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "Added regression test to test/syntactic-ir.test.ts: .jsx with conditional rendering ({show && <span>} + {show ? <strong> : null}) must find both boolean and ternary control nodes. Confirmed via git-stash A/B: fails pre-fix (ternary swallowed, only boolean found), passes post-fix. Chose lowerSource-level assertion over a full scan() fixture (draft's original T4 sketch) since it pins the exact regression precisely and stays fast/stable.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/debug-jsx-e2e-tmp.mjs",
+        "/home/thomas/projects/necro/test/syntactic-ir.test.ts"
+      ],
+      "updatedAt": "2026-07-17T21:41:21.883Z"
+    },
+    "T5": {
+      "status": "DONE",
+      "notes": "README.md ~231: default include example widened to the six-glob list; declaration-file skip note widened to .d.ts/.d.mts/.d.cts. CHANGELOG.md: new [Unreleased] section with Added (widened default include) + Fixed (JSX mis-parse grammar bug) entries. Verified no stale two-glob default references remain outside the changelog's own new entry.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/README.md",
+        "/home/thomas/projects/necro/CHANGELOG.md"
+      ],
+      "updatedAt": "2026-07-17T21:41:58.224Z"
+    }
+  }
+}

@@ -6,8 +6,9 @@ import { globMatcher } from "./glob.js";
 const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "coverage"]);
 
 /**
- * Walk `target` and return absolute paths of TypeScript source files matching
- * `config.include` and not `config.ignore`. Declaration files (`*.d.ts`) are skipped.
+ * Walk `target` and return absolute paths of source files matching
+ * `config.include` and not `config.ignore`. Declaration files (`*.d.ts`,
+ * `*.d.mts`, `*.d.cts`) are skipped.
  */
 export async function discoverFiles(
   target: string,
@@ -29,7 +30,7 @@ export async function discoverFiles(
         continue;
       }
       if (!entry.isFile()) continue;
-      if (entry.name.endsWith(".d.ts")) continue;
+      if (/\.d\.(ts|mts|cts)$/.test(entry.name)) continue;
       const rel = relative(target, abs);
       if (include(rel) && !ignore(rel)) out.push(abs);
     }
