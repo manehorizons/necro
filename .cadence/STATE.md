@@ -4,13 +4,13 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 43
+**Active phase:** 44-python-module-resolver
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 57%
-- Subagent spawns this session: 44
+- Token utilization: 60%
+- Subagent spawns this session: 45
 - Last handoff: SESSION-2026-07-17-phase-43-python-syntactic-axis-shipped.md
 
 ## Counts

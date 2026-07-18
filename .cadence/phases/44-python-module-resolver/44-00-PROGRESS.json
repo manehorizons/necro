@@ -1,0 +1,35 @@
+{
+  "draftId": "44-00",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "src/graph/python/import-parser.ts + test/graph-python-import-parser.test.ts (11 tests). Probed real tree-sitter-python grammar first (import_statement/import_from_statement field names: name, alias, module_name) before coding, per phase 43 discipline.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T00:23:36.142Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "src/graph/python/module-resolver.ts (detectImportRoots, buildPythonModuleMap, containingPackage) + test/graph-python-module-map.test.ts (8 tests).",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T00:23:36.323Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "src/graph/python/resolve-import.ts (resolvePythonImport) + test/graph-python-import-resolver.test.ts (12 tests). Verified relative dot-level semantics (module vs __init__.py containing-package distinction) against real CPython behavior, not assumed.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T00:23:36.500Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "test/fixtures/python-module-resolver/{regular-package,deep-relative,src-layout,aliasing,missing-target,unresolvable-local}/ real directory trees + test/graph-python-module-resolver-fixtures.test.ts (5 end-to-end tests exercising discoverFiles+parse+resolve together).",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T00:23:36.686Z"
+    },
+    "T5": {
+      "status": "DONE",
+      "notes": "src/bench/python-import-resolution-rate.ts (tsx-run harness, matching src/bench/cli-bench.ts convention rather than the DRAFT's originally-sketched scripts/*.mjs path) + test/bench-python-import-resolution-rate.test.ts (8 tests). Metric corrected mid-build: raw resolved/total-import-statements bottomed out at 3.7% on pip because the overwhelming majority of imports are stdlib (os, sys, typing...) which the resolver correctly cannot resolve to a local file — not a resolver bug. Redefined the denominator to *local* candidates only (relative imports, or absolute imports whose top segment is a package this repo's own file set discovered); documented in the code and covered by dedicated isLocalImportCandidate tests. Measured against real pinned checkouts (not vendored into the repo, per boundaries): pip @ f451950e675a1305bd2f523598d1f6474541721b (github.com/pypa/pip), src/pip -> 2928/2945 = 99.4%. httpie @ 5b604c37c6c67e18e7c3e9aee6c88a8c22b98345 (github.com/httpie/cli), full checkout -> 679/679 = 100.0%. Both clear the >=95% floor. Also discovered (not fixed, out of scope per boundaries, recorded as rec-20260718-001): src/discover.ts's SKIP_DIRS unconditionally skips any directory literally named 'build' at any depth (added for JS/TS build output), which silently drops pip's real pip/_internal/operations/build/ subpackage from discovery -- accounts for 8 of the 17 unresolved-local imports on pip.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T00:23:50.292Z"
+    }
+  }
+}

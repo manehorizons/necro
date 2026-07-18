@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
-  "revision": 295,
+  "revision": 311,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
-  "activePhase": "43",
+  "activePhase": "44-python-module-resolver",
   "activeDraft": null,
   "activeSpec": null,
   "loopPosition": "IDLE",
   "tier": null,
-  "draftReadAt": "2026-07-17T22:50:06.887Z",
+  "draftReadAt": "2026-07-18T00:09:28.564Z",
   "openDrafts": [],
   "decisions": [],
   "deferred": [],
   "session": {
-    "tokenUtilization": 0.5700000000000003,
+    "tokenUtilization": 0.6000000000000003,
     "lastHandoff": "SESSION-2026-07-17-phase-43-python-syntactic-axis-shipped.md",
-    "subagentSpawns": 44,
+    "subagentSpawns": 45,
     "subagentBaselines": {}
   },
   "skillAudit": {
