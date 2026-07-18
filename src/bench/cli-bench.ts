@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { pathToFileURL } from "node:url";
 import { DEFAULT_LLM } from "../config.js";
@@ -6,7 +6,7 @@ import { createRefactorClient } from "../refactor/client.js";
 import { createTriageClient } from "../triage/client.js";
 import { VERSION } from "../version.js";
 import { runBench } from "./run.js";
-import { serialize } from "./snapshot.js";
+import { type BenchResults, parse, serialize } from "./snapshot.js";
 
 /**
  * Repo-internal benchmark runner (`npm run bench`). NOT part of the published
@@ -61,6 +61,25 @@ export function parseArgs(argv: string[]): BenchArgs {
   return args;
 }
 
+/** Read the existing snapshot at `path`, if any — used so a partial `--corpus`
+ * run doesn't drop the other corpus's entry from a prior full run. */
+async function readExisting(path: string): Promise<BenchResults | undefined> {
+  try {
+    return parse(await readFile(path, "utf8"));
+  } catch {
+    return undefined;
+  }
+}
+
+/** Merge a fresh (possibly partial) run's corpora over an existing snapshot's,
+ * by `id` — corpora not re-run this time are carried over unchanged. */
+export function mergeCorpora(existing: BenchResults | undefined, fresh: BenchResults): BenchResults {
+  if (!existing) return fresh;
+  const freshIds = new Set(fresh.corpora.map((c) => c.id));
+  const carried = existing.corpora.filter((c) => !freshIds.has(c.id));
+  return { ...fresh, corpora: [...carried, ...fresh.corpora] };
+}
+
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const llm = {
@@ -72,7 +91,7 @@ async function main(): Promise<void> {
   const triageClient = createTriageClient(llm);
   const refactorClient = createRefactorClient(llm);
 
-  const results = await runBench(
+  const fresh = await runBench(
     { triageClient, refactorClient },
     {
       corpus: args.corpus,
@@ -82,6 +101,7 @@ async function main(): Promise<void> {
     },
   );
 
+  const results = args.corpus === "all" ? fresh : mergeCorpora(await readExisting(args.out), fresh);
   const text = serialize(results);
   if (args.dryRun) {
     process.stdout.write(text);

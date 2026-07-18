@@ -36,6 +36,9 @@ describe("live triage eval — synthetic smoke set (AC-3, AC-4)", () => {
  * hand-verified truth (see fixtures/triage-realrepo/SOURCES.md). Phase 13 grew the
  * corpus to **48 cases across 2 repos** (honojs/hono 19 + trpc/trpc 29; 33 alive /
  * 15 dead) so a single symbol's coin-flip can no longer swing precision ~0.33.
+ * Phase 49 grew the dead class further to **63 cases, still 2 repos** (honojs/hono
+ * 19 + trpc/trpc 44; 33 alive / 30 dead, mined via `testOnlyEvidence` — see
+ * `SOURCES.md`'s "Attempted 3rd repos" section for why a 3rd repo didn't land).
  *
  * PRE-TUNING BASELINE (phase 11, hono-only, claude-opus-4-8): precision 0.50–0.75 —
  * the model trusted misleading "0 static references" evidence and flagged live
@@ -46,31 +49,39 @@ describe("live triage eval — synthetic smoke set (AC-3, AC-4)", () => {
  * Zero alive→likely-dead FPs across all 33 alive cases — including the 19 trpc
  * trust-killers from a second codebase, confirming the tuning generalizes.
  *
+ * POST-CORPUS-GROWTH (phase 51, same prompt, 63 cases / 30 dead, 3 live runs via
+ * the host-cli backend, `bench/results.json` methodologyVersion 2):
+ *   precision 1.00 / 1.00 / 1.00   ·   recall 0.80 / 0.80 / 0.80   (24 TP, 0 FP, 6 FN)
+ * Zero variance across all 3 runs and still zero alive→likely-dead FPs on the
+ * doubled dead class — recall's real floor moved meaningfully with more data.
+ *
  * The gates below are REGRESSION FLOORS set under the observed run-to-run minima
  * (not pass-cherry-picked): they catch a collapse without flaking on the model's
- * non-determinism. PRECISION is the headline (the trust-critical metric); with
- * 1.00 holding across 3 runs on 33 alive cases, the floor is raised to **0.85**
- * (the aspirational target, with margin for one borderline FP). RECALL is floored
- * loosely at **0.40** (under the 0.47 minimum) — the dead class (15) is
- * production-dead test-local helpers whose labels are definitionally debatable.
+ * non-determinism. PRECISION stays at **0.85** — still the aspirational target
+ * with margin for one borderline FP; the phase-49 data confirms 1.00 again but
+ * doesn't justify tightening the trust-critical metric's buffer. RECALL is
+ * raised from 0.40 to **0.70** — comfortably under the new 0.80 minimum (a
+ * margin similar in proportion to phase 13's), reflecting the real recall gain
+ * from doubling the dead class while still tolerating some of the "definitionally
+ * debatable" test-local-helper labels.
  */
 const PRECISION_GATE = 0.85;
-const RECALL_GATE = 0.4;
+const RECALL_GATE = 0.7;
 
 /** The two production-source symbols the tuning targeted: genuinely alive, but
  * called `likely-dead` pre-tuning on misleading "0 static references" evidence. */
 const TUNED_FALSE_POSITIVES = ["RequiredRequestInit", "detectResponseType"];
 
-describe("live triage eval — real-repo accuracy gate (AC-2)", () => {
+describe("live triage eval — real-repo accuracy gate (AC-2, AC-3)", () => {
   test.runIf(process.env.ANTHROPIC_API_KEY)(
-    "clears the raised precision floor (≥0.85) on the expanded 48-case corpus and keeps the two FPs alive (AC-2)",
+    "clears the precision floor (≥0.85) and the re-derived recall floor (≥0.70) on the expanded 63-case corpus, and keeps the two FPs alive (AC-2, AC-3)",
     async () => {
       const cases = await loadEvalCases(realRepo);
       const client = createTriageClient(DEFAULT_LLM);
       const m = await runEval(cases, client, { concurrency: 4 });
       // biome-ignore lint/suspicious/noConsole: eval output is the point of the live run
       console.log(`live real-repo eval\n${formatBreakdown(m)}`);
-      // AC-2: precision clears the raised floor (0.85) re-calibrated on 48 cases / 2 repos.
+      // AC-2: precision clears the floor (0.85). AC-3: recall re-derived to 0.70 on the phase-49 63-case corpus.
       expect(m.precision).toBeGreaterThanOrEqual(PRECISION_GATE);
       expect(m.recall).toBeGreaterThanOrEqual(RECALL_GATE);
       // the two persistent production-source false positives are no longer dead.
