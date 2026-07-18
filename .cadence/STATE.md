@@ -4,14 +4,14 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 48-python-accuracy-corpus-ci-gate
+**Active phase:** 50-workspaces-entry-fallback
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 80%
-- Subagent spawns this session: 98
-- Last handoff: SESSION-2026-07-18-phase-48-shipped-fork-incident.md
+- Token utilization: 95%
+- Subagent spawns this session: 103
+- Last handoff: SESSION-2026-07-18-workspaces-fix-shipped.md
 
 ## Counts
 - Open drafts: 0

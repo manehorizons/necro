@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
-  "revision": 518,
+  "revision": 556,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
-  "activePhase": "48-python-accuracy-corpus-ci-gate",
+  "activePhase": "50-workspaces-entry-fallback",
   "activeDraft": null,
   "activeSpec": null,
   "loopPosition": "IDLE",
   "tier": null,
-  "draftReadAt": "2026-07-18T04:39:17.620Z",
+  "draftReadAt": "2026-07-18T18:12:01.422Z",
   "openDrafts": [],
   "decisions": [],
   "deferred": [],
   "session": {
-    "tokenUtilization": 0.8000000000000005,
-    "lastHandoff": "SESSION-2026-07-18-phase-48-shipped-fork-incident.md",
-    "subagentSpawns": 98,
+    "tokenUtilization": 0.9500000000000006,
+    "lastHandoff": "SESSION-2026-07-18-workspaces-fix-shipped.md",
+    "subagentSpawns": 103,
     "subagentBaselines": {}
   },
   "skillAudit": {
