@@ -10,8 +10,8 @@
 
 ## Telemetry
 - Token utilization: 100%
-- Subagent spawns this session: 109
-- Last handoff: SESSION-2026-07-18-pickup-host-cli-rec.md
+- Subagent spawns this session: 110
+- Last handoff: SESSION-2026-07-18-host-cli-and-gate-rederivation.md
 
 ## Counts
 - Open drafts: 0
