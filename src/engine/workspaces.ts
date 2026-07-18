@@ -1,6 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { isAbsolute, join, relative } from "node:path";
 import picomatch from "picomatch";
+import { resolveProdEntries } from "./prod-entries.js";
 
 /** What the monorepo passes downstream: alias resolution + entry rooting. */
 export interface WorkspaceInfo {
@@ -18,11 +19,17 @@ const MAX_DEPTH = 6;
 /**
  * Resolve workspace members for a monorepo root. Detects npm/yarn (`workspaces`
  * in the root `package.json`) and pnpm (`pnpm-workspace.yaml`), enumerates the
- * member packages, and maps each package name to its entry file. Returns empty
+ * member packages, and resolves each package's entry the same way a
+ * single-package scan would (`resolveProdEntries`): manifest `main`/`module`/
+ * `bin`/`exports`, existence-checked, falling back through dist→src tsconfig
+ * mapping and conventional filenames. Without this, a member whose manifest
+ * points at an unbuilt `dist/` file (the normal state of a fresh, un-built
+ * monorepo checkout) would resolve to a file that doesn't exist, seeding no
+ * reachability root and no cross-package alias for that member. Returns empty
  * info (and never throws) when no workspaces are declared or manifests are
  * malformed.
  */
-export async function resolveWorkspaces(root: string): Promise<WorkspaceInfo> {
+export async function resolveWorkspaces(root: string, files: string[]): Promise<WorkspaceInfo> {
   const globs = await workspaceGlobs(root);
   if (globs.length === 0) return EMPTY;
 
@@ -37,15 +44,28 @@ export async function resolveWorkspaces(root: string): Promise<WorkspaceInfo> {
     const pkg = await readJsonSafe(join(dir, "package.json"));
     if (!pkg || typeof pkg.name !== "string") continue;
 
-    const entryRel = manifestEntry(pkg);
-    if (!entryRel) continue;
-    const entryAbs = join(dir, entryRel);
+    const memberFiles = files.filter((f) => isWithinDir(dir, f));
+    if (memberFiles.length === 0) continue;
 
-    packagePaths.set(pkg.name, entryAbs);
-    entryFiles.push(entryAbs);
+    const { entries, records } = await resolveProdEntries(dir, memberFiles, { conventions: true });
+    if (entries.size === 0) continue;
+
+    for (const entry of entries) entryFiles.push(entry);
+
+    // One canonical entry per package name for cross-package alias resolution;
+    // prefer a manifest-declared (or dist→src mapped) entry over a bare
+    // convention match, matching resolveProdEntries' own mechanism priority.
+    const canonical = records.find((r) => r.source === "manifest" || r.source === "mapped") ?? records[0];
+    if (canonical) packagePaths.set(pkg.name, canonical.file);
   }
 
   return { packagePaths, entryFiles };
+}
+
+/** Whether absolute `file` sits inside absolute directory `dir`. */
+function isWithinDir(dir: string, file: string): boolean {
+  const rel = relative(dir, file);
+  return rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
 }
 
 /** Collect workspace globs from npm/yarn `workspaces` and pnpm-workspace.yaml. */
@@ -89,23 +109,6 @@ async function memberDirs(root: string): Promise<string[]> {
 
   await walk(root, 0);
   return out;
-}
-
-/** First entry file (rel) from `main`/`module`/`exports`, normalized of a leading `./`. */
-function manifestEntry(pkg: Record<string, unknown>): string | undefined {
-  const candidates: string[] = [];
-  collectStrings(pkg.main, candidates);
-  collectStrings(pkg.module, candidates);
-  collectStrings(pkg.exports, candidates);
-  const first = candidates.find((c) => /\.[cm]?[jt]sx?$/.test(c));
-  return first?.replace(/^\.\//, "");
-}
-
-function collectStrings(value: unknown, out: string[]): void {
-  if (typeof value === "string") out.push(value);
-  else if (Array.isArray(value)) for (const v of value) collectStrings(v, out);
-  else if (value && typeof value === "object")
-    for (const v of Object.values(value)) collectStrings(v, out);
 }
 
 /**

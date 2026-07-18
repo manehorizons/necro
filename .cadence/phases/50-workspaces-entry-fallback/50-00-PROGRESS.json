@@ -1,0 +1,23 @@
+{
+  "draftId": "50-00",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Rewrote resolveWorkspaces (src/engine/workspaces.ts) to call resolveProdEntries per member dir instead of raw manifestEntry() string extraction, threading the discovered `files` list in via a new second param (model.ts:102 updated to pass it). entryFiles = union of all members' resolved entries; packagePaths prefers manifest/mapped-source records over convention. Removed now-dead manifestEntry/collectStrings helpers. Bonus beyond spec: reusing resolveProdEntries also picks up pkg.scripts entries (scriptEntries) for free, not just the planned pkg.bin coverage -- confirmed live on trpc/openapi's \"codegen\" script. tsc --noEmit clean.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T18:25:58.603Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "Added 4 new fixtures to test/workspaces.test.ts: (A) unbuilt member (main points at nonexistent dist/index.js, real src/index.ts present) resolves via mapDistToSrc fallback; (B) member's own tsconfig outDir/rootDir mapping resolves independently of the monorepo root; (C) manifest entry that exists on disk wins over a co-present conventional entry; (D) member with source files but no resolvable entry is skipped without throwing. Fixture (E) non-monorepo-repo-unaffected was already covered by the pre-existing first test, now just call-site-updated. All 5 pre-existing tests' call sites updated to `resolveWorkspaces(dir, await discover())` using real discoverFiles/DEFAULT_CONFIG (production parity) -- assertions themselves unchanged. 9/9 passing.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T18:26:01.997Z"
+    },
+    "T3": {
+      "status": "DONE_WITH_CONCERNS",
+      "notes": "Live-verified against a fresh, unbuilt trpc/trpc checkout pinned at c7360d4eb3c89c336468809a293e5cda4b302d4b, `necro scan --json .` from repo root, with an exact pre/post-fix diff (git stash of model.ts/workspaces.ts, rebuild, rescan, restore, rebuild, rescan -- same exact commit both times). Result differs from AC-4's original literal framing: the aggregate packages/-scoped maybe RATIO barely moved (1183/3268 pre-fix vs 1181/3248 post-fix, ~36% both times) -- because trpc's dominant ambiguity source is legitimate, orthogonal dynamic-import taint (SOURCES.md's already-documented \"trust-killer\" pattern, e.g. packages/server/src/unstable-core-do-not-import/**), which entry-rooting correctness cannot and should not resolve. The real, precise effect: exactly 20 findings under packages/ that were present pre-fix are gone post-fix (correctly reclassified alive, confirmed by diffing file+line+name keys) -- 17 certain-dead + 1 likely-dead + 2 maybe. 17 of those are packages/openapi/test/scripts/codegen.ts's top-level consts, newly rooted because reusing resolveProdEntries also mines pkg.scripts (openapi's package.json has \"codegen\": \"tsx test/scripts/codegen.run.ts\") -- a real invoked build script the old workspaces.ts code never checked at all. The other 2 are initTRPC (packages/server/.../initTRPC.ts) and generateOpenAPIDocument (packages/openapi/src/generate.ts) -- core cross-package-consumed exports, consistent with the packagePaths/ts-morph-alias fix. Net: the fix eliminates false certain-dead/maybe findings on genuinely-alive code (a precision fix), not a dramatic maybe-tier volume drop -- AC-4's Given/Then should be read as satisfied by this more precise, itemized evidence rather than the original speculative ratio framing, which was written before this data existed. The separate, explicitly out-of-scope `necro scan --json packages` (subdir target) repro remains unfixed as documented (100% maybe, EMPTY workspace-manifest lookup) -- confirmed unaffected by this fix, as expected.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T18:26:20.017Z"
+    }
+  }
+}

@@ -99,7 +99,7 @@ export async function buildReachabilityModel(
 
   // Workspace members: alias map (so cross-package refs resolve) + entry files
   // (so executed member entries are rooted). Empty for single-package repos.
-  const workspaces = await resolveWorkspaces(targetPath);
+  const workspaces = await resolveWorkspaces(targetPath, files);
 
   // Plugin entries are split by kind: `test` globs seed test roots; `prod` globs
   // (e.g. Next.js file-routing) seed prod roots.
