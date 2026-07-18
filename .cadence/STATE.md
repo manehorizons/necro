@@ -9,9 +9,9 @@
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 60%
+- Token utilization: 61%
 - Subagent spawns this session: 45
-- Last handoff: SESSION-2026-07-17-phase-43-python-syntactic-axis-shipped.md
+- Last handoff: SESSION-2026-07-18-phase-45-python-reachability-shipped.md
 
 ## Counts
 - Open drafts: 0
@@ -20,4 +20,4 @@
 
 ## Skill audit
 - Required: (none)
-- Invoked: superpowers:test-driven-development
+- Invoked: superpowers:test-driven-development, handoff
