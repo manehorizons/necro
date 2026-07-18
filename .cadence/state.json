@@ -1,23 +1,28 @@
 {
   "schemaVersion": 1,
-  "revision": 556,
+  "revision": 564,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
-  "activePhase": "50-workspaces-entry-fallback",
-  "activeDraft": null,
+  "activePhase": "49-triage-corpus-variance",
+  "activeDraft": "49-01",
   "activeSpec": null,
-  "loopPosition": "IDLE",
-  "tier": null,
-  "draftReadAt": "2026-07-18T18:12:01.422Z",
-  "openDrafts": [],
+  "loopPosition": "BUILD",
+  "tier": "standard",
+  "draftReadAt": "2026-07-18T18:43:19.565Z",
+  "openDrafts": [
+    {
+      "id": "49-01",
+      "since": "2026-07-18T18:38:07.560Z"
+    }
+  ],
   "decisions": [],
   "deferred": [],
   "session": {
-    "tokenUtilization": 0.9500000000000006,
+    "tokenUtilization": 0.9900000000000007,
     "lastHandoff": "SESSION-2026-07-18-workspaces-fix-shipped.md",
-    "subagentSpawns": 103,
+    "subagentSpawns": 104,
     "subagentBaselines": {}
   },
   "skillAudit": {
@@ -27,5 +32,9 @@
       "handoff"
     ]
   },
-  "activeTask": null
+  "activeTask": {
+    "id": "T1",
+    "status": "BLOCKED",
+    "touchedFiles": []
+  }
 }

@@ -1,0 +1,11 @@
+{
+  "draftId": "49-01",
+  "tasks": {
+    "T1": {
+      "status": "BLOCKED",
+      "notes": "Grew dead-positive corpus from 15→30 cases (trpc/trpc: mined 15 new hand-verified test-local-helper dead cases via necro's testOnlyEvidence signal, using `necro scan --json .` since the documented `--json packages` command now returns EMPTY — rec-20260718-002). Meets AC-1's ≥30 count target but not its ≥3-repos clause: 4 attempts at a genuinely new 3rd repo (zod, fastify, h3 x2) all dead-ended for mechanistically-traced reasons documented in SOURCES.md's \"Attempted 3rd repos\" section — the qualifying trait (unexported, test-file-local helper functions, as opposed to a library's own ambiguous public API) is narrower than expected and repo-unpredictable without scanning. cases.json 48→63, triage-eval-capture.test.ts passes. Continuing to T2-T4 (bench variance) since they depend on \"the grown corpus\" existing, not the exact repo count.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T19:21:29.828Z"
+    }
+  }
+}

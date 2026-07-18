@@ -1486,5 +1486,410 @@
       "symbol": "executeTests"
     },
     "rationale": "test-local harness fn used only within the transforms test — no production (non-test) reference; production-dead (necro's '0 static references' is a dynamic-import-taint artifact hiding the test-only use)."
+  },
+  {
+    "name": "aggregateAsyncIterable",
+    "truth": "dead",
+    "code": "1\timport { waitError } from '@trpc/server/__tests__/waitError';\n2\timport type { AnyRouter } from '@trpc/server';\n3\timport { initTRPC, tracked, TRPCError } from '@trpc/server';\n4\timport { makeResource, run } from '@trpc/server/unstable-core-do-not-import';\n5\timport superjson from 'superjson';\n6\timport { z } from 'zod';\n7\timport { createTRPCClient } from '../createTRPCClient';\n8\timport { isTRPCClientError } from '../TRPCClientError';\n9\timport type { LocalLinkOptions } from './localLink';\n10\timport { experimental_localLink as localLink } from './localLink';\n11\t\n12\tasync function aggregateAsyncIterable<TYield, TReturn>(\n13\t  iterable: AsyncIterable<TYield, TReturn>,\n14\t) {\n15\t  const items: TYield[] = [];\n16\t\n17\t  try {\n18\t    const iterator = iterable[Symbol.asyncIterator]();\n19\t\n20\t    while (true) {\n21\t      const res = await iterator.next();\n22\t      if (res.done) {\n23\t        return {\n24\t          items,\n25\t          ok: true as const,\n26\t          return: res.value,\n27\t        };\n28\t      }\n29\t      items.push(res.value);\n30\t    }\n31\t  } catch (error: unknown) {\n32\t    return {\n33\t      error,\n34\t      items,\n35\t      ok: false as const,\n36\t    };\n37\t  }\n38\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/client/src/links/localLink.test.ts",
+      "line": 12,
+      "symbol": "aggregateAsyncIterable"
+    },
+    "rationale": "test-local async-iterable-draining helper declared in localLink.test.ts; unexported, used only by this file's own tests (2 call sites), zero cross-file references anywhere in the monorepo — production-dead."
+  },
+  {
+    "name": "localLinkClient",
+    "truth": "dead",
+    "code": "20\t    while (true) {\n21\t      const res = await iterator.next();\n22\t      if (res.done) {\n23\t        return {\n24\t          items,\n25\t          ok: true as const,\n26\t          return: res.value,\n27\t        };\n28\t      }\n29\t      items.push(res.value);\n30\t    }\n31\t  } catch (error: unknown) {\n32\t    return {\n33\t      error,\n34\t      items,\n35\t      ok: false as const,\n36\t    };\n37\t  }\n38\t}\n39\t\n40\tfunction localLinkClient<TRouter extends AnyRouter>(\n41\t  opts: LocalLinkOptions<TRouter>,\n42\t) {\n43\t  const onError = vi.fn<NonNullable<LocalLinkOptions<TRouter>['onError']>>();\n44\t  const client = createTRPCClient<TRouter>({\n45\t    links: [\n46\t      localLink({\n47\t        onError,\n48\t        ...opts,\n49\t      }),\n50\t    ],\n51\t  });\n52\t\n53\t  return {\n54\t    client,\n55\t    onError,\n56\t  };\n57\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/client/src/links/localLink.test.ts",
+      "line": 40,
+      "symbol": "localLinkClient"
+    },
+    "rationale": "test-local client-construction helper declared in localLink.test.ts; unexported, used only by this file's own tests (4 call sites), zero cross-file references — production-dead."
+  },
+  {
+    "name": "createServer",
+    "truth": "dead",
+    "code": "1\timport { EventEmitter } from 'events';\n2\timport * as http from 'http';\n3\timport { expect } from 'vitest';\n4\timport { incomingMessageToRequest } from './incomingMessageToRequest';\n5\t\n6\tfunction createServer(opts: Parameters<typeof incomingMessageToRequest>[2]) {\n7\t  type Handler = (req: Request) => Promise<void>;\n8\t\n9\t  let rejectHandler: null | ((err: any) => void) = null;\n10\t  let resolveHandler: null | (() => void) = null;\n11\t  let handle: Handler | null = null;\n12\t  const server = http.createServer(async (req, res) => {\n13\t    const request = incomingMessageToRequest(req, res, opts);\n14\t\n15\t    await handle!(request).then(resolveHandler).catch(rejectHandler);\n16\t    res.end();\n17\t  });\n18\t  server.listen(0);\n19\t\n20\t  const port = (server.address() as any).port as number;\n21\t\n22\t  return {\n23\t    async close() {\n24\t      await new Promise((resolve) => {\n25\t        server.close(resolve);\n26\t      });\n27\t    },\n28\t    fetch: async (\n29\t      opts: RequestInit & {\n30\t        path?: string;\n31\t      },\n32\t      _handle: (request: Request) => Promise<void>,\n33\t    ) => {\n34\t      handle = _handle;\n35\t\n36\t      const promise = new Promise<void>((resolve, reject) => {\n37\t        resolveHandler = resolve;\n38\t        rejectHandler = reject;\n39\t      });\n40\t\n41\t      await fetch(`http://localhost:${port}${opts.path ?? ''}`, {\n42\t        ...opts,\n43\t      });\n44\t      await promise;\n45\t    },\n46\t  };\n47\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/adapters/node-http/incomingMessageToRequest.test.ts",
+      "line": 6,
+      "symbol": "createServer"
+    },
+    "rationale": "test-local HTTP server harness declared in incomingMessageToRequest.test.ts; unexported, used only within this file's own tests (5 call sites) — production-dead. Name collides with Node's builtin http.createServer and several other same-named test-local helpers elsewhere in the repo, but each is a distinct unexported per-file declaration."
+  },
+  {
+    "name": "createMockRes",
+    "truth": "dead",
+    "code": "29\t      opts: RequestInit & {\n30\t        path?: string;\n31\t      },\n32\t      _handle: (request: Request) => Promise<void>,\n33\t    ) => {\n34\t      handle = _handle;\n35\t\n36\t      const promise = new Promise<void>((resolve, reject) => {\n37\t        resolveHandler = resolve;\n38\t        rejectHandler = reject;\n39\t      });\n40\t\n41\t      await fetch(`http://localhost:${port}${opts.path ?? ''}`, {\n42\t        ...opts,\n43\t      });\n44\t      await promise;\n45\t    },\n46\t  };\n47\t}\n48\t\n49\tfunction createMockRes() {\n50\t  const mockRes = new EventEmitter();\n51\t  return mockRes as http.ServerResponse;\n52\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/adapters/node-http/incomingMessageToRequest.test.ts",
+      "line": 49,
+      "symbol": "createMockRes"
+    },
+    "rationale": "test-local mock ServerResponse factory declared in incomingMessageToRequest.test.ts; unexported, used repeatedly (7 call sites) only within this file's own tests — production-dead."
+  },
+  {
+    "name": "createMockReq",
+    "truth": "dead",
+    "code": "34\t      handle = _handle;\n35\t\n36\t      const promise = new Promise<void>((resolve, reject) => {\n37\t        resolveHandler = resolve;\n38\t        rejectHandler = reject;\n39\t      });\n40\t\n41\t      await fetch(`http://localhost:${port}${opts.path ?? ''}`, {\n42\t        ...opts,\n43\t      });\n44\t      await promise;\n45\t    },\n46\t  };\n47\t}\n48\t\n49\tfunction createMockRes() {\n50\t  const mockRes = new EventEmitter();\n51\t  return mockRes as http.ServerResponse;\n52\t}\n53\t\n54\tfunction createMockReq(opts: Partial<http.IncomingMessage> = {}) {\n55\t  const mockSocket = new EventEmitter();\n56\t  const req = Object.assign(new EventEmitter(), {\n57\t    headers: {},\n58\t    url: '/test',\n59\t    method: 'GET',\n60\t    socket: mockSocket,\n61\t    ...opts,\n62\t  });\n63\t  return req as http.IncomingMessage;\n64\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/adapters/node-http/incomingMessageToRequest.test.ts",
+      "line": 54,
+      "symbol": "createMockReq"
+    },
+    "rationale": "test-local mock IncomingMessage factory declared in incomingMessageToRequest.test.ts; unexported, used repeatedly (7 call sites) only within this file's own tests — production-dead."
+  },
+  {
+    "name": "SubscriptionEvents",
+    "truth": "dead",
+    "code": "1\timport { EventEmitter } from 'events';\n2\timport { observable } from './observable';\n3\timport {\n4\t  distinctUntilChanged,\n5\t  distinctUntilDeepChanged,\n6\t  map,\n7\t  share,\n8\t} from './operators';\n9\t\n10\tinterface SubscriptionEvents<TOutput> {\n11\t  data: (data: TOutput) => void;\n12\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/observable/operators.test.ts",
+      "line": 10,
+      "symbol": "SubscriptionEvents"
+    },
+    "rationale": "test-local interface declared in operators.test.ts, feeding the file's own CustomEventEmitter declaration-merge; unexported, zero cross-file references — production-dead."
+  },
+  {
+    "name": "CustomEventEmitter",
+    "truth": "dead",
+    "code": "1\timport { EventEmitter } from 'events';\n2\timport { observable } from './observable';\n3\timport {\n4\t  distinctUntilChanged,\n5\t  distinctUntilDeepChanged,\n6\t  map,\n7\t  share,\n8\t} from './operators';\n9\t\n10\tinterface SubscriptionEvents<TOutput> {\n11\t  data: (data: TOutput) => void;\n12\t}\n13\t\n14\tdeclare interface CustomEventEmitter<TOutput> {\n15\t  on<U extends keyof SubscriptionEvents<TOutput>>(\n16\t    event: U,\n17\t    listener: SubscriptionEvents<TOutput>[U],\n18\t  ): this;\n19\t\n20\t  once<U extends keyof SubscriptionEvents<TOutput>>(\n21\t    event: U,\n22\t    listener: SubscriptionEvents<TOutput>[U],\n23\t  ): this;\n24\t\n25\t  emit<U extends keyof SubscriptionEvents<TOutput>>(\n26\t    event: U,\n27\t    ...args: Parameters<SubscriptionEvents<TOutput>[U]>\n28\t  ): boolean;\n29\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/observable/operators.test.ts",
+      "line": 14,
+      "symbol": "CustomEventEmitter"
+    },
+    "rationale": "test-local `declare interface` half of a declaration-merge pair (interface at L14 + class at L30) in operators.test.ts, used only by this file's own test ('map') via `new CustomEventEmitter(...)`; unexported, zero cross-file references — production-dead."
+  },
+  {
+    "name": "CustomEventEmitter",
+    "truth": "dead",
+    "code": "10\tinterface SubscriptionEvents<TOutput> {\n11\t  data: (data: TOutput) => void;\n12\t}\n13\t\n14\tdeclare interface CustomEventEmitter<TOutput> {\n15\t  on<U extends keyof SubscriptionEvents<TOutput>>(\n16\t    event: U,\n17\t    listener: SubscriptionEvents<TOutput>[U],\n18\t  ): this;\n19\t\n20\t  once<U extends keyof SubscriptionEvents<TOutput>>(\n21\t    event: U,\n22\t    listener: SubscriptionEvents<TOutput>[U],\n23\t  ): this;\n24\t\n25\t  emit<U extends keyof SubscriptionEvents<TOutput>>(\n26\t    event: U,\n27\t    ...args: Parameters<SubscriptionEvents<TOutput>[U]>\n28\t  ): boolean;\n29\t}\n30\tclass CustomEventEmitter<TOutput>\n31\t  extends EventEmitter\n32\t  implements CustomEventEmitter<TOutput> {}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/observable/operators.test.ts",
+      "line": 30,
+      "symbol": "CustomEventEmitter"
+    },
+    "rationale": "test-local class half of the same declaration-merge pair (see L14 interface) in operators.test.ts; unexported, zero cross-file references — production-dead."
+  },
+  {
+    "name": "Constructor",
+    "truth": "dead",
+    "code": "1\timport { z } from 'zod';\n2\timport { TRPCError } from './error/TRPCError';\n3\timport { initTRPC } from './initTRPC';\n4\timport type { inferProcedureBuilderResolverOptions } from './procedureBuilder';\n5\t\n6\ttype Constructor<T extends object = object> = new (...args: any[]) => T;\n7\t\n8\t// TODO: move to a test-utils package\n9\tasync function waitError<TError extends Error = Error>(\n10\t  /**\n11\t   * Function callback or promise that you expect will throw\n12\t   */\n13\t  fnOrPromise: Promise<unknown> | (() => unknown),\n14\t  /**\n15\t   * Force error constructor to be of specific type\n16\t   * @default Error\n17\t   **/\n18\t  errorConstructor?: Constructor<TError>,\n19\t): Promise<TError> {\n20\t  try {\n21\t    if (typeof fnOrPromise === 'function') {\n22\t      await fnOrPromise();\n23\t    } else {\n24\t      await fnOrPromise;\n25\t    }\n26\t  } catch (cause) {\n27\t    expect(cause).toBeInstanceOf(Error);\n28\t    if (errorConstructor) {\n29\t      expect((cause as Error).name).toBe(errorConstructor.name);\n30\t    }\n31\t    return cause as TError;\n32\t  }\n33\t  throw new Error('Function did not throw');\n34\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/procedureBuilder.test.ts",
+      "line": 6,
+      "symbol": "Constructor"
+    },
+    "rationale": "test-local type alias declared in procedureBuilder.test.ts, feeding this file's own local `waitError` helper's optional errorConstructor param; unexported, zero cross-file references — production-dead."
+  },
+  {
+    "name": "waitError",
+    "truth": "dead",
+    "code": "1\timport { z } from 'zod';\n2\timport { TRPCError } from './error/TRPCError';\n3\timport { initTRPC } from './initTRPC';\n4\timport type { inferProcedureBuilderResolverOptions } from './procedureBuilder';\n5\t\n6\ttype Constructor<T extends object = object> = new (...args: any[]) => T;\n7\t\n8\t// TODO: move to a test-utils package\n9\tasync function waitError<TError extends Error = Error>(\n10\t  /**\n11\t   * Function callback or promise that you expect will throw\n12\t   */\n13\t  fnOrPromise: Promise<unknown> | (() => unknown),\n14\t  /**\n15\t   * Force error constructor to be of specific type\n16\t   * @default Error\n17\t   **/\n18\t  errorConstructor?: Constructor<TError>,\n19\t): Promise<TError> {\n20\t  try {\n21\t    if (typeof fnOrPromise === 'function') {\n22\t      await fnOrPromise();\n23\t    } else {\n24\t      await fnOrPromise;\n25\t    }\n26\t  } catch (cause) {\n27\t    expect(cause).toBeInstanceOf(Error);\n28\t    if (errorConstructor) {\n29\t      expect((cause as Error).name).toBe(errorConstructor.name);\n30\t    }\n31\t    return cause as TError;\n32\t  }\n33\t  throw new Error('Function did not throw');\n34\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/procedureBuilder.test.ts",
+      "line": 9,
+      "symbol": "waitError"
+    },
+    "rationale": "test-local duplicate of the shared `@trpc/server/__tests__/waitError` helper (which other files import), re-declared inline here with a literal `// TODO: move to a test-utils package` comment acknowledging the duplication; unexported, used only within this file's own tests (3 call sites), zero cross-file references to this specific declaration — production-dead."
+  },
+  {
+    "name": "serverResourceForStream",
+    "truth": "dead",
+    "code": "216\t        }) + '\\n',\n217\t      );\n218\t      await writer.close();\n219\t    })().catch(() => {\n220\t      // noop\n221\t    });\n222\t    await jsonlStreamConsumer({\n223\t      from: textEncoder.readable,\n224\t      deserialize: (v) => SuperJSON.deserialize(v),\n225\t      abortController,\n226\t    });\n227\t    expect(true).toBe(false);\n228\t  } catch (err) {\n229\t    // console.log('err', err);\n230\t    expect(err).toMatchInlineSnapshot(\n231\t      `[TypeError: Cannot convert undefined or null to object]`,\n232\t    );\n233\t  }\n234\t});\n235\t\n236\tfunction serverResourceForStream(\n237\t  stream: ReadableStream,\n238\t  headers: Record<string, string> = {},",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/stream/jsonl.test.ts",
+      "line": 236,
+      "symbol": "serverResourceForStream"
+    },
+    "rationale": "test-local server-from-stream harness declared in jsonl.test.ts; unexported, used repeatedly (6 call sites) only within this file's own tests — production-dead."
+  },
+  {
+    "name": "suppressLogs",
+    "truth": "dead",
+    "code": "1\timport { EventEmitter, on } from 'node:events';\n2\timport { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';\n3\timport { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';\n4\timport SuperJSON from 'superjson';\n5\timport type { inferAsyncIterableYield, Maybe } from '../types';\n6\timport { run, sleep } from '../utils';\n7\timport { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';\n8\timport { isTrackedEnvelope, sse, tracked } from './tracked';\n9\t\n10\t(global as any).EventSource = NativeEventSource || EventSourcePolyfill;\n11\t\n12\t/* eslint-disable no-console */\n13\texport const suppressLogs = () => {\n14\t  const error = console.error;\n15\t  const noop = () => {\n16\t    // ignore\n17\t  };\n18\t\n19\t  console.error = noop;\n20\t  return () => {\n21\t    console.error = error;\n22\t  };\n23\t};",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/stream/sse.test.ts",
+      "line": 13,
+      "symbol": "suppressLogs"
+    },
+    "rationale": "test-local duplicate of the shared `@trpc/server/__tests__/suppressLogs` helper (imported by many other test files across the monorepo), re-declared inline here instead of importing the shared one; despite the `export` keyword this is a .test.ts file so it isn't a package export, and no other file imports this specific declaration — used only within this file's own test (1 call site) — production-dead."
+  },
+  {
+    "name": "EventMap",
+    "truth": "dead",
+    "code": "1\timport EventEmitter, { on } from 'events';\n2\timport { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';\n3\timport { expect, vi } from 'vitest';\n4\timport { run } from '../../utils';\n5\timport { withPing } from './withPing';\n6\t\n7\ttype EventMap<T> = Record<keyof T, any[]>;\n8\tclass IterableEventEmitter<T extends EventMap<T>> extends EventEmitter<T> {\n9\t  toIterable<TEventName extends keyof T & string>(\n10\t    eventName: TEventName,\n11\t    opts?: NonNullable<Parameters<typeof on>[2]>,\n12\t  ): AsyncIterable<T[TEventName]> {\n13\t    return on(this as any, eventName, opts) as any;\n14\t  }\n15\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/stream/utils/withPing.test.ts",
+      "line": 7,
+      "symbol": "EventMap"
+    },
+    "rationale": "test-local type alias declared in withPing.test.ts, feeding this file's own local IterableEventEmitter; a separate shared `@trpc/server/__tests__/iterableEventEmitter` module exists and is imported elsewhere, but this file re-declares its own copy instead. Unexported, zero cross-file references — production-dead."
+  },
+  {
+    "name": "IterableEventEmitter",
+    "truth": "dead",
+    "code": "1\timport EventEmitter, { on } from 'events';\n2\timport { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';\n3\timport { expect, vi } from 'vitest';\n4\timport { run } from '../../utils';\n5\timport { withPing } from './withPing';\n6\t\n7\ttype EventMap<T> = Record<keyof T, any[]>;\n8\tclass IterableEventEmitter<T extends EventMap<T>> extends EventEmitter<T> {\n9\t  toIterable<TEventName extends keyof T & string>(\n10\t    eventName: TEventName,\n11\t    opts?: NonNullable<Parameters<typeof on>[2]>,\n12\t  ): AsyncIterable<T[TEventName]> {\n13\t    return on(this as any, eventName, opts) as any;\n14\t  }\n15\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/stream/utils/withPing.test.ts",
+      "line": 8,
+      "symbol": "IterableEventEmitter"
+    },
+    "rationale": "test-local duplicate of the shared `@trpc/server/__tests__/iterableEventEmitter` class (imported by other test files), re-declared inline in withPing.test.ts; unexported, used only within this file's own test (1 call site), zero cross-file references to this specific declaration — production-dead."
+  },
+  {
+    "name": "MyEvents",
+    "truth": "dead",
+    "code": "1\timport EventEmitter, { on } from 'events';\n2\timport { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';\n3\timport { expect, vi } from 'vitest';\n4\timport { run } from '../../utils';\n5\timport { withPing } from './withPing';\n6\t\n7\ttype EventMap<T> = Record<keyof T, any[]>;\n8\tclass IterableEventEmitter<T extends EventMap<T>> extends EventEmitter<T> {\n9\t  toIterable<TEventName extends keyof T & string>(\n10\t    eventName: TEventName,\n11\t    opts?: NonNullable<Parameters<typeof on>[2]>,\n12\t  ): AsyncIterable<T[TEventName]> {\n13\t    return on(this as any, eventName, opts) as any;\n14\t  }\n15\t}\n16\t\n17\tinterface MyEvents {\n18\t  message: [str: string];\n19\t}",
+    "evidence": [
+      {
+        "ok": true,
+        "text": "0 production references"
+      },
+      {
+        "ok": false,
+        "text": "referenced only in test files"
+      },
+      {
+        "ok": null,
+        "text": "coverage: not available"
+      }
+    ],
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+      "file": "packages/server/src/unstable-core-do-not-import/stream/utils/withPing.test.ts",
+      "line": 17,
+      "symbol": "MyEvents"
+    },
+    "rationale": "test-local event-map interface declared in withPing.test.ts, used only by this file's own test as `IterableEventEmitter<MyEvents>`; unexported, zero cross-file references — production-dead."
   }
 ]
