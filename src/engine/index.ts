@@ -72,6 +72,7 @@ export async function scan(
       reachability,
       coverage,
       entryCollapse: model.entryResolution.collapsed,
+      publicApiIds: model.publicApiIds,
     }),
   );
 

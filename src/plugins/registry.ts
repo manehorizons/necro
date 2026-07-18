@@ -1,5 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
+import { pyprojectHasSection, readPythonDependencyNames } from "./python-manifest.js";
 import type { FrameworkPlugin, RepoContext } from "./types.js";
 
 interface PackageJson {
@@ -20,6 +21,7 @@ export async function createRepoContext(root: string): Promise<RepoContext> {
     ...Object.keys(pkg.devDependencies ?? {}),
     ...Object.keys(pkg.peerDependencies ?? {}),
     ...Object.keys(pkg.optionalDependencies ?? {}),
+    ...readPythonDependencyNames(root),
   ]);
 
   return {
@@ -30,6 +32,7 @@ export async function createRepoContext(root: string): Promise<RepoContext> {
       return rootEntries.some((entry) => matchers.some((re) => re.test(entry)));
     },
     packageJsonHas: (key) => Object.prototype.hasOwnProperty.call(pkg, key),
+    pyprojectHas: (header) => pyprojectHasSection(root, header),
   };
 }
 

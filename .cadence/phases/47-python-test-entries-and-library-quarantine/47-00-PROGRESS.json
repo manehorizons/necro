@@ -1,0 +1,68 @@
+{
+  "draftId": "47-00",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "src/plugins/python-manifest.ts (readPythonDependencyNames, pyprojectHasSection), wired into RepoContext/createRepoContext (hasDep + pyprojectHas). test/plugins-python-manifest.test.ts, 13/13 green, AC-1 tagged.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T03:40:30.082Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "src/plugins/pytest/index.ts (detect via hasDep/hasConfig/pyprojectHas; entryPatterns for test_*.py/*_test.py/tests/**). test/plugins-pytest-detect.test.ts, 6/6 green, AC-2 tagged.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/plugins/pytest/index.ts",
+        "/home/thomas/projects/necro/test/plugins-pytest-detect.test.ts",
+        "/home/thomas/.claude/projects/-home-thomas-projects-necro/memory/cadence-host-cli-verifier-gap.md",
+        "/home/thomas/projects/necro/src/engine/model.ts",
+        "/home/thomas/projects/necro/test/model-pytest-entries.test.ts"
+      ],
+      "updatedAt": "2026-07-18T03:43:48.227Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "createPytestPlugin() added to PLUGINS in model.ts; symmetric testEntries exported-symbol rooting loop added (language-neutral, mirrors existing prodEntries rooting). test/model-pytest-entries.test.ts, 2/2 green (both Python and JS cases), AC-3 tagged.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T03:43:53.465Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "test/scan-python-pytest-entries.test.ts, 2/2 green: pytest-detected test_ function resolves test-only; without detection falls back correctly to phase 45's likely-tier exemption (isolated from entry-collapse). AC-4 tagged.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/scan-python-pytest-entries.test.ts"
+      ],
+      "updatedAt": "2026-07-18T03:44:48.183Z"
+    },
+    "T5": {
+      "status": "DONE",
+      "notes": "isPythonLibrary(ctx) helper added to model.ts (ctx.pyprojectHas(\"project\") && ctx.pyprojectHas(\"build-system\")). Verified together with T6's test file.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/engine/model.ts",
+        "/home/thomas/projects/necro/src/engine/index.ts"
+      ],
+      "updatedAt": "2026-07-18T03:45:59.046Z"
+    },
+    "T6": {
+      "status": "DONE",
+      "notes": "publicApiIds field added to ReachabilityModel (model.ts), computed from isPythonLibrary + exported pyGraph nodes; wired into scan()'s classify() call (index.ts) as its first real caller. test/model-python-library.test.ts, 4/4 green, AC-5/AC-6 tagged.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/model-python-library.test.ts"
+      ],
+      "updatedAt": "2026-07-18T03:46:31.246Z"
+    },
+    "T7": {
+      "status": "DONE",
+      "notes": "test/scan-python-library-quarantine.test.ts, 2/2 green: library-detected exported symbol quarantines to maybe/autoFixEligible=false with exports evidence text; non-library repo unaffected (likely). AC-6 tagged.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/scan-python-library-quarantine.test.ts"
+      ],
+      "updatedAt": "2026-07-18T03:47:09.357Z"
+    },
+    "T8": {
+      "status": "DONE",
+      "notes": "Full suite 666/666 green (up from 637), build+typecheck clean. Phase 45's scan-python-reachability.test.ts and scan-python.test.ts specifically re-verified byte-identical. AC-7 tagged.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T03:47:44.103Z"
+    }
+  }
+}

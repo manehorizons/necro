@@ -10,6 +10,8 @@ export interface RepoContext {
   hasConfig(globs: string[]): boolean;
   /** True if `package.json` has the given top-level key (e.g. `"jest"`). */
   packageJsonHas(key: string): boolean;
+  /** True if `pyproject.toml` has the given top-level section header (e.g. `"project"`, `"build-system"`, `"tool.pytest.ini_options"`). */
+  pyprojectHas(header: string): boolean;
 }
 
 /** A root glob that is alive by definition, tagged prod or test. */

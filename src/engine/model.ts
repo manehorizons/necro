@@ -15,14 +15,15 @@ import { buildSymbolGraph } from "../graph/symbol-graph.js";
 import type { SymbolEdge, SymbolGraph } from "../graph/types.js";
 import { resolveEntries } from "../plugins/entry-resolver.js";
 import { createNextjsPlugin } from "../plugins/nextjs/index.js";
+import { createPytestPlugin } from "../plugins/pytest/index.js";
 import { createRepoContext, detectPlugins } from "../plugins/registry.js";
 import { createTestRunnerPlugin } from "../plugins/test-runner/index.js";
-import type { FrameworkPlugin } from "../plugins/types.js";
+import type { FrameworkPlugin, RepoContext } from "../plugins/types.js";
 import { resolvePythonEntries } from "./python-entries.js";
 import { resolveProdEntries, type EntrySource } from "./prod-entries.js";
 import { resolveWorkspaces } from "./workspaces.js";
 
-const PLUGINS: FrameworkPlugin[] = [createTestRunnerPlugin(), createNextjsPlugin()];
+const PLUGINS: FrameworkPlugin[] = [createTestRunnerPlugin(), createNextjsPlugin(), createPytestPlugin()];
 
 /** One resolved production entry, for the `entryResolution` diagnostic (§2.1). */
 export interface EntryResolutionRecord {
@@ -64,6 +65,8 @@ export interface ReachabilityModel {
   /** File contents (read once; reused by the complexity axis). */
   sources: Array<{ file: string; text: string }>;
   entryResolution: EntryResolution;
+  /** Exported Python symbol ids in a Python-library target (§2.3) — externally consumable, quarantined to `maybe` by `classify()`. Empty for non-library targets and for TS/JS. */
+  publicApiIds: Set<string>;
 }
 
 /**
@@ -87,6 +90,7 @@ export async function buildReachabilityModel(
       reachability: [],
       sources: [],
       entryResolution: { prodEntryCount: 0, sources: [], collapsed: false },
+      publicApiIds: new Set(),
     };
   }
 
@@ -142,6 +146,13 @@ export async function buildReachabilityModel(
   for (const node of graph.nodes) {
     if (node.exported && pluginProdEntryFiles.has(node.file)) prodEntries.add(node.id);
   }
+  // Symmetric fix for test-kind entry files (e.g. a pytest `test_*.py` file's
+  // top-level `def test_foo():`): also invoked by convention, never via an
+  // explicit reference, so its exported declarations need the same direct
+  // rooting the prod side gets above — language-neutral, not Python-specific.
+  for (const node of graph.nodes) {
+    if (node.exported && isTestFile(node.file)) testEntries.add(node.id);
+  }
   // Workspace member entry files are prod roots (file-path semantics, matching
   // the root package): keeps executed member entries alive. Cross-package
   // *consumed* symbols stay alive via resolved references, not by rooting — so
@@ -181,6 +192,14 @@ export async function buildReachabilityModel(
     taintedFiles,
   });
 
+  // Library quarantine (§2.3): a `pyproject.toml` with both `[project]` and
+  // `[build-system]` is meant to be built/installed and consumed externally —
+  // every exported Python symbol is public API, quarantined to `maybe` via
+  // `classify()`'s existing (previously unwired) `publicApiIds` parameter.
+  const publicApiIds = isPythonLibrary(ctx)
+    ? new Set(pyGraph.nodes.filter((n) => n.exported).map((n) => n.id))
+    : new Set<string>();
+
   return {
     files,
     graph,
@@ -191,7 +210,13 @@ export async function buildReachabilityModel(
     reachability,
     sources,
     entryResolution,
+    publicApiIds,
   };
+}
+
+/** A `pyproject.toml` declaring both `[project]` and `[build-system]` is a distributable library (§2.3) — its exported symbols are externally consumable. */
+function isPythonLibrary(ctx: RepoContext): boolean {
+  return ctx.pyprojectHas("project") && ctx.pyprojectHas("build-system");
 }
 
 /**
