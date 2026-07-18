@@ -9,9 +9,9 @@
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 77%
-- Subagent spawns this session: 94
-- Last handoff: SESSION-2026-07-18-phase-48-corpus-vendored-labeling-paused.md
+- Token utilization: 80%
+- Subagent spawns this session: 98
+- Last handoff: SESSION-2026-07-18-phase-48-shipped-fork-incident.md
 
 ## Counts
 - Open drafts: 0

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 510,
+  "revision": 518,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
@@ -15,9 +15,9 @@
   "decisions": [],
   "deferred": [],
   "session": {
-    "tokenUtilization": 0.7700000000000005,
-    "lastHandoff": "SESSION-2026-07-18-phase-48-corpus-vendored-labeling-paused.md",
-    "subagentSpawns": 94,
+    "tokenUtilization": 0.8000000000000005,
+    "lastHandoff": "SESSION-2026-07-18-phase-48-shipped-fork-incident.md",
+    "subagentSpawns": 98,
     "subagentBaselines": {}
   },
   "skillAudit": {
