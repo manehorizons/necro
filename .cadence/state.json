@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "revision": 311,
+  "revision": 348,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
-  "activePhase": "44-python-module-resolver",
+  "activePhase": "45",
   "activeDraft": null,
   "activeSpec": null,
   "loopPosition": "IDLE",
   "tier": null,
-  "draftReadAt": "2026-07-18T00:09:28.564Z",
+  "draftReadAt": "2026-07-18T00:34:31.691Z",
   "openDrafts": [],
   "decisions": [],
   "deferred": [],

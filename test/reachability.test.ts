@@ -154,4 +154,23 @@ describe("findTaintedFiles", () => {
     expect(tainted.has("dyn.ts")).toBe(true);
     expect(tainted.has("clean.ts")).toBe(false);
   });
+
+  test("flags Python files with dynamic-dispatch patterns (AC-4)", () => {
+    const tainted = findTaintedFiles([
+      { file: "getattr.py", text: "getattr(obj, name)()" },
+      { file: "importlib.py", text: "import importlib\nimportlib.import_module(name)" },
+      { file: "globals.py", text: "globals()[name]()" },
+      { file: "dunder.py", text: "class C:\n    def __getattr__(self, name):\n        pass" },
+      { file: "eval.py", text: "eval(user_input)" },
+      { file: "exec.py", text: "exec(user_code)" },
+      { file: "clean.py", text: "def helper():\n    return 1\n" },
+    ]);
+    expect(tainted.has("getattr.py")).toBe(true);
+    expect(tainted.has("importlib.py")).toBe(true);
+    expect(tainted.has("globals.py")).toBe(true);
+    expect(tainted.has("dunder.py")).toBe(true);
+    expect(tainted.has("eval.py")).toBe(true);
+    expect(tainted.has("exec.py")).toBe(true);
+    expect(tainted.has("clean.py")).toBe(false);
+  });
 });

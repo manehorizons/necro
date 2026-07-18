@@ -33,8 +33,8 @@ export function resolvePythonImport(fromFile: string, imp: PythonImport, map: Py
   return imp.names.map((n) => ({ file: resolveFromName(base, n.name, map), binding: n.binding }));
 }
 
-/** The dotted module path a `from` clause's names should be resolved against, or `null` if a relative import walked above the topmost known package. */
-function resolveFromBase(fromFile: string, imp: Extract<PythonImport, { kind: "from" }>, map: PythonModuleMap): string | null {
+/** The dotted module path a `from` clause's names should be resolved against, or `null` if a relative import walked above the topmost known package. Exported for callers (Phase C's reference walk) that need to distinguish a submodule-style binding from a package-fallback (re-exported symbol) binding. */
+export function resolveFromBase(fromFile: string, imp: Extract<PythonImport, { kind: "from" }>, map: PythonModuleMap): string | null {
   if (imp.relativeDots === 0) return imp.moduleSegments.join(".");
 
   const ownPackage = containingPackage(fromFile, map);

@@ -8,6 +8,9 @@ import {
 import type { NecroConfig } from "../config.js";
 import { discoverFiles } from "../discover.js";
 import { globMatcher } from "../glob.js";
+import { isPythonFile } from "../graph/python/language.js";
+import { buildPythonModuleMap, detectImportRoots } from "../graph/python/module-resolver.js";
+import { buildPythonSymbolGraph } from "../graph/python/symbol-graph.js";
 import { buildSymbolGraph } from "../graph/symbol-graph.js";
 import type { SymbolEdge, SymbolGraph } from "../graph/types.js";
 import { resolveEntries } from "../plugins/entry-resolver.js";
@@ -107,7 +110,19 @@ export async function buildReachabilityModel(
   const matchesProdGlob = globMatcher(prodGlobs);
   const pluginProdEntryFiles = new Set(files.filter((abs) => matchesProdGlob(relToRoot(abs))));
 
-  const graph = buildSymbolGraph(files, { isTestFile, packagePaths: workspaces.packagePaths });
+  // Language partition (AC-5): the TS graph (ts-morph) covers everything but
+  // `.py`; the Python graph is hand-rolled (no ts-morph equivalent exists).
+  // Node ids are file-path-based, so concatenating the two never collides.
+  const pyFiles = files.filter(isPythonFile);
+  const tsFiles = files.filter((f) => !isPythonFile(f));
+  const tsGraph = buildSymbolGraph(tsFiles, { isTestFile, packagePaths: workspaces.packagePaths });
+  const pyRoots = detectImportRoots(targetPath, pyFiles);
+  const pyModuleMap = buildPythonModuleMap(pyFiles, pyRoots);
+  const { graph: pyGraph, starTaintedFiles } = await buildPythonSymbolGraph(pyFiles, pyModuleMap);
+  const graph: SymbolGraph = {
+    nodes: [...tsGraph.nodes, ...pyGraph.nodes],
+    edges: [...tsGraph.edges, ...pyGraph.edges],
+  };
 
   const syntheticEdges: SymbolEdge[] = detected.flatMap((p) =>
     p.resolveEdges(ctx, graph).map((e) => ({ from: e.from, to: e.to, kind: e.kind })),
@@ -142,7 +157,7 @@ export async function buildReachabilityModel(
   });
 
   const sources = await readSources(files);
-  const taintedFiles = findTaintedFiles(sources);
+  const taintedFiles = new Set([...findTaintedFiles(sources), ...starTaintedFiles]);
 
   const edges = [...graph.edges, ...syntheticEdges];
   const reachability = computeReachability({

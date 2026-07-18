@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "draftId": "45-00",
+  "completedAt": "2026-07-18T00:50:04.649Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-2",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-3",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-4",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-5",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-6",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-7",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-8",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-9",
+      "pass": true,
+      "evidence": "assertion"
+    }
+  ],
+  "gates": [
+    {
+      "gate": "draft-read",
+      "status": "ran"
+    },
+    {
+      "gate": "structural-verifier",
+      "status": "ran"
+    },
+    {
+      "gate": "boundary-scan",
+      "status": "skipped",
+      "skipReason": "boundaryEnforcement is not \"block\""
+    },
+    {
+      "gate": "build-test-must-pass",
+      "status": "skipped",
+      "skipReason": "no test command configured — build-test-must-pass cannot verify your tests ran; this settle will NOT confirm the suite passes. Set verification.testCommand in .cadence/config.json to enable real enforcement."
+    },
+    {
+      "gate": "test-coverage",
+      "status": "ran"
+    },
+    {
+      "gate": "interactive-verdict",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "deep-verify",
+      "status": "ran"
+    },
+    {
+      "gate": "code-review",
+      "status": "ran"
+    },
+    {
+      "gate": "security-audit",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "src/graph/python/language.ts (isPythonFile) + test/graph-python-language.test.ts (2 tests)."
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "src/graph/python/symbol-graph.ts (buildPythonSymbolGraph node collection, decorated_definition unwrap, __all__/dunder/pytest exported semantics) + test/graph-python-symbol-nodes.test.ts (10 tests)."
+    },
+    {
+      "id": "T3",
+      "status": "DONE",
+      "notes": "src/graph/python/symbol-graph.ts extended with reference-edge resolution (recursive binding chase via Phase B's resolvePythonImport/resolveFromBase, single-hop attribute access, cycle-guarded re-export pass-through) + test/graph-python-symbol-edges.test.ts (10 tests). Exported resolveFromBase from resolve-import.ts (additive) to distinguish whole-module vs package-fallback-symbol bindings. Scoped simplification: only single-hop attribute access resolved (m.attr); deep dotted chains after a bare unaliased 'import a.b.c' (a.b.c.foo() style) are not — documented as a conservative-recall gap consistent with the SPEC's Constraints, not a bug."
+    },
+    {
+      "id": "T4",
+      "status": "DONE",
+      "notes": "starTaintedFiles already populated by T3's buildPythonSymbolGraph pass (from-import isStar detection) + test/graph-python-star-taint.test.ts (2 tests). Extended src/analyze/reachability.ts's TAINT_PATTERNS with getattr(/importlib/__getattr__/exec( — eval( and globals()[name]() were already covered by existing JS-authored patterns (content regexes are language-agnostic) + test/reachability.test.ts new case (1 test, 6 sub-assertions)."
+    },
+    {
+      "id": "T5",
+      "status": "DONE",
+      "notes": "src/engine/model.ts: partitions files by isPythonFile, builds tsGraph (ts-morph, non-.py) + pyGraph (buildPythonSymbolGraph) separately, concatenates nodes/edges, unions starTaintedFiles into taintedFiles. test/model-python-merge.test.ts (2 tests). Regression-checked: engine.test.ts, entry-resolution.test.ts, scan.test.ts (34 tests) all still green."
+    },
+    {
+      "id": "T6",
+      "status": "DONE",
+      "notes": "src/analyze/classify.ts: after deadTier(), cap tier at likely (never certain) for Python files via isPythonFile — autoFixEligible naturally follows since it's tier==='certain'. Added 3 tests to test/classify.test.ts (18 total, all green): Python capped, TS unaffected, cap never raises an already-lower tier."
+    },
+    {
+      "id": "T7",
+      "status": "DONE",
+      "notes": "src/engine/verify-removal.ts: verifyRemovals refuses with a clear message right after single-match resolution when isPythonFile(node.file), before planRemovalOf is ever called. fix --verify inherits it via verifyFindings; plain fix --write already can't select Python symbols (T6's tier cap). 1 new test in test/verify-removal.test.ts (7 total, all green) confirming the refusal message and that no worktree is created."
+    },
+    {
+      "id": "T8",
+      "status": "DONE",
+      "notes": "test/fixtures via test/scan-python-reachability.test.ts (2 tests, full AC-9 truth table: certain-dead-capped-to-likely, exported-likely, pytest-exempt-likely, taint-wins-maybe, direct-import-alive, __init__.py-re-export-alive) + test/explain-python.test.ts (2 tests, AC-8 proof — zero new code, same engine as TS). Full regression: npm run typecheck clean, npm test 606/606 passing (100 files, 2 pre-existing skips), zero TS/JS behavior change."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": [
+      "superpowers:test-driven-development"
+    ]
+  },
+  "deepVerify": {
+    "AC-1": {
+      "pass": true,
+      "reason": "mock: 45 linked tests (test/bench-cli.test.ts:4)",
+      "provider": "mock"
+    },
+    "AC-2": {
+      "pass": true,
+      "reason": "mock: 43 linked tests (test/bench-page-contract.test.ts:23)",
+      "provider": "mock"
+    },
+    "AC-3": {
+      "pass": true,
+      "reason": "mock: 33 linked tests (test/bench-cli.test.ts:4)",
+      "provider": "mock"
+    },
+    "AC-4": {
+      "pass": true,
+      "reason": "mock: 33 linked tests (test/churn.test.ts:28)",
+      "provider": "mock"
+    },
+    "AC-5": {
+      "pass": true,
+      "reason": "mock: 14 linked tests (test/config.test.ts:37)",
+      "provider": "mock"
+    },
+    "AC-6": {
+      "pass": true,
+      "reason": "mock: 16 linked tests (test/classify.test.ts:171)",
+      "provider": "mock"
+    },
+    "AC-7": {
+      "pass": true,
+      "reason": "mock: 5 linked tests (test/bench-python-import-resolution-rate.test.ts:20)",
+      "provider": "mock"
+    },
+    "AC-8": {
+      "pass": true,
+      "reason": "mock: 2 linked tests (test/explain-python.test.ts:31)",
+      "provider": "mock"
+    },
+    "AC-9": {
+      "pass": true,
+      "reason": "mock: 1 linked test (test/scan-python-reachability.test.ts:66)",
+      "provider": "mock"
+    }
+  },
+  "deepVerifyMeta": {
+    "diffProvided": true,
+    "diffBytes": 5632,
+    "truncated": false,
+    "filesCount": 16,
+    "provider": "mock"
+  },
+  "codeReview": {}
+}

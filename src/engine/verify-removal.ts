@@ -2,6 +2,7 @@ import { relative } from "node:path";
 import type { ClassifiedFinding } from "../analyze/classify.js";
 import type { NecroConfig } from "../config.js";
 import { planRemovalOf } from "../fix/remove.js";
+import { isPythonFile } from "../graph/python/language.js";
 import {
   type FileEdit,
   gitWorktreeRunner,
@@ -76,6 +77,16 @@ export async function verifyRemovals(
     }
 
     const node = matches[0] as (typeof matches)[number];
+    if (isPythonFile(node.file)) {
+      verdicts.push({
+        symbol,
+        status: "unresolved",
+        output: "Python removal is not supported yet — necro's Python support is report/explain/triage only",
+        resolvedId: node.id,
+      });
+      continue;
+    }
+
     const edits = planRemovalOf([{ file: node.file, name: node.name, line: node.line }]);
     if (edits.length === 0) {
       verdicts.push({ symbol, status: "unresolved", output: "no removable declaration", resolvedId: node.id });

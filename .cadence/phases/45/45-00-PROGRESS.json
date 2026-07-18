@@ -1,0 +1,76 @@
+{
+  "draftId": "45-00",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "src/graph/python/language.ts (isPythonFile) + test/graph-python-language.test.ts (2 tests).",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T00:35:02.256Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "src/graph/python/symbol-graph.ts (buildPythonSymbolGraph node collection, decorated_definition unwrap, __all__/dunder/pytest exported semantics) + test/graph-python-symbol-nodes.test.ts (10 tests).",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/graph-python-symbol-nodes.test.ts",
+        "/home/thomas/projects/necro/src/graph/python/symbol-graph.ts"
+      ],
+      "updatedAt": "2026-07-18T00:36:44.327Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "src/graph/python/symbol-graph.ts extended with reference-edge resolution (recursive binding chase via Phase B's resolvePythonImport/resolveFromBase, single-hop attribute access, cycle-guarded re-export pass-through) + test/graph-python-symbol-edges.test.ts (10 tests). Exported resolveFromBase from resolve-import.ts (additive) to distinguish whole-module vs package-fallback-symbol bindings. Scoped simplification: only single-hop attribute access resolved (m.attr); deep dotted chains after a bare unaliased 'import a.b.c' (a.b.c.foo() style) are not — documented as a conservative-recall gap consistent with the SPEC's Constraints, not a bug.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/graph/python/resolve-import.ts",
+        "/home/thomas/projects/necro/src/graph/python/symbol-graph.ts",
+        "/home/thomas/projects/necro/test/graph-python-symbol-edges.test.ts"
+      ],
+      "updatedAt": "2026-07-18T00:42:16.825Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "starTaintedFiles already populated by T3's buildPythonSymbolGraph pass (from-import isStar detection) + test/graph-python-star-taint.test.ts (2 tests). Extended src/analyze/reachability.ts's TAINT_PATTERNS with getattr(/importlib/__getattr__/exec( — eval( and globals()[name]() were already covered by existing JS-authored patterns (content regexes are language-agnostic) + test/reachability.test.ts new case (1 test, 6 sub-assertions).",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/graph-python-star-taint.test.ts",
+        "/home/thomas/projects/necro/test/reachability.test.ts",
+        "/home/thomas/projects/necro/src/analyze/reachability.ts"
+      ],
+      "updatedAt": "2026-07-18T00:43:29.749Z"
+    },
+    "T5": {
+      "status": "DONE",
+      "notes": "src/engine/model.ts: partitions files by isPythonFile, builds tsGraph (ts-morph, non-.py) + pyGraph (buildPythonSymbolGraph) separately, concatenates nodes/edges, unions starTaintedFiles into taintedFiles. test/model-python-merge.test.ts (2 tests). Regression-checked: engine.test.ts, entry-resolution.test.ts, scan.test.ts (34 tests) all still green.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/engine/model.ts",
+        "/home/thomas/projects/necro/test/model-python-merge.test.ts"
+      ],
+      "updatedAt": "2026-07-18T00:45:07.945Z"
+    },
+    "T6": {
+      "status": "DONE",
+      "notes": "src/analyze/classify.ts: after deadTier(), cap tier at likely (never certain) for Python files via isPythonFile — autoFixEligible naturally follows since it's tier==='certain'. Added 3 tests to test/classify.test.ts (18 total, all green): Python capped, TS unaffected, cap never raises an already-lower tier.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/analyze/classify.ts",
+        "/home/thomas/projects/necro/test/classify.test.ts"
+      ],
+      "updatedAt": "2026-07-18T00:46:02.273Z"
+    },
+    "T7": {
+      "status": "DONE",
+      "notes": "src/engine/verify-removal.ts: verifyRemovals refuses with a clear message right after single-match resolution when isPythonFile(node.file), before planRemovalOf is ever called. fix --verify inherits it via verifyFindings; plain fix --write already can't select Python symbols (T6's tier cap). 1 new test in test/verify-removal.test.ts (7 total, all green) confirming the refusal message and that no worktree is created.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/engine/verify-removal.ts",
+        "/home/thomas/projects/necro/test/verify-removal.test.ts"
+      ],
+      "updatedAt": "2026-07-18T00:46:55.781Z"
+    },
+    "T8": {
+      "status": "DONE",
+      "notes": "test/fixtures via test/scan-python-reachability.test.ts (2 tests, full AC-9 truth table: certain-dead-capped-to-likely, exported-likely, pytest-exempt-likely, taint-wins-maybe, direct-import-alive, __init__.py-re-export-alive) + test/explain-python.test.ts (2 tests, AC-8 proof — zero new code, same engine as TS). Full regression: npm run typecheck clean, npm test 606/606 passing (100 files, 2 pre-existing skips), zero TS/JS behavior change.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/scan-python-reachability.test.ts",
+        "/home/thomas/projects/necro/test/explain-python.test.ts"
+      ],
+      "updatedAt": "2026-07-18T00:49:09.111Z"
+    }
+  }
+}

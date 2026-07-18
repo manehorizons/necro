@@ -3,8 +3,8 @@ import { classify } from "../src/analyze/classify.js";
 import type { ReachabilityResult } from "../src/analyze/reachability.js";
 import type { SymbolNode } from "../src/graph/types.js";
 
-function node(id: string, exported: boolean): SymbolNode {
-  return { id, name: id, file: `${id}.ts`, line: 1, exported };
+function node(id: string, exported: boolean, file = `${id}.ts`): SymbolNode {
+  return { id, name: id, file, line: 1, exported };
 }
 
 function reach(
@@ -179,5 +179,34 @@ describe("classify with coverage", () => {
       reachability: [reach("a", "dead")],
     });
     expect(without).toEqual(withFn);
+  });
+});
+
+describe("classify — Python tier cap (AC-6, phase 45)", () => {
+  test("a private, zero-ref Python symbol is capped at likely, never certain", () => {
+    const [f] = classify({
+      nodes: [node("a", false, "pkg/mod.py")],
+      reachability: [reach("a", "dead")],
+    });
+    expect(f?.tier).toBe("likely");
+    expect(f?.autoFixEligible).toBe(false);
+  });
+
+  test("the same shape for a TS symbol is unaffected — still reaches certain", () => {
+    const [f] = classify({
+      nodes: [node("a", false, "pkg/mod.ts")],
+      reachability: [reach("a", "dead")],
+    });
+    expect(f?.tier).toBe("certain");
+    expect(f?.autoFixEligible).toBe(true);
+  });
+
+  test("an already-tainted Python symbol stays maybe (cap never raises a tier)", () => {
+    const [f] = classify({
+      nodes: [node("a", false, "pkg/mod.py")],
+      reachability: [reach("a", "dead", true)],
+    });
+    expect(f?.tier).toBe("maybe");
+    expect(f?.autoFixEligible).toBe(false);
   });
 });

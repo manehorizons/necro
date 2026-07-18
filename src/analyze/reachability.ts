@@ -145,7 +145,12 @@ const TAINT_PATTERNS: RegExp[] = [
   /import\s*\(\s*`[^`]*\$\{/, // dynamic import with template interpolation
   /import\s*\(\s*[A-Za-z_$]/, // dynamic import of a variable
   /\beval\s*\(/, // eval
-  /\[\s*[A-Za-z_$][\w$]*\s*\]\s*\(/, // string/computed dispatch: obj[name]()
+  /\[\s*[A-Za-z_$][\w$]*\s*\]\s*\(/, // string/computed dispatch: obj[name]() — also covers Python's globals()[name]()
+  // Python
+  /\bgetattr\s*\(/, // dynamic attribute access
+  /\bimportlib\b/, // importlib.import_module(...) dynamic import
+  /__getattr__/, // module/class dynamic-attribute dispatch hook
+  /\bexec\s*\(/, // exec
 ];
 
 /** Detect files containing dynamic dispatch the static graph cannot resolve. */

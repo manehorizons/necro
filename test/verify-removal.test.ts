@@ -167,4 +167,27 @@ describe("verifyFindings (phase 29 T1)", () => {
       { symbol: "does-not-exist:1:ghost", status: "unresolved", output: "no matching symbol" },
     ]);
   });
+
+  test("AC-7 (phase 45): a Python symbol query is refused with a clear message, and no worktree is spun up", async () => {
+    await writeFixture();
+    await write("mod.py", "def dead_py():\n    pass\n");
+    const config = { ...DEFAULT_CONFIG, include: [...DEFAULT_CONFIG.include, "**/*.py"] };
+    const calls = { roots: [] as string[], files: [] as string[][] };
+
+    const results = await verifyRemovals(dir, config, ["dead_py"], {
+      repoRoot: dir,
+      checks: ["typecheck"],
+      runnerFactory: fakeRunnerFactory("dep.ts", calls),
+    });
+
+    expect(results).toEqual([
+      {
+        symbol: "dead_py",
+        status: "unresolved",
+        output: "Python removal is not supported yet — necro's Python support is report/explain/triage only",
+        resolvedId: expect.stringContaining("mod.py"),
+      },
+    ]);
+    expect(calls.roots).toHaveLength(0); // no worktree ever created for the refused symbol
+  });
 });

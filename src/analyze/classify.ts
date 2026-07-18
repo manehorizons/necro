@@ -1,4 +1,5 @@
 import type { SymbolNode } from "../graph/types.js";
+import { isPythonFile } from "../graph/python/language.js";
 import type { CoverageStatus } from "./coverage/lookup.js";
 import type { ReachabilityResult } from "./reachability.js";
 
@@ -80,7 +81,11 @@ export function classify(input: ClassifyInput): ClassifiedFinding[] {
     const cov = coverageOf(node);
     const isPublicApi = publicApiIds.has(node.id);
     const collapse = input.entryCollapse ?? false;
-    const tier = collapse ? "maybe" : deadTier(node, result, isPublicApi, cov);
+    // Python dead-code findings are hard-capped at `likely` (AC-6, phase 45):
+    // the resolver's recall/precision hasn't been corpus-validated yet
+    // (Phase D), so a Python symbol never earns `certain`/auto-fix eligible.
+    const rawTier = collapse ? "maybe" : deadTier(node, result, isPublicApi, cov);
+    const tier = rawTier === "certain" && isPythonFile(node.file) ? "likely" : rawTier;
     const evidence = deadEvidence(node, result, isPublicApi, cov);
     findings.push({
       node,
