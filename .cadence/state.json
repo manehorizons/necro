@@ -1,22 +1,17 @@
 {
   "schemaVersion": 1,
-  "revision": 579,
+  "revision": 580,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
   "activePhase": "49-triage-corpus-variance",
-  "activeDraft": "49-01",
+  "activeDraft": null,
   "activeSpec": null,
-  "loopPosition": "BUILD",
-  "tier": "standard",
+  "loopPosition": "IDLE",
+  "tier": null,
   "draftReadAt": "2026-07-18T18:43:19.565Z",
-  "openDrafts": [
-    {
-      "id": "49-01",
-      "since": "2026-07-18T18:38:07.560Z"
-    }
-  ],
+  "openDrafts": [],
   "decisions": [],
   "deferred": [],
   "session": {
@@ -32,9 +27,5 @@
       "handoff"
     ]
   },
-  "activeTask": {
-    "id": "T4",
-    "status": "BLOCKED",
-    "touchedFiles": []
-  }
+  "activeTask": null
 }
