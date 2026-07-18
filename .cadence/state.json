@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 416,
+  "revision": 421,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
@@ -15,9 +15,9 @@
   "decisions": [],
   "deferred": [],
   "session": {
-    "tokenUtilization": 0.6600000000000004,
-    "lastHandoff": "SESSION-2026-07-18-phase-45-python-reachability-shipped.md",
-    "subagentSpawns": 49,
+    "tokenUtilization": 0.6800000000000004,
+    "lastHandoff": "SESSION-2026-07-18-phase-47-python-quarantine-shipped.md",
+    "subagentSpawns": 51,
     "subagentBaselines": {}
   },
   "skillAudit": {

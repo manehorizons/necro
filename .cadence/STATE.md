@@ -9,9 +9,9 @@
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 66%
-- Subagent spawns this session: 49
-- Last handoff: SESSION-2026-07-18-phase-45-python-reachability-shipped.md
+- Token utilization: 68%
+- Subagent spawns this session: 51
+- Last handoff: SESSION-2026-07-18-phase-47-python-quarantine-shipped.md
 
 ## Counts
 - Open drafts: 0
