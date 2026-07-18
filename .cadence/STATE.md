@@ -9,9 +9,9 @@
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 99%
-- Subagent spawns this session: 104
-- Last handoff: SESSION-2026-07-18-workspaces-fix-shipped.md
+- Token utilization: 100%
+- Subagent spawns this session: 105
+- Last handoff: SESSION-2026-07-18-pickup-host-cli-rec.md
 
 ## Counts
 - Open drafts: 0
