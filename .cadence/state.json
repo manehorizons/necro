@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
-  "revision": 351,
+  "revision": 383,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
-  "activePhase": "45",
+  "activePhase": "46-python-entrypoints",
   "activeDraft": null,
   "activeSpec": null,
   "loopPosition": "IDLE",
   "tier": null,
-  "draftReadAt": "2026-07-18T00:34:31.691Z",
+  "draftReadAt": "2026-07-18T02:08:06.124Z",
   "openDrafts": [],
   "decisions": [],
   "deferred": [],
   "session": {
-    "tokenUtilization": 0.6100000000000003,
+    "tokenUtilization": 0.6400000000000003,
     "lastHandoff": "SESSION-2026-07-18-phase-45-python-reachability-shipped.md",
-    "subagentSpawns": 45,
+    "subagentSpawns": 48,
     "subagentBaselines": {}
   },
   "skillAudit": {

@@ -18,6 +18,7 @@ import { createNextjsPlugin } from "../plugins/nextjs/index.js";
 import { createRepoContext, detectPlugins } from "../plugins/registry.js";
 import { createTestRunnerPlugin } from "../plugins/test-runner/index.js";
 import type { FrameworkPlugin } from "../plugins/types.js";
+import { resolvePythonEntries } from "./python-entries.js";
 import { resolveProdEntries, type EntrySource } from "./prod-entries.js";
 import { resolveWorkspaces } from "./workspaces.js";
 
@@ -146,6 +147,18 @@ export async function buildReachabilityModel(
   // *consumed* symbols stay alive via resolved references, not by rooting — so
   // genuinely-unused member exports are still reported.
   for (const entry of workspaces.entryFiles) prodEntries.add(entry);
+
+  // Python entry-point resolution (pyproject scripts, setup.cfg/setup.py
+  // console_scripts, __main__/if-name-main modules, conventional filenames) —
+  // additive, first-mechanism-wins merge into the same prod-entry diagnostic
+  // (§2.3); conftest.py roots into testEntries instead.
+  const pythonEntries = await resolvePythonEntries(targetPath, pyFiles, pyModuleMap);
+  for (const record of pythonEntries.records) {
+    if (prodEntries.has(record.file)) continue;
+    prodEntries.add(record.file);
+    prodEntryRecords.push(record);
+  }
+  for (const file of pythonEntries.testEntries) testEntries.add(file);
 
   const toPosixRel = (abs: string) => relToRoot(abs).split("\\").join("/");
   const entryResolution = buildEntryResolution({

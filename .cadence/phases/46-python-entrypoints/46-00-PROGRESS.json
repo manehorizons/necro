@@ -1,0 +1,66 @@
+{
+  "draftId": "46-00",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "src/engine/python-entries.ts scaffolded: sectioned [section] key=value scanner + resolveDottedModule lookup. Verified indirectly via T2's pyproject test (6/6 green).",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T02:15:10.760Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "pyproject.toml [project.scripts]/[gui-scripts]/[entry-points.*] extraction. test/engine-python-entries-pyproject.test.ts, 6/6 green, AC-1 tagged.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T02:15:15.187Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "setup.cfg [options.entry_points] console_scripts extraction. test/engine-python-entries-setup-cfg.test.ts, 4/4 green, AC-2 tagged.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/engine-python-entries-setup-cfg.test.ts"
+      ],
+      "updatedAt": "2026-07-18T02:15:45.915Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "setup.py literal console_scripts via tree-sitter (call+attribute-call forms), dynamic entry_points skipped honestly. test/engine-python-entries-setup-py.test.ts, 5/5 green, AC-3 tagged.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/engine-python-entries-setup-py.test.ts"
+      ],
+      "updatedAt": "2026-07-18T02:17:01.678Z"
+    },
+    "T5": {
+      "status": "DONE",
+      "notes": "__main__.py unconditional root + tree-sitter module-level if __name__==\"__main__\" guard (both operand orders); nested (non-module-level) guard correctly excluded. test/engine-python-entries-dunder-main.test.ts, 5/5 green, AC-4 tagged.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/engine-python-entries-dunder-main.test.ts"
+      ],
+      "updatedAt": "2026-07-18T02:17:32.277Z"
+    },
+    "T6": {
+      "status": "DONE",
+      "notes": "main.py/app.py/manage.py/wsgi.py/asgi.py -> prod entry (convention); conftest.py -> testEntries. test/engine-python-entries-conventions.test.ts, 7/7 green, AC-5 tagged.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/engine-python-entries-conventions.test.ts"
+      ],
+      "updatedAt": "2026-07-18T02:17:58.370Z"
+    },
+    "T7": {
+      "status": "DONE",
+      "notes": "resolvePythonEntries wired into buildReachabilityModel (src/engine/model.ts), merged into prodEntries/prodEntryRecords/testEntries. test/model-python-entries.test.ts, 3/3 green, AC-6 tagged.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/engine/model.ts",
+        "/home/thomas/projects/necro/test/model-python-entries.test.ts"
+      ],
+      "updatedAt": "2026-07-18T02:19:38.015Z"
+    },
+    "T8": {
+      "status": "DONE",
+      "notes": "End-to-end fixture in test/scan-python-entrypoints.test.ts covering all mechanisms via scan() diagnostics.entryResolution; AC-7 tagged. Full suite 637/637 green (up from 606), build+typecheck clean, zero behavior change on non-Python/existing-Python paths.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/scan-python-entrypoints.test.ts"
+      ],
+      "updatedAt": "2026-07-18T02:21:21.658Z"
+    }
+  }
+}

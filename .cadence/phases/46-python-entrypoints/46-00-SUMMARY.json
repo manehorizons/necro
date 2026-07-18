@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "draftId": "46-00",
+  "completedAt": "2026-07-18T02:39:07.832Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-2",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-3",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-4",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-5",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-6",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-7",
+      "pass": true,
+      "evidence": "assertion"
+    }
+  ],
+  "gates": [
+    {
+      "gate": "draft-read",
+      "status": "ran"
+    },
+    {
+      "gate": "structural-verifier",
+      "status": "ran"
+    },
+    {
+      "gate": "boundary-scan",
+      "status": "skipped",
+      "skipReason": "boundaryEnforcement is not \"block\""
+    },
+    {
+      "gate": "build-test-must-pass",
+      "status": "skipped",
+      "skipReason": "no test command configured — build-test-must-pass cannot verify your tests ran; this settle will NOT confirm the suite passes. Set verification.testCommand in .cadence/config.json to enable real enforcement."
+    },
+    {
+      "gate": "test-coverage",
+      "status": "ran"
+    },
+    {
+      "gate": "interactive-verdict",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "deep-verify",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "code-review",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    },
+    {
+      "gate": "security-audit",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "src/engine/python-entries.ts scaffolded: sectioned [section] key=value scanner + resolveDottedModule lookup. Verified indirectly via T2's pyproject test (6/6 green)."
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "pyproject.toml [project.scripts]/[gui-scripts]/[entry-points.*] extraction. test/engine-python-entries-pyproject.test.ts, 6/6 green, AC-1 tagged."
+    },
+    {
+      "id": "T3",
+      "status": "DONE",
+      "notes": "setup.cfg [options.entry_points] console_scripts extraction. test/engine-python-entries-setup-cfg.test.ts, 4/4 green, AC-2 tagged."
+    },
+    {
+      "id": "T4",
+      "status": "DONE",
+      "notes": "setup.py literal console_scripts via tree-sitter (call+attribute-call forms), dynamic entry_points skipped honestly. test/engine-python-entries-setup-py.test.ts, 5/5 green, AC-3 tagged."
+    },
+    {
+      "id": "T5",
+      "status": "DONE",
+      "notes": "__main__.py unconditional root + tree-sitter module-level if __name__==\"__main__\" guard (both operand orders); nested (non-module-level) guard correctly excluded. test/engine-python-entries-dunder-main.test.ts, 5/5 green, AC-4 tagged."
+    },
+    {
+      "id": "T6",
+      "status": "DONE",
+      "notes": "main.py/app.py/manage.py/wsgi.py/asgi.py -> prod entry (convention); conftest.py -> testEntries. test/engine-python-entries-conventions.test.ts, 7/7 green, AC-5 tagged."
+    },
+    {
+      "id": "T7",
+      "status": "DONE",
+      "notes": "resolvePythonEntries wired into buildReachabilityModel (src/engine/model.ts), merged into prodEntries/prodEntryRecords/testEntries. test/model-python-entries.test.ts, 3/3 green, AC-6 tagged."
+    },
+    {
+      "id": "T8",
+      "status": "DONE",
+      "notes": "End-to-end fixture in test/scan-python-entrypoints.test.ts covering all mechanisms via scan() diagnostics.entryResolution; AC-7 tagged. Full suite 637/637 green (up from 606), build+typecheck clean, zero behavior change on non-Python/existing-Python paths."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": [
+      "superpowers:test-driven-development",
+      "handoff"
+    ]
+  }
+}

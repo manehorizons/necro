@@ -16,7 +16,10 @@ export type EntrySource =
   | "scripts"
   | "config"
   | "plugin"
-  | "workspace";
+  | "workspace"
+  | "pyproject-scripts"
+  | "setup-config"
+  | "dunder-main";
 
 export interface ProdEntryRecord {
   /** Absolute path. */

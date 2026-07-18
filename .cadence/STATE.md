@@ -4,13 +4,13 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 45
+**Active phase:** 46-python-entrypoints
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
-- Token utilization: 61%
-- Subagent spawns this session: 45
+- Token utilization: 64%
+- Subagent spawns this session: 48
 - Last handoff: SESSION-2026-07-18-phase-45-python-reachability-shipped.md
 
 ## Counts
