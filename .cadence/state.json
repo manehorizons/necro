@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 564,
+  "revision": 579,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
@@ -33,7 +33,7 @@
     ]
   },
   "activeTask": {
-    "id": "T1",
+    "id": "T4",
     "status": "BLOCKED",
     "touchedFiles": []
   }

@@ -36,6 +36,11 @@ export interface RunBenchOptions {
   /** necro version the run is measured against. */
   necroVersion: string;
   concurrency?: number;
+  /** Times to run the triage live eval, aggregated into min/mean/max (default 3,
+   * matching the phase-13 manual-run precedent). Runs sequentially — each is a
+   * full live-model pass over the corpus, so bounded concurrency isn't worth the
+   * added flakiness surface. */
+  triageRuns?: number;
   /** Override corpus loaders (defaults read the in-repo fixtures). */
   loadTriageCases?: () => Promise<EvalCase[]>;
   loadDupCases?: () => Promise<DuplicateEvalCase[]>;
@@ -53,8 +58,12 @@ export async function runBench(clients: BenchClients, opts: RunBenchOptions): Pr
 
   if (opts.corpus === "triage" || opts.corpus === "all") {
     const cases = await (opts.loadTriageCases?.() ?? loadEvalCases(TRIAGE_CORPUS));
-    const metrics = await runEval(cases, clients.triageClient, { concurrency: opts.concurrency });
-    corpora.push(summarizeTriage(metrics, deriveSources(cases)));
+    const n = opts.triageRuns ?? 3;
+    const runs = [];
+    for (let i = 0; i < n; i++) {
+      runs.push(await runEval(cases, clients.triageClient, { concurrency: opts.concurrency }));
+    }
+    corpora.push(summarizeTriage(runs, deriveSources(cases)));
   }
 
   if (opts.corpus === "dup" || opts.corpus === "all") {
@@ -67,7 +76,7 @@ export async function runBench(clients: BenchClients, opts: RunBenchOptions): Pr
 
   return {
     schemaVersion: 1,
-    methodologyVersion: 1,
+    methodologyVersion: 2,
     generatedAt: opts.now,
     necroVersion: opts.necroVersion,
     model: opts.model,

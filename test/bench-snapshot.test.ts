@@ -56,6 +56,45 @@ describe("bench snapshot — triage summary (AC-1, AC-3)", () => {
     const m = result.metrics as Extract<typeof result.metrics, { precision: number }>;
     expect(m.f1).toBe(0);
   });
+
+  test("a single run (not wrapped in an array) omits variance (AC-2)", () => {
+    const result = summarizeTriage(
+      { total: 48, truePositives: 7, falsePositives: 0, falseNegatives: 8, precision: 1, recall: 0.4667 },
+      [],
+    );
+    const m = result.metrics as Extract<typeof result.metrics, { precision: number }>;
+    expect(m.variance).toBeUndefined();
+  });
+
+  test("an array of one run also omits variance (AC-2)", () => {
+    const result = summarizeTriage(
+      [{ total: 48, truePositives: 7, falsePositives: 0, falseNegatives: 8, precision: 1, recall: 0.4667 }],
+      [],
+    );
+    const m = result.metrics as Extract<typeof result.metrics, { precision: number }>;
+    expect(m.variance).toBeUndefined();
+  });
+
+  test("N runs aggregate min/mean/max per metric and mean the top-level fields (AC-2)", () => {
+    const runs = [
+      { total: 48, truePositives: 6, falsePositives: 0, falseNegatives: 9, precision: 1, recall: 0.4 },
+      { total: 48, truePositives: 9, falsePositives: 0, falseNegatives: 6, precision: 1, recall: 0.6 },
+      { total: 48, truePositives: 8, falsePositives: 1, falseNegatives: 7, precision: 0.8889, recall: 0.5333 },
+    ];
+    const result = summarizeTriage(runs, [{ repo: "honojs/hono", sha: "aaa", cases: 48 }]);
+    expect(result.n).toBe(48);
+    const m = result.metrics as Extract<typeof result.metrics, { precision: number }>;
+
+    expect(m.variance).toBeDefined();
+    expect(m.variance?.recall).toEqual({ min: 0.4, mean: expect.closeTo(0.5111, 3), max: 0.6 });
+    expect(m.variance?.precision.min).toBeCloseTo(0.8889, 3);
+    expect(m.variance?.precision.max).toBe(1);
+    // top-level precision/recall/TP/FP/FN are the mean across runs (TP/FP/FN rounded — they're counts)
+    expect(m.recall).toBeCloseTo((0.4 + 0.6 + 0.5333) / 3, 3);
+    expect(m.truePositives).toBe(Math.round((6 + 9 + 8) / 3));
+    expect(m.falsePositives).toBe(Math.round((0 + 0 + 1) / 3));
+    expect(m.falseNegatives).toBe(Math.round((9 + 6 + 7) / 3));
+  });
 });
 
 describe("bench snapshot — dup summary (AC-1, AC-3)", () => {
