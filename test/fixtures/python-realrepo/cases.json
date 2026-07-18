@@ -1,0 +1,554 @@
+[
+  {
+    "name": "_hash_dict",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/cache.py",
+      "line": 27,
+      "symbol": "_hash_dict"
+    },
+    "rationale": "Called at cache.py:68 by Cache._get_cache_path_parts (same file). Cache's real subclass WheelCache is instantiated in commands/install.py:447, commands/wheel.py:115, commands/lock.py:115 \u2014 all three are Command implementations loaded only via commands/__init__.py's commands_dict: `module = importlib.import_module(module_path); command_class = getattr(module, class_name)` (string keys, not identifiers), so necro's import-graph resolver has no static edge into these command modules or anything they call, and marks the whole reachable subtree (including same-file callers) as unreferenced. Genuinely executed on every `pip install`/`wheel`/`lock` run."
+  },
+  {
+    "name": "autocomplete",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/cli/autocompletion.py",
+      "line": 17,
+      "symbol": "autocomplete"
+    },
+    "rationale": "Called directly at cli/main.py:67 (`autocomplete()`) inside `main()`, via a LOCAL import at main.py:47 (`from pip._internal.cli.autocompletion import autocomplete`). Genuinely executed on every real `pip` invocation, before any subcommand dispatch \u2014 this is upstream of the commands_dict boundary, not gated behind it, and (phase 48 fix) necro's Python entry resolution now correctly seeds `main()` itself as the prod entry (the pyproject-scripts spec `pip = \"pip._internal.cli.main:main\"` previously only seeded the bare file, never the `:main` function target, so `main()` and everything it calls read as unreachable)."
+  },
+  {
+    "name": "get_path_completion_type",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/cli/autocompletion.py",
+      "line": 132,
+      "symbol": "get_path_completion_type"
+    },
+    "rationale": "Called twice in the same file (autocompletion.py:90, 124) from within `autocomplete()`'s own real shell-completion logic \u2014 reachable via the same main()\u2192autocomplete() chain as the `autocomplete` case above."
+  },
+  {
+    "name": "no_cache",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/cli/cmdoptions.py",
+      "line": 941,
+      "symbol": "no_cache"
+    },
+    "rationale": "A `partial(PipOption, ...)` option-factory referenced as a bare identifier inside `general_group`'s `\"options\"` list (cmdoptions.py:1267, same file). `general_group` is itself passed to `cmdoptions.make_option_group(cmdoptions.general_group, parser)` at cli/main_parser.py:36, inside `create_main_parser()`, which `parse_command()` calls at main_parser.py:72 \u2014 and `parse_command` is called directly from `main()` (cli/main.py, local import) to parse every real pip invocation's global `--no-cache-dir` option, upstream of command dispatch."
+  },
+  {
+    "name": "PipOption",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/cli/cmdoptions.py",
+      "line": 147,
+      "symbol": "PipOption"
+    },
+    "rationale": "A custom `optparse.Option` subclass referenced repeatedly as the class argument to `partial(PipOption, ...)` throughout cmdoptions.py's option definitions (e.g. lines 275, 364, 378), including `no_cache` and the other `general_group` members that are genuinely reached via `create_main_parser()` on every real invocation."
+  },
+  {
+    "name": "make_option_group",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/cli/cmdoptions.py",
+      "line": 56,
+      "symbol": "make_option_group"
+    },
+    "rationale": "Called directly at cli/main_parser.py:36 (`cmdoptions.make_option_group(cmdoptions.general_group, parser)`) inside `create_main_parser()`, itself called from `parse_command()` \u2014 reached on every real pip invocation before any subcommand is selected."
+  },
+  {
+    "name": "raise_option_error",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/cli/cmdoptions.py",
+      "line": 42,
+      "symbol": "raise_option_error"
+    },
+    "rationale": "Called from multiple option-validation callbacks within the same file (cmdoptions.py:484, 810, 929) that back `general_group`'s option definitions \u2014 reached via the same create_main_parser()\u2192general_group chain, exercised whenever a user passes an invalid value to one of pip's global CLI options."
+  },
+  {
+    "name": "get_similar_commands",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/commands/__init__.py",
+      "line": 128,
+      "symbol": "get_similar_commands"
+    },
+    "rationale": "Imported top-level and called at cli/main_parser.py:124 (`get_similar_commands(cmd_name)`) inside `parse_command()`'s \"did you mean...\" suggestion path when an unknown subcommand name is given \u2014 reached directly from `parse_command()`, upstream of the commands_dict dynamic-dispatch boundary that still gates the specific Command subclasses themselves."
+  },
+  {
+    "name": "ConfigOptionParser",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/cli/parser.py",
+      "line": 202,
+      "symbol": "ConfigOptionParser"
+    },
+    "rationale": "Instantiated directly at cli/main_parser.py:24 (`parser = ConfigOptionParser(...)`) inside `create_main_parser()` \u2014 the real argparse-style parser object every pip invocation builds before any subcommand dispatch happens."
+  },
+  {
+    "name": "general_group",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/cli/cmdoptions.py",
+      "line": 1245,
+      "symbol": "general_group"
+    },
+    "rationale": "A module-level dict literal referenced across a file boundary at cli/main_parser.py:36 (`cmdoptions.general_group`) inside `create_main_parser()` \u2014 genuinely built and consumed on every real pip invocation to construct the global `--verbose`/`--quiet`/`--no-cache-dir`/etc. option group."
+  },
+  {
+    "name": "verbose",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/cli/cmdoptions.py",
+      "line": 218,
+      "symbol": "verbose"
+    },
+    "rationale": "Another `general_group`-listed option (cmdoptions.py:1252, same file as its own declaration) backing the real `-v`/`--verbose` flag \u2014 reached via the same create_main_parser()\u2192general_group chain as `no_cache` above; a second member of the same list to show the pattern isn't a one-off."
+  },
+  {
+    "name": "InstallCommand",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/commands/install.py",
+      "line": 142,
+      "symbol": "InstallCommand"
+    },
+    "rationale": "The class instantiated by commands/__init__.py:create_command's `getattr(importlib.import_module(module_path), class_name)` on every `pip install` invocation \u2014 commands_dict maps the string \"install\" to this exact module_path/class_name pair. necro's `dynamic-import taint in scope` evidence correctly notices the pattern (hedges to `maybe` instead of `likely`), but the class is genuinely reachable, not merely uncertain."
+  },
+  {
+    "name": "HashCommand",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/commands/hash.py",
+      "line": 14,
+      "symbol": "HashCommand"
+    },
+    "rationale": "Instantiated by commands_dict/create_command's dynamic getattr dispatch whenever `pip hash` runs. necro logs `no dynamic-import taint in scope` for this one (inconsistent with InstallCommand/WheelCommand above, which do get the taint hedge) \u2014 an interesting case where the same real mechanism is detected for some Command subclasses but not others."
+  },
+  {
+    "name": "FreezeCommand",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/commands/freeze.py",
+      "line": 24,
+      "symbol": "FreezeCommand"
+    },
+    "rationale": "Instantiated via commands_dict/create_command's dynamic getattr dispatch whenever `pip freeze` runs; same reachability gap as HashCommand \u2014 necro reports no taint hedge for this one either, landing purely on the exported-symbol quarantine to keep it at `maybe` rather than `likely`."
+  },
+  {
+    "name": "ShowCommand",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/commands/show.py",
+      "line": 27,
+      "symbol": "ShowCommand"
+    },
+    "rationale": "Instantiated via commands_dict/create_command's dynamic getattr dispatch whenever `pip show` runs."
+  },
+  {
+    "name": "get_major_minor_version",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/locations/base.py",
+      "line": 20,
+      "symbol": "get_major_minor_version"
+    },
+    "rationale": "Declared in locations/base.py but re-exported through locations/__init__.py's `__all__`/`from .base import (...)` chain (AC-1's target pattern). Consumed via the re-export path \u2014 `from pip._internal.locations import get_major_minor_version` \u2014 by utils/misc.py:36 and operations/install/wheel.py:38, not via a direct `.base` import, so this specifically exercises __init__.py re-export resolution rather than a same-file reference."
+  },
+  {
+    "name": "MaxLevelFilter",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/utils/logging.py",
+      "line": 259,
+      "symbol": "MaxLevelFilter"
+    },
+    "rationale": "Never referenced by identifier anywhere \u2014 only by its fully-qualified dotted-path string \"pip._internal.utils.logging.MaxLevelFilter\" inside a logging.config-style dictConfig literal in the same file (utils/logging.py:332), which Python's stdlib `logging.config.dictConfig` resolves and instantiates dynamically at setup_logging() time. A string reference, not an identifier, so necro's identifier/attribute-based resolver cannot see it."
+  },
+  {
+    "name": "ExcludeLoggerFilter",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/utils/logging.py",
+      "line": 267,
+      "symbol": "ExcludeLoggerFilter"
+    },
+    "rationale": "Same dotted-path-string dynamic-instantiation pattern as MaxLevelFilter above (dictConfig literal at utils/logging.py:340), in the same file."
+  },
+  {
+    "name": "_has_option",
+    "truth": "dead",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/req/req_install.py",
+      "line": 832,
+      "symbol": "_has_option"
+    },
+    "rationale": "Zero references anywhere in pip's real checkout (src/ or tests/) beyond its own declaration \u2014 confirmed by exhaustive grep across the full pinned-SHA checkout, not just the trimmed slice. vulture independently flags it (60% confidence, \"unused function\"). A scoped `pytest tests/unit/test_req_install.py` run to confirm via deletion was attempted but blocked in this sandbox by a missing test-only dependency (`installer`, pulled in by tests/conftest.py) unrelated to this symbol; the grep-based zero-reference confirmation across the complete checkout is the basis for this label."
+  },
+  {
+    "name": "today_is_later_than",
+    "truth": "dead",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/utils/datetime.py",
+      "line": 7,
+      "symbol": "today_is_later_than"
+    },
+    "rationale": "A small standalone module-level helper (compares today's date to a given y/m/d) with zero references anywhere in the real checkout's src/ or tests/ trees. vulture independently flags it (60% confidence, \"unused function\"). Its sibling function in the same file, parse_iso_datetime, IS used elsewhere \u2014 this isn't a case of the whole file being unreached, just one genuinely vestigial helper."
+  },
+  {
+    "name": "HeadersFormatter",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/output/formatters/headers.py",
+      "line": 4,
+      "symbol": "HeadersFormatter"
+    },
+    "rationale": "Passed by identifier into plugin_manager.register(...) in plugins/registry.py:17, which is imported top-level by httpie/core.py \u2014 reachable from the real entry point (httpie/__main__.py:main \u2192 `from httpie.core import main`, a LOCAL import inside __main__.py's main() function body). necro's Python import parser does record function-local imports as bindings, but even so this class is dead-flagged; the registration is a bare identifier passed as a call argument (not a decorator, not an attribute chain), confirmed live by grep across the full checkout with zero ambiguity."
+  },
+  {
+    "name": "JSONFormatter",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/output/formatters/json.py",
+      "line": 6,
+      "symbol": "JSONFormatter"
+    },
+    "rationale": "Same plugin_manager.register(...) list-argument registration in plugins/registry.py:18 as HeadersFormatter above, reachable from httpie/core.py."
+  },
+  {
+    "name": "XMLFormatter",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/output/formatters/xml.py",
+      "line": 53,
+      "symbol": "XMLFormatter"
+    },
+    "rationale": "Same plugin_manager.register(...) list-argument registration in plugins/registry.py:19 as HeadersFormatter above."
+  },
+  {
+    "name": "SessionNameValidator",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/cli/argtypes.py",
+      "line": 28,
+      "symbol": "SessionNameValidator"
+    },
+    "rationale": "Instantiated at cli/definition.py:583 (`session_name_validator = SessionNameValidator(...)`), which is part of the real argparse option-definition module built at import time by httpie's CLI parser."
+  },
+  {
+    "name": "response_charset_type",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/cli/argtypes.py",
+      "line": 262,
+      "symbol": "response_charset_type"
+    },
+    "rationale": "Passed as the `type=` callback for the --response-charset argparse option at cli/definition.py:352 \u2014 a genuine, exercised reference, just not a call-site necro's resolver associates with the declaration."
+  },
+  {
+    "name": "SEPARATOR_PROXY",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/cli/constants.py",
+      "line": 18,
+      "symbol": "SEPARATOR_PROXY"
+    },
+    "rationale": "Used at cli/definition.py:719 as `KeyValueArgType(SEPARATOR_PROXY)` while building the --proxy option's argument type \u2014 imported and referenced across a file boundary via a plain top-level `from ... import (...)` (cli/definition.py:16)."
+  },
+  {
+    "name": "SORTED_FORMAT_OPTIONS_STRING",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/cli/constants.py",
+      "line": 121,
+      "symbol": "SORTED_FORMAT_OPTIONS_STRING"
+    },
+    "rationale": "Used at cli/definition.py:282 and in --help text at definition.py:345, imported top-level at definition.py:17."
+  },
+  {
+    "name": "generate_subparsers",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/manager/cli.py",
+      "line": 105,
+      "symbol": "generate_subparsers"
+    },
+    "rationale": "Called at manager/cli.py:181, module-level code in the same file that builds the `httpie` management-CLI's subcommand parser at import time \u2014 genuinely executed whenever the `httpie`/`httpie.manager` console script runs (setup.cfg's `httpie = httpie.manager.__main__:main` entry point), a separate entry point from `http`/`https`."
+  },
+  {
+    "name": "RE_STATUS_LINE",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/output/lexers/http.py",
+      "line": 5,
+      "symbol": "RE_STATUS_LINE"
+    },
+    "rationale": "Used at http.py:26 in the same file's status-line regex matcher, part of the real HTTP-response syntax highlighter (SimplifiedHTTPLexer, see below)."
+  },
+  {
+    "name": "SimplifiedHTTPLexer",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/output/lexers/http.py",
+      "line": 54,
+      "symbol": "SimplifiedHTTPLexer"
+    },
+    "rationale": "Imported and instantiated via a LOCAL import inside ColorFormatter's own method body \u2014 `from ..lexers.http import SimplifiedHTTPLexer` at output/formatters/colors.py:71 \u2014 not a top-level import, so this specifically exercises the function-local-import binding path (same underlying reachability mechanism as the `httpie/__main__.py:main()`-style local imports that gate the whole app's entry chain)."
+  },
+  {
+    "name": "PREFIX_TOKEN",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/output/lexers/json.py",
+      "line": 7,
+      "symbol": "PREFIX_TOKEN"
+    },
+    "rationale": "Used at json.py:26 (`bygroups(PREFIX_TOKEN, using(JsonLexer))`) in the same file's JSON-body syntax highlighter, part of httpie's real output-formatting path."
+  },
+  {
+    "name": "_update_checker",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/internal/update_warnings.py",
+      "line": 91,
+      "symbol": "_update_checker"
+    },
+    "rationale": "Applied as a decorator \u2014 `@_update_checker` \u2014 to check_updates (update_warnings.py:140), in the same file. check_updates is imported top-level and called directly by httpie/core.py:98 inside main(), which is reachable from the real entry point. The decorator-application identifier is a genuine, exercised reference necro's graph does not credit."
+  },
+  {
+    "name": "FETCH_INTERVAL",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/internal/update_warnings.py",
+      "line": 18,
+      "symbol": "FETCH_INTERVAL"
+    },
+    "rationale": "Used at update_warnings.py:71, same file, inside maybe_fetch_updates (see below) \u2014 a plain same-file module-scope constant reference."
+  },
+  {
+    "name": "maybe_fetch_updates",
+    "truth": "alive",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/internal/update_warnings.py",
+      "line": 62,
+      "symbol": "maybe_fetch_updates"
+    },
+    "rationale": "Called at update_warnings.py:102, same file, from the wrapper() closure that _update_checker's decorator installs around check_updates \u2014 reachable transitively from httpie/core.py:98's check_updates(env) call on every real httpie invocation (update checks are throttled internally by this function, not skipped)."
+  },
+  {
+    "name": "SEPARATOR_GROUP_DATA_EMBED_ITEMS",
+    "truth": "dead",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/cli/constants.py",
+      "line": 45,
+      "symbol": "SEPARATOR_GROUP_DATA_EMBED_ITEMS"
+    },
+    "rationale": "A frozenset constant with zero references anywhere else in the real checkout (src or tests) beyond its own declaration \u2014 confirmed by exhaustive grep across the full pinned-SHA checkout."
+  },
+  {
+    "name": "SEPARATORS",
+    "truth": "dead",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/output/ui/rich_help.py",
+      "line": 15,
+      "symbol": "SEPARATORS"
+    },
+    "rationale": "Module-level constant built from SEPARATOR_GROUP_ALL_ITEMS at import time but never read anywhere else in the checkout \u2014 dead computed constant, not merely an unused import."
+  },
+  {
+    "name": "STYLE_PROGRAM_NAME",
+    "truth": "dead",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/output/ui/rich_help.py",
+      "line": 19,
+      "symbol": "STYLE_PROGRAM_NAME"
+    },
+    "rationale": "Declared alongside STYLE_METAVAR/STYLE_SWITCH/etc (all real, used styles) but this one specific style constant has zero references anywhere else in the checkout \u2014 a genuinely vestigial sibling among otherwise-live constants, not a whole-file reachability gap."
+  },
+  {
+    "name": "LEFT_PADDING_5",
+    "truth": "dead",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/output/ui/rich_help.py",
+      "line": 31,
+      "symbol": "LEFT_PADDING_5"
+    },
+    "rationale": "Declared alongside LEFT_PADDING_2/3/4 (all real, used elsewhere) but LEFT_PADDING_5 itself has zero references anywhere else in the checkout."
+  },
+  {
+    "name": "to_help_message",
+    "truth": "dead",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/output/ui/rich_help.py",
+      "line": 128,
+      "symbol": "to_help_message"
+    },
+    "rationale": "A module-level function with zero references anywhere else in the real checkout. vulture independently flags it (60% confidence, \"unused function\")."
+  },
+  {
+    "name": "render_as_string",
+    "truth": "dead",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/output/ui/rich_utils.py",
+      "line": 12,
+      "symbol": "render_as_string"
+    },
+    "rationale": "A module-level helper for rendering a rich renderable to a plain string, with zero references anywhere else in the real checkout. vulture independently flags it (60% confidence)."
+  },
+  {
+    "name": "enable_highlighter",
+    "truth": "dead",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/output/ui/rich_utils.py",
+      "line": 23,
+      "symbol": "enable_highlighter"
+    },
+    "rationale": "A contextmanager helper with zero references anywhere else in the real checkout. vulture independently flags it (60% confidence)."
+  },
+  {
+    "name": "DEFAULT_SESSIONS_DIR",
+    "truth": "dead",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/sessions.py",
+      "line": 30,
+      "symbol": "DEFAULT_SESSIONS_DIR"
+    },
+    "rationale": "A module-level constant (default sessions directory path) with zero references anywhere else in the real checkout, including tests \u2014 the sessions feature resolves its directory through a different path elsewhere."
+  },
+  {
+    "name": "__date__",
+    "truth": "dead",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/__init__.py",
+      "line": 7,
+      "symbol": "__date__"
+    },
+    "rationale": "Module metadata dunder (release date string) declared alongside __version__ \u2014 but unlike __version__ (imported and used in 8+ places: core.py, client.py, config.py, cli/definition.py, manager/cli.py, tests), __date__ has zero references anywhere in the real checkout. A dunder-named module attribute is exported by convention (isExported's DUNDER_NAME rule), but exported-by-convention doesn't mean referenced \u2014 this pair is a direct alive/dead contrast within the same declaration block."
+  },
+  {
+    "name": "__licence__",
+    "truth": "dead",
+    "provenance": {
+      "repo": "httpie/cli",
+      "sha": "2105caa49bae87c5809c274e407619a0de2639d1",
+      "file": "httpie/__init__.py",
+      "line": 9,
+      "symbol": "__licence__"
+    },
+    "rationale": "Same situation as __date__ above (misspelled deliberately by upstream as \"licence\" not \"license\") \u2014 zero references anywhere in the real checkout."
+  },
+  {
+    "name": "__hash__",
+    "truth": "alive",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/resolution/resolvelib/candidates.py",
+      "line": 177,
+      "symbol": "__hash__"
+    },
+    "rationale": "A dunder-method protocol case: _InstallRequirementBackedCandidate.__hash__ (with its paired __eq__ at line 184) is never called by name anywhere in the checkout \u2014 it's invoked implicitly by the Python interpreter whenever a Candidate instance is inserted into a set/dict, which resolvelib's real resolution algorithm does genuinely at runtime (e.g. `explicit_candidates: set[Candidate] = set()` in factory.py:458, populated during every real `pip install` dependency resolution). No textual call site exists to find; reachability is real but only visible via the implicit hashing/equality protocol, not a traceable reference edge."
+  },
+  {
+    "name": "yield_lines",
+    "truth": "dead",
+    "provenance": {
+      "repo": "pypa/pip",
+      "sha": "31d7d168953668aad85154d6121879d07fbeac27",
+      "file": "pip/_internal/utils/_jaraco_text.py",
+      "line": 41,
+      "symbol": "yield_lines"
+    },
+    "rationale": "A functools.singledispatch decorator-registered function (`@functools.singledispatch def yield_lines(...)`, with a str-specialized handler registered via `@yield_lines.register(str)` at line 59) \u2014 the decorator-registration hard pattern. This entire module's own docstring says it verbatim: \"These functions are not supposed to be used within pip._internal.\" Confirmed by exhaustive grep across the full pinned-SHA checkout (src/ and tests/): no import of pip._internal.utils._jaraco_text exists anywhere \u2014 the module (and its sibling drop_comment, join_continuation, _nonblank) is entirely vestigial, left over from a vendoring exercise. necro's own scan (see pip-scan.json) does flag yield_lines as verdict=dead, but only at tier=maybe rather than likely \u2014 this is a live instance of the phase-47 library-quarantine/recall tension noted in T1's handoff: the file lives under a package whose pyproject.toml triggers the library exported-symbol quarantine, so a genuinely, unambiguously dead top-level function is held at maybe instead of likely, directly illustrating the recall-floor risk T2 exists to measure."
+  }
+]

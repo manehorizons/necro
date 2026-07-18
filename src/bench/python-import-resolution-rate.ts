@@ -33,22 +33,39 @@ export interface ResolutionRateResult {
 }
 
 /**
+ * Common Python vendoring convention: a package bundles its own copy of a
+ * third-party dependency under a `_vendor`/`vendor` subpackage of its own
+ * namespace (e.g. `pip._vendor.requests`, `setuptools._vendor.packaging`).
+ * The top-level segment matches this repo's own package, but the content is
+ * genuinely third-party, not this project's logic — phase 48's trimmed
+ * corpus fixtures deliberately don't vendor these large bundled deps (AC-1:
+ * "trimmed, not full checkouts"), so counting them as local candidates would
+ * measure fixture-completeness, not resolver accuracy.
+ */
+function isVendoredBundle(segments: string[]): boolean {
+  return segments.includes("_vendor") || segments.includes("vendor");
+}
+
+/**
  * Per-resolved-entry (same arity and order as `resolvePythonImport`'s
  * result) whether each entry is plausibly first-party (part of this repo),
  * as opposed to stdlib or a third-party dependency the module map has no
  * knowledge of. Relative imports (`from . import x`) are always local by
  * Python semantics. Absolute imports are local only if their top-level
  * segment matches a top-level package/module this repo's file set actually
- * produced (e.g. `pip` for a `pip` checkout) — `import os` never matches.
- * `import a, b` is judged per module, since an unrelated pair can mix local
- * and external; a single `from` clause is judged once and shared across all
- * its names, since they all resolve against the same base module.
+ * produced (e.g. `pip` for a `pip` checkout) — `import os` never matches —
+ * and the path isn't a `_vendor`/`vendor` bundled-dependency import (see
+ * `isVendoredBundle`). `import a, b` is judged per module, since an
+ * unrelated pair can mix local and external; a single `from` clause is
+ * judged once and shared across all its names, since they all resolve
+ * against the same base module.
  */
 export function isLocalImportCandidate(imp: PythonImport, topLevelPackages: ReadonlySet<string>): boolean[] {
   if (imp.kind === "import") {
-    return imp.modules.map((m) => topLevelPackages.has(m.segments[0] ?? ""));
+    return imp.modules.map((m) => topLevelPackages.has(m.segments[0] ?? "") && !isVendoredBundle(m.segments));
   }
-  const local = imp.relativeDots > 0 || topLevelPackages.has(imp.moduleSegments[0] ?? "");
+  const local =
+    (imp.relativeDots > 0 || topLevelPackages.has(imp.moduleSegments[0] ?? "")) && !isVendoredBundle(imp.moduleSegments);
   const count = imp.isStar ? 1 : imp.names.length;
   return Array(count).fill(local);
 }

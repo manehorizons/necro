@@ -103,7 +103,10 @@ describe("buildPythonSymbolGraph — reference edges (AC-3)", () => {
   test("a reference to a name with no matching declaration or binding produces no edge", async () => {
     const file = await write("mod.py", ["def use():", "    os.path.join('a')"].join("\n"));
     const { graph } = await graphFor([file]);
-    expect(graph.edges.filter((e) => e.from === `${file}:1:use`)).toHaveLength(0);
+    // No edge to any declared symbol — the only outbound edges from `use` are
+    // the always-present self-file edges (phase 48: reaching a declaration
+    // means its module's own top level ran too), not a resolved reference.
+    expect(graph.edges.filter((e) => e.from === `${file}:1:use` && e.to !== file)).toHaveLength(0);
   });
 
   test("edges are tagged prod by default and test for test_*.py files", async () => {

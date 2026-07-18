@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { Node as TsNode } from "web-tree-sitter";
+import type { SymbolNode } from "../graph/types.js";
 import type { PythonModuleMap } from "../graph/python/module-resolver.js";
 import { getParser } from "../syntactic/parse.js";
 import type { EntrySource } from "./prod-entries.js";
@@ -13,6 +14,17 @@ const MODULE_SPEC = /^[A-Za-z_][\w.]*(?::[A-Za-z_]\w*)?$/;
 export interface PythonEntryRecord {
   file: string;
   source: EntrySource;
+  /**
+   * The exact declared symbol id when the spec named a specific function
+   * (`pkg.mod:func`) that resolves to a real module-level declaration in the
+   * target file. A bare-file entry root has no outbound edge into a function
+   * merely *defined* there (only into that file's own module-level
+   * statements) — so without this, `pip = "pip._internal.cli.main:main"`
+   * seeds `cli/main.py` but never reaches `main()` itself, and everything
+   * `main()` calls reads as dead. Absent when the spec has no `:func` suffix
+   * or the named function can't be found (falls back to file-only seeding).
+   */
+  symbolId?: string;
 }
 
 export interface ResolvedPythonEntries {
@@ -34,22 +46,31 @@ export async function resolvePythonEntries(
   root: string,
   files: string[],
   moduleMap: PythonModuleMap,
+  declaredSymbols: SymbolNode[] = [],
 ): Promise<ResolvedPythonEntries> {
   const fileSet = new Set(files);
   const entries = new Set<string>();
   const testEntries = new Set<string>();
   const records: PythonEntryRecord[] = [];
 
-  const add = (file: string, source: EntrySource): void => {
-    if (entries.has(file)) return;
-    entries.add(file);
-    records.push({ file, source });
+  const declaredByFile = new Map<string, Map<string, number>>();
+  for (const n of declaredSymbols) {
+    let byName = declaredByFile.get(n.file);
+    if (!byName) declaredByFile.set(n.file, (byName = new Map()));
+    byName.set(n.name, n.line);
+  }
+
+  const add = (file: string, source: EntrySource, symbolId?: string): void => {
+    if (!entries.has(file)) {
+      entries.add(file);
+      records.push({ file, source, symbolId });
+    }
   };
 
   const addResolved = (specs: string[], source: EntrySource): void => {
     for (const spec of specs) {
-      const file = resolveDottedModule(spec, moduleMap);
-      if (file && fileSet.has(file)) add(file, source);
+      const resolved = resolveDottedModule(spec, moduleMap, declaredByFile);
+      if (resolved && fileSet.has(resolved.file)) add(resolved.file, source, resolved.symbolId);
     }
   };
 
@@ -95,10 +116,23 @@ function readIfExists(path: string): string | null {
   }
 }
 
-/** Strip an optional `:func` suffix and look up the remaining dotted module path directly — these specs are always fully-qualified, never relative. */
-function resolveDottedModule(spec: string, map: PythonModuleMap): string | null {
-  const modulePath = spec.split(":")[0] ?? "";
-  return map.moduleToFile.get(modulePath) ?? null;
+/**
+ * Look up a spec's dotted module path directly — these specs are always
+ * fully-qualified, never relative. When an optional `:func` suffix names a
+ * function that's actually declared at module level in the resolved file,
+ * also resolve its exact symbol id (see `PythonEntryRecord.symbolId`).
+ */
+function resolveDottedModule(
+  spec: string,
+  map: PythonModuleMap,
+  declaredByFile: Map<string, Map<string, number>>,
+): { file: string; symbolId?: string } | null {
+  const [modulePath, funcName] = spec.split(":");
+  const file = map.moduleToFile.get(modulePath ?? "");
+  if (!file) return null;
+  if (!funcName) return { file };
+  const line = declaredByFile.get(file)?.get(funcName);
+  return { file, symbolId: line !== undefined ? `${file}:${line}:${funcName}` : undefined };
 }
 
 const SECTION_HEADER = /^\s*\[([^\]]+)\]\s*$/;

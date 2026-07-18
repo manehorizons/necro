@@ -173,4 +173,19 @@ describe("findTaintedFiles", () => {
     expect(tainted.has("exec.py")).toBe(true);
     expect(tainted.has("clean.py")).toBe(false);
   });
+
+  test("does NOT flag Python's ordinary multi-line parenthesized import as dynamic dispatch (phase 48 regression)", () => {
+    const tainted = findTaintedFiles([
+      {
+        file: "multiline_import.py",
+        text: "from pip._internal.utils.misc import (\n    build_netloc,\n    build_url_from_netloc,\n)\n",
+      },
+    ]);
+    expect(tainted.has("multiline_import.py")).toBe(false);
+  });
+
+  test("still flags a genuinely dynamic JS import even shaped like the Python false positive", () => {
+    const tainted = findTaintedFiles([{ file: "dyn2.ts", text: "const m = import(\n    moduleName\n);" }]);
+    expect(tainted.has("dyn2.ts")).toBe(true);
+  });
 });

@@ -163,11 +163,16 @@ export async function buildReachabilityModel(
   // console_scripts, __main__/if-name-main modules, conventional filenames) —
   // additive, first-mechanism-wins merge into the same prod-entry diagnostic
   // (§2.3); conftest.py roots into testEntries instead.
-  const pythonEntries = await resolvePythonEntries(targetPath, pyFiles, pyModuleMap);
+  const pythonEntries = await resolvePythonEntries(targetPath, pyFiles, pyModuleMap, pyGraph.nodes);
   for (const record of pythonEntries.records) {
-    if (prodEntries.has(record.file)) continue;
-    prodEntries.add(record.file);
-    prodEntryRecords.push(record);
+    if (!prodEntries.has(record.file)) {
+      prodEntries.add(record.file);
+      prodEntryRecords.push(record);
+    }
+    // Seed the specific function too — a bare-file root has no edge into a
+    // function merely defined there (§2.3, phase 48: `pkg.mod:func` specs
+    // were silently seeding only the file, never the function itself).
+    if (record.symbolId) prodEntries.add(record.symbolId);
   }
   for (const file of pythonEntries.testEntries) testEntries.add(file);
 

@@ -5,6 +5,7 @@ import { computeResolutionRate, isLocalImportCandidate, parseArgs } from "../src
 import type { PythonImport } from "../src/graph/python/import-parser.js";
 
 const FIXTURES_ROOT = join(dirname(fileURLToPath(import.meta.url)), "fixtures", "python-module-resolver");
+const REALREPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "fixtures", "python-realrepo");
 
 describe("parseArgs", () => {
   test("parses --repo", () => {
@@ -39,6 +40,22 @@ describe("computeResolutionRate", () => {
   });
 });
 
+describe("computeResolutionRate against the vendored python-realrepo corpus (AC-7, phase 48)", () => {
+  test("pip fixture slice resolves >=95% of local imports", async () => {
+    const result = await computeResolutionRate(join(REALREPO_ROOT, "pip"));
+    console.log(`pip: ${result.resolved}/${result.total} local imports resolved (${(result.rate * 100).toFixed(1)}%)`);
+    expect(result.total).toBeGreaterThan(0);
+    expect(result.rate).toBeGreaterThanOrEqual(0.95);
+  });
+
+  test("httpie fixture slice resolves >=95% of local imports", async () => {
+    const result = await computeResolutionRate(join(REALREPO_ROOT, "httpie"));
+    console.log(`httpie: ${result.resolved}/${result.total} local imports resolved (${(result.rate * 100).toFixed(1)}%)`);
+    expect(result.total).toBeGreaterThan(0);
+    expect(result.rate).toBeGreaterThanOrEqual(0.95);
+  });
+});
+
 describe("isLocalImportCandidate", () => {
   const topLevel = new Set(["pkg"]);
 
@@ -57,5 +74,23 @@ describe("isLocalImportCandidate", () => {
   test("`import a, b` is judged per module, not per statement", () => {
     const imp: PythonImport = { kind: "import", line: 1, modules: [{ segments: ["pkg", "mod"], alias: null, binding: "pkg" }, { segments: ["sys"], alias: null, binding: "sys" }] };
     expect(isLocalImportCandidate(imp, topLevel)).toEqual([true, false]);
+  });
+
+  test("a `_vendor`/`vendor` bundled-dependency import is excluded even though its top segment matches (AC-7, phase 48)", () => {
+    const pipVendor: PythonImport = {
+      kind: "from",
+      line: 1,
+      relativeDots: 0,
+      moduleSegments: ["pip", "_vendor", "requests"],
+      isStar: false,
+      names: [{ name: "get", alias: null, binding: "get" }],
+    };
+    const setuptoolsVendor: PythonImport = {
+      kind: "import",
+      line: 1,
+      modules: [{ segments: ["pkg", "vendor", "six"], alias: null, binding: "pkg" }],
+    };
+    expect(isLocalImportCandidate(pipVendor, new Set(["pip"]))).toEqual([false]);
+    expect(isLocalImportCandidate(setuptoolsVendor, topLevel)).toEqual([false]);
   });
 });

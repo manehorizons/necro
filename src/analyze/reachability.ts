@@ -1,4 +1,5 @@
 import type { SymbolEdge, SymbolNode } from "../graph/types.js";
+import { isPythonFile } from "../graph/python/language.js";
 
 export type Reachability = "alive" | "test-only" | "dead";
 
@@ -141,12 +142,21 @@ export function tracePath(
   return null;
 }
 
-const TAINT_PATTERNS: RegExp[] = [
-  /import\s*\(\s*`[^`]*\$\{/, // dynamic import with template interpolation
-  /import\s*\(\s*[A-Za-z_$]/, // dynamic import of a variable
+// Shared across languages: both JS/TS and Python have `eval`/computed dispatch.
+const SHARED_TAINT_PATTERNS: RegExp[] = [
   /\beval\s*\(/, // eval
   /\[\s*[A-Za-z_$][\w$]*\s*\]\s*\(/, // string/computed dispatch: obj[name]() — also covers Python's globals()[name]()
-  // Python
+];
+
+// JS/TS-only: a bare `import(...)` call is a dynamic-import expression there.
+// Excluded from Python, where the identical text shape — `import (\n    Name,`
+// — is ordinary, fully-static multi-line `from x import (...)` syntax.
+const JS_ONLY_TAINT_PATTERNS: RegExp[] = [
+  /import\s*\(\s*`[^`]*\$\{/, // dynamic import with template interpolation
+  /import\s*\(\s*[A-Za-z_$]/, // dynamic import of a variable
+];
+
+const PYTHON_ONLY_TAINT_PATTERNS: RegExp[] = [
   /\bgetattr\s*\(/, // dynamic attribute access
   /\bimportlib\b/, // importlib.import_module(...) dynamic import
   /__getattr__/, // module/class dynamic-attribute dispatch hook
@@ -159,7 +169,10 @@ export function findTaintedFiles(
 ): Set<string> {
   const tainted = new Set<string>();
   for (const { file, text } of sources) {
-    if (TAINT_PATTERNS.some((re) => re.test(text))) tainted.add(file);
+    const patterns = isPythonFile(file)
+      ? [...SHARED_TAINT_PATTERNS, ...PYTHON_ONLY_TAINT_PATTERNS]
+      : [...SHARED_TAINT_PATTERNS, ...JS_ONLY_TAINT_PATTERNS];
+    if (patterns.some((re) => re.test(text))) tainted.add(file);
   }
   return tainted;
 }

@@ -1,0 +1,11 @@
+{
+  "bypasses": [],
+  "roughTasks": [
+    {
+      "id": "T1",
+      "status": "DONE_WITH_CONCERNS",
+      "notes": "Vendored pip 26.1.2 + httpie 3.2.4 source-tree slices into test/fixtures/python-realrepo/ with SOURCES.md provenance and necro.config.json per fixture. Re-verified tier breakdown post-rebuild: pip 974 findings/35 likely/939 maybe; httpie 106 findings/84 likely/22 maybe — matches handoff-recorded numbers exactly. Concern carried forward: pip's pyproject.toml triggers phase-47 library quarantine, pushing 939/974 of its findings to the maybe tier (exported-detection is per-symbol-name, not path-aware, so _internal's leading-underscore directory isn't recognized as pip's real privacy signal). Proceeding with option (a): label T2 cases first (including deliberate dead cases from pip's quarantined maybe bucket) and measure actual precision/recall before deciding whether a path-based exemption fix is needed to hit the recall floor."
+    }
+  ],
+  "findings": {}
+}
