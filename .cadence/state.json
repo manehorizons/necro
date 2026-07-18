@@ -1,23 +1,28 @@
 {
   "schemaVersion": 1,
-  "revision": 421,
+  "revision": 437,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
-  "activePhase": "47-python-test-entries-and-library-quarantine",
-  "activeDraft": null,
+  "activePhase": "48-python-accuracy-corpus-ci-gate",
+  "activeDraft": "48-00",
   "activeSpec": null,
-  "loopPosition": "IDLE",
-  "tier": null,
-  "draftReadAt": "2026-07-18T03:38:15.315Z",
-  "openDrafts": [],
+  "loopPosition": "BUILD",
+  "tier": "complex",
+  "draftReadAt": "2026-07-18T04:39:17.620Z",
+  "openDrafts": [
+    {
+      "id": "48-00",
+      "since": "2026-07-18T04:38:02.985Z"
+    }
+  ],
   "decisions": [],
   "deferred": [],
   "session": {
-    "tokenUtilization": 0.6800000000000004,
-    "lastHandoff": "SESSION-2026-07-18-phase-47-python-quarantine-shipped.md",
-    "subagentSpawns": 51,
+    "tokenUtilization": 0.7300000000000004,
+    "lastHandoff": "SESSION-2026-07-18-phase-48-corpus-vendored-labeling-paused.md",
+    "subagentSpawns": 57,
     "subagentBaselines": {}
   },
   "skillAudit": {
