@@ -81,3 +81,39 @@ describe("onUsage callback (AC-4)", () => {
     expect(usages).toEqual([{ inputTokens: 111, outputTokens: 222 }]);
   });
 });
+
+vi.mock("../src/llm/host-cli-client.js", () => ({
+  hostCliStructuredCall: vi.fn(async (o: { parse: (raw: unknown) => unknown }) => ({
+    result: o.parse({ summary: "hc-s", newFunctions: ["hc-f"], replacement: "hc-code", rationale: "hc-r" }),
+    usage: { inputTokens: 3, outputTokens: 4 },
+  })),
+}));
+
+describe("createRefactorClient host-cli provider (AC-1, AC-3)", () => {
+  test("does not throw MissingApiKeyError with no API key set (AC-1)", () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    expect(() => createRefactorClient({ ...DEFAULT_LLM, provider: "host-cli" })).not.toThrow();
+  });
+
+  test("propose() routes through the host-cli transport, not the Anthropic SDK (AC-1)", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    const usages: Array<{ inputTokens: number; outputTokens: number }> = [];
+    const client = createRefactorClient({ ...DEFAULT_LLM, provider: "host-cli" }, { onUsage: (u) => usages.push(u) });
+    const result = await client.propose({ system: "sys", user: "usr" });
+    expect(result).toEqual({
+      ok: true,
+      proposal: { summary: "hc-s", newFunctions: ["hc-f"], replacement: "hc-code", rationale: "hc-r" },
+    });
+    expect(usages).toEqual([{ inputTokens: 3, outputTokens: 4 }]);
+  });
+
+  test("the anthropic-path default is unaffected by the host-cli branch (AC-3)", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "sk-present");
+    const client = createRefactorClient(DEFAULT_LLM);
+    const result = await client.propose({ system: "sys", user: "usr" });
+    expect(result).toEqual({
+      ok: true,
+      proposal: { summary: "s", newFunctions: ["f"], replacement: "code", rationale: "r" },
+    });
+  });
+});

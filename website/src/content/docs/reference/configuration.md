@@ -65,12 +65,20 @@ is the smallest normalized-token sequence reported as a clone.
 ### `llm`
 
 - **Type:** object
-- **Default:** `{ model: "claude-opus-4-8", snippetRadius: 20 }`
+- **Default:** `{ model: "claude-opus-4-8", snippetRadius: 20, provider: "anthropic", hostCliBin: "claude" }`
 
 Options for the opt-in LLM layer ([`triage`](/necro/reference/cli/#necro-triage)
 and [`refactor`](/necro/reference/cli/#necro-refactor)). `model` is the Anthropic
 model id; `snippetRadius` is how many lines of context around a finding are sent.
-Used only when you invoke those commands, which require `ANTHROPIC_API_KEY`.
+
+By default (`provider: "anthropic"`), these commands call the Anthropic SDK
+directly and require `ANTHROPIC_API_KEY` (or `llm.apiKey`). Set
+`provider: "host-cli"` to instead shell out to an already-authenticated `claude`
+binary headlessly — no API key needed, useful when running inside a Claude Code
+session. `hostCliBin` overrides the binary name/path (default `"claude"`). The
+host-cli path is claude-only for now, has no mock fallback (spawn/auth failures
+throw a descriptive error), and reports token usage only when the CLI's own
+output envelope includes it.
 
 ## Example
 

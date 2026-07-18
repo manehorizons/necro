@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
-  "revision": 583,
+  "revision": 611,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
-  "activePhase": "49-triage-corpus-variance",
+  "activePhase": "51-host-cli-llm-backend",
   "activeDraft": null,
   "activeSpec": null,
   "loopPosition": "IDLE",
   "tier": null,
-  "draftReadAt": "2026-07-18T18:43:19.565Z",
+  "draftReadAt": "2026-07-18T20:44:52.108Z",
   "openDrafts": [],
   "decisions": [],
   "deferred": [],
   "session": {
     "tokenUtilization": 1,
     "lastHandoff": "SESSION-2026-07-18-pickup-host-cli-rec.md",
-    "subagentSpawns": 105,
+    "subagentSpawns": 107,
     "subagentBaselines": {}
   },
   "skillAudit": {

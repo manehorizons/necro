@@ -35,6 +35,14 @@ export interface LlmOptions {
   maxFindings?: number;
   /** Optional API-key override; `ANTHROPIC_API_KEY` (env) takes precedence. */
   apiKey?: string;
+  /** Model backend: `"anthropic"` calls the SDK directly with an API key;
+   * `"host-cli"` shells out to an already-authenticated `claude` binary
+   * headlessly, so live calls work inside a Claude Code session with no
+   * separate API key. Defaults to `"anthropic"`. */
+  provider?: "anthropic" | "host-cli";
+  /** Host CLI binary name or path used when `provider` is `"host-cli"`.
+   * Defaults to `"claude"`. */
+  hostCliBin?: string;
 }
 
 /** Risk-hotspot ranking options. */
@@ -66,6 +74,8 @@ export const DEFAULT_DUPLICATION: DuplicationOptions = { minTokens: 50 };
 export const DEFAULT_LLM: LlmOptions = {
   model: "claude-opus-4-8",
   snippetRadius: 20,
+  provider: "anthropic",
+  hostCliBin: "claude",
 };
 
 export const DEFAULT_CONFIG: NecroConfig = {

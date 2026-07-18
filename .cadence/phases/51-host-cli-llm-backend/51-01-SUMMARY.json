@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "draftId": "51-01",
+  "completedAt": "2026-07-18T22:00:35.912Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-2",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-3",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-4",
+      "pass": true,
+      "evidence": "assertion"
+    }
+  ],
+  "gates": [
+    {
+      "gate": "draft-read",
+      "status": "ran"
+    },
+    {
+      "gate": "structural-verifier",
+      "status": "ran"
+    },
+    {
+      "gate": "boundary-scan",
+      "status": "skipped",
+      "skipReason": "boundaryEnforcement is not \"block\""
+    },
+    {
+      "gate": "build-test-must-pass",
+      "status": "skipped",
+      "skipReason": "no test command configured — build-test-must-pass cannot verify your tests ran; this settle will NOT confirm the suite passes. Set verification.testCommand in .cadence/config.json to enable real enforcement."
+    },
+    {
+      "gate": "test-coverage",
+      "status": "ran"
+    },
+    {
+      "gate": "interactive-verdict",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "deep-verify",
+      "status": "ran"
+    },
+    {
+      "gate": "code-review",
+      "status": "ran"
+    },
+    {
+      "gate": "security-audit",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "Added provider (\"anthropic\" | \"host-cli\", default \"anthropic\") and hostCliBin (default \"claude\") to LlmOptions/DEFAULT_LLM; loadConfig's existing spread-merge already threads them through. 14/14 config.test.ts tests pass incl. new AC-3 test; tsc --noEmit clean."
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "Implemented src/llm/host-cli-client.ts: hostCliStructuredCall<T> spawns `claude -p --output-format json`, embeds the schema as a prompt instruction (no API-level structured-output constraint available headlessly), enforces a 3-min timeout with SIGKILL, guards against self-invocation via CLAUDECODE=1, and surfaces typed HostCliError reasons (not-found/spawn-error/nonzero-exit/output-error/timeout/self-invocation). Loosened SpawnedProcessLike's stdout/stderr type to a minimal on(\"data\",...) interface so tests use a bare EventEmitter fake instead of a full ReadableStream. 7/7 new tests pass (stubbed spawn only, no real binary); tsc clean."
+    },
+    {
+      "id": "T3",
+      "status": "DONE",
+      "notes": "createTriageClient/createRefactorClient now branch on llm.provider === \"host-cli\", routing classify/propose/proposeDuplicate through hostCliStructuredCall (skipping resolveApiKey/MissingApiKeyError/lazyAnthropic entirely) instead of duplicating logic per client. Anthropic-path branch untouched. Added host-cli-branch tests (no-key-no-throw, routes through stubbed hostCliStructuredCall not the SDK, anthropic default unaffected) to both triage-client.test.ts and refactor-client.test.ts. Full suite: 709 passed, 6 skipped, 0 failures; tsc clean."
+    },
+    {
+      "id": "T4",
+      "status": "DONE",
+      "notes": "necro triage/refactor CLI already load config.llm via loadConfig() and thread it through, so provider: \"host-cli\" works there with zero further changes (confirmed by reading cli.ts). The bench harness (src/bench/cli-bench.ts) hardcoded DEFAULT_LLM and never read config, so added --provider/--host-cli-bin flags there to actually make the live-eval path selectable (this was a genuine gap, not covered by T1-T3 alone). Documented llm.provider/llm.hostCliBin in website/src/content/docs/reference/configuration.md. Also updated a stale memory (cadence-host-cli-verifier-gap) whose index line still said \"not yet released\" — confirmed installed cadence-core 1.47.0 matches npm's latest and already includes the fix. Full suite: 711 passed, 6 skipped, 0 failures; tsc clean."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": [
+      "superpowers:test-driven-development",
+      "handoff"
+    ]
+  },
+  "deepVerify": {
+    "AC-1": {
+      "pass": true,
+      "reason": "mock: 50 linked tests (test/bench-cli.test.ts:4)",
+      "provider": "mock"
+    },
+    "AC-2": {
+      "pass": true,
+      "reason": "mock: 48 linked tests (test/bench-page-contract.test.ts:23)",
+      "provider": "mock"
+    },
+    "AC-3": {
+      "pass": true,
+      "reason": "mock: 38 linked tests (test/bench-cli.test.ts:4)",
+      "provider": "mock"
+    },
+    "AC-4": {
+      "pass": true,
+      "reason": "mock: 37 linked tests (test/churn.test.ts:28)",
+      "provider": "mock"
+    }
+  },
+  "deepVerifyMeta": {
+    "diffProvided": true,
+    "diffBytes": 13377,
+    "truncated": false,
+    "filesCount": 11,
+    "provider": "mock"
+  },
+  "codeReview": {}
+}

@@ -103,6 +103,22 @@ describe("loadConfig", () => {
     expect(config.llm.model).toBe(DEFAULT_LLM.model);
     expect(config.llm.snippetRadius).toBe(DEFAULT_LLM.snippetRadius);
   });
+
+  test("llm.provider defaults to anthropic; a config override to host-cli merges alongside hostCliBin (AC-3)", async () => {
+    const def = await loadConfig(dir);
+    expect(def.llm.provider).toBe("anthropic");
+    expect(def.llm.hostCliBin).toBe("claude");
+
+    await writeFile(
+      join(dir, "necro.config.json"),
+      JSON.stringify({ llm: { provider: "host-cli", hostCliBin: "/usr/local/bin/claude" } }),
+    );
+    const config = await loadConfig(dir);
+    expect(config.llm.provider).toBe("host-cli");
+    expect(config.llm.hostCliBin).toBe("/usr/local/bin/claude");
+    // untouched keys keep defaults
+    expect(config.llm.model).toBe(DEFAULT_LLM.model);
+  });
 });
 
 describe("resolveConfigDir (AC-2)", () => {

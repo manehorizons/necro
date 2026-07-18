@@ -1,0 +1,43 @@
+{
+  "draftId": "51-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Added provider (\"anthropic\" | \"host-cli\", default \"anthropic\") and hostCliBin (default \"claude\") to LlmOptions/DEFAULT_LLM; loadConfig's existing spread-merge already threads them through. 14/14 config.test.ts tests pass incl. new AC-3 test; tsc --noEmit clean.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-18T20:56:28.979Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "Implemented src/llm/host-cli-client.ts: hostCliStructuredCall<T> spawns `claude -p --output-format json`, embeds the schema as a prompt instruction (no API-level structured-output constraint available headlessly), enforces a 3-min timeout with SIGKILL, guards against self-invocation via CLAUDECODE=1, and surfaces typed HostCliError reasons (not-found/spawn-error/nonzero-exit/output-error/timeout/self-invocation). Loosened SpawnedProcessLike's stdout/stderr type to a minimal on(\"data\",...) interface so tests use a bare EventEmitter fake instead of a full ReadableStream. 7/7 new tests pass (stubbed spawn only, no real binary); tsc clean.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/llm/host-cli-client.ts",
+        "/home/thomas/projects/necro/test/llm-host-cli-client.test.ts"
+      ],
+      "updatedAt": "2026-07-18T21:09:23.600Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "createTriageClient/createRefactorClient now branch on llm.provider === \"host-cli\", routing classify/propose/proposeDuplicate through hostCliStructuredCall (skipping resolveApiKey/MissingApiKeyError/lazyAnthropic entirely) instead of duplicating logic per client. Anthropic-path branch untouched. Added host-cli-branch tests (no-key-no-throw, routes through stubbed hostCliStructuredCall not the SDK, anthropic default unaffected) to both triage-client.test.ts and refactor-client.test.ts. Full suite: 709 passed, 6 skipped, 0 failures; tsc clean.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/triage/client.ts",
+        "/home/thomas/projects/necro/src/refactor/client.ts",
+        "/home/thomas/projects/necro/test/triage-client.test.ts",
+        "/home/thomas/projects/necro/test/refactor-client.test.ts"
+      ],
+      "updatedAt": "2026-07-18T21:12:20.083Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "necro triage/refactor CLI already load config.llm via loadConfig() and thread it through, so provider: \"host-cli\" works there with zero further changes (confirmed by reading cli.ts). The bench harness (src/bench/cli-bench.ts) hardcoded DEFAULT_LLM and never read config, so added --provider/--host-cli-bin flags there to actually make the live-eval path selectable (this was a genuine gap, not covered by T1-T3 alone). Documented llm.provider/llm.hostCliBin in website/src/content/docs/reference/configuration.md. Also updated a stale memory (cadence-host-cli-verifier-gap) whose index line still said \"not yet released\" — confirmed installed cadence-core 1.47.0 matches npm's latest and already includes the fix. Full suite: 711 passed, 6 skipped, 0 failures; tsc clean.",
+      "touchedFiles": [
+        "/home/thomas/.claude/projects/-home-thomas-projects-necro/memory/cadence-host-cli-verifier-gap.md",
+        "/home/thomas/.claude/projects/-home-thomas-projects-necro/memory/MEMORY.md",
+        "/home/thomas/projects/necro/src/bench/cli-bench.ts",
+        "/home/thomas/projects/necro/test/bench-cli.test.ts",
+        "/home/thomas/projects/necro/website/src/content/docs/reference/configuration.md"
+      ],
+      "updatedAt": "2026-07-18T21:55:39.516Z"
+    }
+  }
+}

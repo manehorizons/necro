@@ -73,6 +73,13 @@ vi.mock("@anthropic-ai/sdk", () => ({
   },
 }));
 
+vi.mock("../src/llm/host-cli-client.js", () => ({
+  hostCliStructuredCall: vi.fn(async (o: { parse: (raw: unknown) => unknown }) => ({
+    result: o.parse({ verdict: "likely-alive", reasoning: "host-cli r" }),
+    usage: { inputTokens: 3, outputTokens: 4 },
+  })),
+}));
+
 describe("onUsage callback (AC-4)", () => {
   test("classify() reports token usage from the mocked response (AC-4)", async () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "sk-present");
@@ -81,5 +88,28 @@ describe("onUsage callback (AC-4)", () => {
     const result = await client.classify({ system: "sys", user: "usr" });
     expect(result).toEqual({ verdict: "likely-dead", reasoning: "r" });
     expect(usages).toEqual([{ inputTokens: 11, outputTokens: 22 }]);
+  });
+});
+
+describe("createTriageClient host-cli provider (AC-1, AC-3)", () => {
+  test("does not throw MissingApiKeyError with no API key set (AC-1)", () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    expect(() => createTriageClient({ ...DEFAULT_LLM, provider: "host-cli" })).not.toThrow();
+  });
+
+  test("classify() routes through the host-cli transport, not the Anthropic SDK (AC-1)", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    const usages: Array<{ inputTokens: number; outputTokens: number }> = [];
+    const client = createTriageClient({ ...DEFAULT_LLM, provider: "host-cli" }, { onUsage: (u) => usages.push(u) });
+    const result = await client.classify({ system: "sys", user: "usr" });
+    expect(result).toEqual({ verdict: "likely-alive", reasoning: "host-cli r" });
+    expect(usages).toEqual([{ inputTokens: 3, outputTokens: 4 }]);
+  });
+
+  test("the anthropic-path default is unaffected by the host-cli branch (AC-3)", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "sk-present");
+    const client = createTriageClient(DEFAULT_LLM);
+    const result = await client.classify({ system: "sys", user: "usr" });
+    expect(result).toEqual({ verdict: "likely-dead", reasoning: "r" });
   });
 });
