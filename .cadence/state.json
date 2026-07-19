@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 892,
+  "revision": 896,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
@@ -17,14 +17,15 @@
   "session": {
     "tokenUtilization": 1,
     "lastHandoff": "SESSION-2026-07-19-v1.4.0-published.md",
-    "subagentSpawns": 131,
+    "subagentSpawns": 135,
     "subagentBaselines": {}
   },
   "skillAudit": {
     "required": [],
     "invoked": [
       "superpowers:test-driven-development",
-      "handoff"
+      "handoff",
+      "superpowers:brainstorming"
     ]
   },
   "activeTask": null

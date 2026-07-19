@@ -10,7 +10,7 @@
 
 ## Telemetry
 - Token utilization: 100%
-- Subagent spawns this session: 131
+- Subagent spawns this session: 135
 - Last handoff: SESSION-2026-07-19-v1.4.0-published.md
 
 ## Counts
@@ -20,4 +20,4 @@
 
 ## Skill audit
 - Required: (none)
-- Invoked: superpowers:test-driven-development, handoff
+- Invoked: superpowers:test-driven-development, handoff, superpowers:brainstorming
