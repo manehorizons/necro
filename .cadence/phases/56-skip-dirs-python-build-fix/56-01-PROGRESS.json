@@ -1,0 +1,17 @@
+{
+  "draftId": "56-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Made the \"build\" skip conditional on config.include lacking a Python glob (*.py); all other SKIP_DIRS entries stay unconditional.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-19T14:27:18.692Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "Added (AC-1) and (AC-2) regression tests to test/discover.test.ts. Full suite: 736 passed, typecheck clean.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-19T14:27:22.537Z"
+    }
+  }
+}

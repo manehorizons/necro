@@ -7,7 +7,6 @@ const SKIP_DIRS = new Set([
   "node_modules",
   ".git",
   "dist",
-  "build",
   "coverage",
   // Python
   "__pycache__",
@@ -16,6 +15,18 @@ const SKIP_DIRS = new Set([
   ".tox",
   ".eggs",
 ]);
+
+/**
+ * `build` is only a build-output dir in JS/TS projects — in Python it's a
+ * legitimate subpackage name (e.g. pip's `pip/_internal/operations/build/`).
+ * Skip it unless `config.include` targets Python, so Python configs don't
+ * silently lose a `build/` package from discovery.
+ */
+function skipDirsFor(config: NecroConfig): Set<string> {
+  const isPython = config.include.some((glob) => glob.includes("*.py"));
+  if (isPython) return SKIP_DIRS;
+  return new Set(SKIP_DIRS).add("build");
+}
 
 /**
  * Walk `target` and return absolute paths of source files matching
@@ -28,6 +39,7 @@ export async function discoverFiles(
 ): Promise<string[]> {
   const include = globMatcher(config.include);
   const ignore = globMatcher(config.ignore);
+  const skipDirs = skipDirsFor(config);
   const out: string[] = [];
 
   async function walk(dir: string): Promise<void> {
@@ -35,7 +47,7 @@ export async function discoverFiles(
     for (const entry of entries) {
       const abs = join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (SKIP_DIRS.has(entry.name)) continue;
+        if (skipDirs.has(entry.name)) continue;
         const rel = relative(target, abs);
         if (ignore(rel)) continue;
         await walk(abs);

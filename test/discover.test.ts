@@ -70,4 +70,25 @@ describe("discoverFiles — Python (AC-4)", () => {
     const names = files.map((f) => f.split("/").pop()).sort();
     expect(names).toEqual(["real.py"]);
   });
+
+  test("discovers a build/ subpackage under a Python-only config (AC-1)", async () => {
+    await mkdir(join(dir, "build"), { recursive: true });
+    await writeFile(join(dir, "build", "build_tracker.py"), "");
+    await writeFile(join(dir, "src", "real.py"), "");
+
+    const config = { ...DEFAULT_CONFIG, include: ["**/*.py"] };
+    const files = await discoverFiles(dir, config);
+    const names = files.map((f) => f.split("/").pop()).sort();
+    expect(names).toEqual(["build_tracker.py", "real.py"]);
+  });
+
+  test("still skips build/ under the default JS/TS-only config (AC-2)", async () => {
+    await mkdir(join(dir, "build"), { recursive: true });
+    await writeFile(join(dir, "build", "bundle.ts"), "");
+    await writeFile(join(dir, "src", "real.ts"), "");
+
+    const files = await discoverFiles(dir, DEFAULT_CONFIG);
+    const names = files.map((f) => f.split("/").pop()).sort();
+    expect(names).toEqual(["real.ts"]);
+  });
 });
