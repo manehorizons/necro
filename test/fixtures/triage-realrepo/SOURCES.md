@@ -41,6 +41,22 @@ engine bug that made trpc scans degenerate was fixed (rec-20260718-002 / phase
 > out. Revisit only with a specific candidate repo in hand, not open-ended
 > search.
 
+> **Open gap (phase 53):** the pinned hono commit above
+> (`61d6d66d27911001b9b4d57ab93139f9ad61384b`) is **no longer reachable
+> upstream** — confirmed via a full clone of every branch in `honojs/hono`
+> (2867 commits, all branches) and via the GitHub commits API (422 "No commit
+> found"). The corpus's own captured `code`/`evidence`/`provenance` data is
+> unaffected (it's frozen JSON, not a live dependency on the commit existing),
+> but anything that needs an actual **checkout** at that SHA — e.g. the
+> knip/ts-prune competitor bench (`npm run bench:checkout` /
+> `npm run bench:competitors`, see the Accuracy docs page's "Head-to-head"
+> section) — can currently only cover the trpc half of this corpus (44 of 63
+> cases). Likely cause: history rewritten upstream sometime after the phase-11
+> capture. Revisit only if a way to recover the original tree state turns up
+> (e.g. a fork or mirror that still has it) — re-pinning to a *different* hono
+> commit would require re-capturing and re-labeling all 19 hono cases from
+> scratch, not just updating a SHA.
+
 hono yields 20 genuinely-ambiguous `maybe` findings with **discriminating**
 evidence: `0 static references (TS compiler)` + `not in package.json exports` +
 an **unresolvable dynamic-import taint** (which is *why* necro is uncertain

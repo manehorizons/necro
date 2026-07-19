@@ -6,6 +6,10 @@
  * the derivations are fully unit-testable.
  */
 
+// Type-only: erased at compile time, so this doesn't create a runtime import
+// cycle even though competitors/score.ts imports `f1` from this module.
+import type { CompetitorBenchResult } from "./competitors/report.js";
+
 /** One source repo a corpus was captured from, with the case count it contributed. */
 export interface BenchSource {
   repo: string;
@@ -66,6 +70,10 @@ export interface BenchResults {
   /** Model id the run used (the numbers are model-specific). */
   model: string;
   corpora: BenchCorpusResult[];
+  /** Knip/ts-prune scored on the identical triage corpus (`npm run
+   * bench:competitors`). Absent until that's been run at least once; a
+   * pre-existing snapshot merged with a fresh competitor run keeps this. */
+  competitors?: CompetitorBenchResult;
 }
 
 /** Shapes the summarizers read — structural subsets of the eval-module metrics. */
@@ -86,7 +94,7 @@ interface DupEvalLike {
 }
 
 /** Harmonic mean of precision and recall; 0 when both are 0 (no divide-by-zero). */
-function f1(precision: number, recall: number): number {
+export function f1(precision: number, recall: number): number {
   const denom = precision + recall;
   return denom === 0 ? 0 : (2 * precision * recall) / denom;
 }
@@ -164,6 +172,12 @@ export function summarizeDup(m: DupEvalLike, sources: BenchSource[]): BenchCorpu
     n: total,
     metrics: { passRate: m.passRate, passed, total },
   };
+}
+
+/** Merge a fresh competitor-bench report into a snapshot's `competitors`
+ * field, replacing any prior one. Pure. */
+export function withCompetitors(results: BenchResults, competitors: CompetitorBenchResult): BenchResults {
+  return { ...results, competitors };
 }
 
 /** Serialize to canonical JSON (2-space indent, trailing newline). */

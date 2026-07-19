@@ -1,0 +1,27 @@
+{
+  "issues": [
+    {
+      "file": "packages/server/src/observable/index.ts",
+      "exports": [
+        { "name": "distinctUntilChanged", "line": 10, "col": 3, "pos": 155 },
+        { "name": "map", "line": 12, "col": 3, "pos": 207 }
+      ],
+      "types": [
+        { "name": "TeardownLogic", "line": 20, "col": 3, "pos": 293 },
+        { "name": "UnsubscribeFn", "line": 22, "col": 3, "pos": 328 }
+      ]
+    },
+    {
+      "file": "packages/client/src/links/localLink.ts",
+      "exports": [
+        { "name": "localLink", "line": 5, "col": 14, "pos": 90 }
+      ],
+      "types": []
+    },
+    {
+      "file": "packages/react-query/src/shared.ts",
+      "exports": [],
+      "types": []
+    }
+  ]
+}

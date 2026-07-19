@@ -4,13 +4,13 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 52-triage-gate-rederivation
+**Active phase:** 53-competitor-accuracy-table
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
 - Token utilization: 100%
-- Subagent spawns this session: 110
+- Subagent spawns this session: 111
 - Last handoff: SESSION-2026-07-18-host-cli-and-gate-rederivation.md
 
 ## Counts

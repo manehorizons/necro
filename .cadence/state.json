@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
-  "revision": 809,
+  "revision": 819,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
-  "activePhase": "52-triage-gate-rederivation",
+  "activePhase": "53-competitor-accuracy-table",
   "activeDraft": null,
   "activeSpec": null,
   "loopPosition": "IDLE",
   "tier": null,
-  "draftReadAt": "2026-07-18T23:33:17.809Z",
+  "draftReadAt": "2026-07-18T23:57:19.462Z",
   "openDrafts": [],
   "decisions": [],
   "deferred": [],
   "session": {
     "tokenUtilization": 1,
     "lastHandoff": "SESSION-2026-07-18-host-cli-and-gate-rederivation.md",
-    "subagentSpawns": 110,
+    "subagentSpawns": 111,
     "subagentBaselines": {}
   },
   "skillAudit": {

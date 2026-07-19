@@ -69,5 +69,53 @@
         }
       }
     }
-  ]
+  ],
+  "competitors": {
+    "generatedAt": "2026-07-19T00:14:58.879Z",
+    "corpusId": "triage",
+    "scoredRepos": [
+      {
+        "repo": "trpc/trpc",
+        "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b",
+        "cases": 44
+      }
+    ],
+    "skippedRepos": [
+      {
+        "repo": "honojs/hono",
+        "sha": "61d6d66d27911001b9b4d57ab93139f9ad61384b",
+        "cases": 19,
+        "reason": "checkout at .bench-cache/honojs__hono is not at the pinned SHA 61d6d66d27911001b9b4d57ab93139f9ad61384b"
+      }
+    ],
+    "n": 44,
+    "tools": [
+      {
+        "tool": "knip",
+        "version": "6.27.0",
+        "metrics": {
+          "total": 44,
+          "truePositives": 0,
+          "falsePositives": 1,
+          "falseNegatives": 25,
+          "precision": 0,
+          "recall": 0,
+          "f1": 0
+        }
+      },
+      {
+        "tool": "ts-prune",
+        "version": "0.10.3",
+        "metrics": {
+          "total": 44,
+          "truePositives": 2,
+          "falsePositives": 0,
+          "falseNegatives": 23,
+          "precision": 1,
+          "recall": 0.08,
+          "f1": 0.14814814814814814
+        }
+      }
+    ]
+  }
 }

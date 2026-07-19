@@ -21,3 +21,6 @@ dumpfile
 
 # Local pre-launch planning docs — kept local, not part of the shipped repo
 docs/launch/
+
+# Competitor-bench external repo checkouts (maintainer-run, never committed)
+.bench-cache/

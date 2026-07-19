@@ -5,6 +5,7 @@ sidebar:
   order: 4.5
 ---
 
+import { Aside } from '@astrojs/starlight/components';
 import results from '../../../../../bench/results.json';
 
 export const triage = results.corpora.find((c) => c.id === 'triage');
@@ -12,6 +13,12 @@ export const dup = results.corpora.find((c) => c.id === 'dup');
 export const pct = (x) => `${(x * 100).toFixed(0)}%`;
 export const measuredOn = results.generatedAt.slice(0, 10);
 export const srcLabel = (c) => c.sources.map((s) => `${s.repo}@${s.sha.slice(0, 7)}`).join(' + ');
+export const competitors = results.competitors;
+export const findTool = (name) => competitors?.tools.find((t) => t.tool === name);
+export const knip = findTool('knip');
+export const tsPrune = findTool('ts-prune');
+export const competitorSrcLabel = () =>
+  competitors?.scoredRepos.map((s) => `${s.repo}@${s.sha.slice(0, 7)}`).join(' + ');
 
 Most dead-code and anti-pattern tools ask you to trust them. Necro **measures**
 itself: every number on this page is computed by running Necro over a frozen,
@@ -32,19 +39,64 @@ what matters most: it measures how often Necro is *right when it calls code dead
 A false positive here — killing live production code — is the trust-killer that
 sinks static dead-code tools.
 
-| Metric | Value |
-| --- | --- |
-| **Precision** (dead class) | **{pct(triage.metrics.precision)}** |
-| **Recall** (dead class) | {pct(triage.metrics.recall)} |
-| **F1** | {triage.metrics.f1.toFixed(2)} |
-| True positives / False positives / False negatives | {triage.metrics.truePositives} / {triage.metrics.falsePositives} / {triage.metrics.falseNegatives} |
-| Cases | {triage.n} ({srcLabel(triage)}) |
+<table>
+  <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Precision</strong> (dead class)</td><td><strong>{pct(triage.metrics.precision)}</strong></td></tr>
+    <tr><td><strong>Recall</strong> (dead class)</td><td>{pct(triage.metrics.recall)}</td></tr>
+    <tr><td><strong>F1</strong></td><td>{triage.metrics.f1.toFixed(2)}</td></tr>
+    <tr><td>True positives / False positives / False negatives</td><td>{triage.metrics.truePositives} / {triage.metrics.falsePositives} / {triage.metrics.falseNegatives}</td></tr>
+    <tr><td>Cases</td><td>{triage.n} ({srcLabel(triage)})</td></tr>
+  </tbody>
+</table>
 
 At **{pct(triage.metrics.precision)} precision** across {triage.n} real-repo
 cases, Necro made **{triage.metrics.falsePositives} false-positive calls** — it
 never told you to delete live code. Recall is deliberately the looser axis:
 Necro would rather quarantine an ambiguous symbol in the `maybe` tier than risk a
 wrong kill.
+
+## Head-to-head — knip, ts-prune
+
+The same triage corpus and ground truth, scored against two popular
+unused-export finders: [knip](https://knip.dev) and
+[ts-prune](https://github.com/nadeesha/ts-prune). Same cases, same "dead"
+positive class, same precision/recall/F1 math necro's own number above uses —
+a tool is scored "dead" on a case iff it flags that case's exact declaration
+as an unused export.
+
+<table>
+  <thead><tr><th>Tool</th><th>Precision</th><th>Recall</th><th>F1</th><th>Cases</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Necro</strong></td><td><strong>{pct(triage.metrics.precision)}</strong></td><td>{pct(triage.metrics.recall)}</td><td>{triage.metrics.f1.toFixed(2)}</td><td>{triage.n}</td></tr>
+    <tr><td>knip {knip?.version}</td><td>{knip ? pct(knip.metrics.precision) : '—'}</td><td>{knip ? pct(knip.metrics.recall) : '—'}</td><td>{knip ? knip.metrics.f1.toFixed(2) : '—'}</td><td>{competitors?.n ?? '—'}</td></tr>
+    <tr><td>ts-prune {tsPrune?.version}</td><td>{tsPrune ? pct(tsPrune.metrics.precision) : '—'}</td><td>{tsPrune ? pct(tsPrune.metrics.recall) : '—'}</td><td>{tsPrune ? tsPrune.metrics.f1.toFixed(2) : '—'}</td><td>{competitors?.n ?? '—'}</td></tr>
+  </tbody>
+</table>
+
+<Aside type="caution" title="Read the scope gap before the numbers">
+  knip and ts-prune only ever analyze **exported** declarations — that's the
+  entire category of tool they are. But **28 of this corpus's 30 "dead"
+  ground-truth cases (93%) are non-exported local declarations** (e.g. a
+  helper `const` or `class` declared and used only inside its own test file,
+  never `export`ed at all) — a pattern necro's triage also catches but that is
+  *structurally invisible* to an unused-*export* tool. That caps knip/ts-prune's
+  theoretical recall on this corpus at roughly 7%, regardless of how good they
+  are at their actual job. This table is a fair "run both out of the box on
+  the identical corpus" comparison, not a fair *scope* comparison — necro's
+  triage and knip/ts-prune solve overlapping but different-sized problems.
+</Aside>
+
+{competitors && competitors.skippedRepos.length > 0 && (
+  <Aside type="note" title="Partial corpus">
+    This table currently covers <strong>{competitors.n} of {triage.n}</strong> cases
+    ({competitorSrcLabel()}) — {competitors.skippedRepos.map((s) => s.repo).join(', ')}'s
+    pinned corpus commit ({competitors.skippedRepos.map((s) => s.sha.slice(0, 7)).join(', ')})
+    is no longer reachable upstream (rewritten history), so it can't currently
+    be checked out to score. See <code>test/fixtures/triage-realrepo/SOURCES.md</code> for
+    the open gap. The head-to-head will cover the full corpus once that's resolved.
+  </Aside>
+)}
 
 ## Duplication refactor — pass-rate
 
@@ -54,11 +106,14 @@ extracts one shared exported function, collapses the duplication at every clone
 site, and preserves each call surface. No human grades the output — the scorer is
 mechanical.
 
-| Metric | Value |
-| --- | --- |
-| **Pass-rate** | **{pct(dup.metrics.passRate)}** |
-| Passed / total | {dup.metrics.passed} / {dup.metrics.total} |
-| Cases | {dup.n} ({srcLabel(dup)}) |
+<table>
+  <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Pass-rate</strong></td><td><strong>{pct(dup.metrics.passRate)}</strong></td></tr>
+    <tr><td>Passed / total</td><td>{dup.metrics.passed} / {dup.metrics.total}</td></tr>
+    <tr><td>Cases</td><td>{dup.n} ({srcLabel(dup)})</td></tr>
+  </tbody>
+</table>
 
 ## Methodology
 
@@ -95,13 +150,24 @@ npm run bench                      # writes bench/results.json
 {dup.n} duplication) and writes a provenance-stamped `bench/results.json` — the
 same file this page reads.
 
+The knip/ts-prune head-to-head is a separate, model-free step (no
+`ANTHROPIC_API_KEY` needed) — it needs local checkouts of the corpus repos
+first:
+
+```bash
+npm run bench:checkout      # clones the corpus repos into .bench-cache/ (gitignored)
+npm run bench:competitors   # scores knip + ts-prune, merges into bench/results.json
+```
+
 ## Limitations &amp; honesty
 
 - **Sample size is modest** ({triage.n} triage + {dup.n} duplication cases). These
   are authentic, deliberately-hard cases, not an exhaustive survey.
 - **Repo selection is curated.** Cases come from a handful of well-known TS repos;
   results may differ on your codebase.
-- **No competitor comparison yet.** This page reports Necro's own measured
-  numbers. A fair head-to-head against other tools (run on the same corpus, scored
-  the same way) is planned as a follow-up — we'd rather publish nothing than an
-  unfair comparison.
+- **The competitor table's scope gap is real, not a scoring bug.** See the
+  caution box above — knip/ts-prune structurally cannot see non-exported dead
+  code, and the corpus is currently missing one of its two source repos
+  pending a checkout fix. We'd rather publish an honestly-caveated partial
+  comparison than wait indefinitely or quietly narrow the corpus to flatter
+  the numbers.
