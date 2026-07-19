@@ -1,6 +1,6 @@
 {
   "name": "@manehorizons/necro",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Local, free, polyglot CLI that finds anti-pattern code and proposes LLM-assisted fixes.",
   "license": "MIT",
   "private": false,

@@ -4,7 +4,7 @@ All notable changes to `@manehorizons/necro` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.3.0] — 2026-07-18
 
 ### Added
 - **Default file discovery now covers the whole JS/TS extension family.**
@@ -21,6 +21,13 @@ adheres to [Semantic Versioning](https://semver.org/).
   The parser now dispatches to the `tsx` grammar for `.tsx`/`.jsx` files
   (already bundled via `tree-sitter-wasms`, no new dependency) and the plain
   `typescript` grammar for everything else.
+- **`necro baseline` snapshots were not portable across machines/CI.**
+  `findingKey`/`complexityKey` keyed each finding by its raw absolute-path
+  symbol id, so a `.necro-baseline.json` committed on one machine would never
+  match when `necro scan --fail-on` re-read it from a different absolute
+  checkout path (e.g. a GitHub Actions runner) — silently un-baselining every
+  pre-existing finding on the first CI run. Keys are now relative to the scan
+  root, so a baseline committed anywhere matches everywhere.
 
 ## [1.2.0] — 2026-07-17
 
