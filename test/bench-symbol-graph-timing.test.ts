@@ -1,0 +1,69 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { DEFAULT_CONFIG } from "../src/config.js";
+import {
+  measureSymbolGraphTiming,
+  parseArgs,
+} from "../src/bench/symbol-graph-timing.js";
+
+let dir: string;
+
+beforeEach(async () => {
+  dir = await mkdtemp(join(tmpdir(), "necro-symbol-graph-timing-"));
+  await mkdir(join(dir, "src"), { recursive: true });
+});
+
+afterEach(async () => {
+  await rm(dir, { recursive: true, force: true });
+});
+
+describe("measureSymbolGraphTiming (AC-1)", () => {
+  test("reports file/decl/edge counts and non-negative timings for a known fixture", async () => {
+    await writeFile(
+      join(dir, "src", "a.ts"),
+      "export function greet() { return 'hi'; }\n",
+    );
+    await writeFile(
+      join(dir, "src", "b.ts"),
+      "import { greet } from './a.js';\nexport function callGreet() { return greet(); }\n",
+    );
+
+    const result = await measureSymbolGraphTiming(dir, DEFAULT_CONFIG);
+
+    expect(result.fileCount).toBe(2);
+    expect(result.declCount).toBe(2); // greet, callGreet
+    expect(result.edgeCount).toBe(2); // callGreet -> greet: one for the import specifier, one for the call
+    expect(result.discoverMs).toBeGreaterThanOrEqual(0);
+    expect(result.buildMs).toBeGreaterThanOrEqual(0);
+  });
+
+  test("counts zero files/decls/edges on an empty tree", async () => {
+    const result = await measureSymbolGraphTiming(dir, DEFAULT_CONFIG);
+
+    expect(result.fileCount).toBe(0);
+    expect(result.declCount).toBe(0);
+    expect(result.edgeCount).toBe(0);
+  });
+});
+
+describe("parseArgs (AC-1)", () => {
+  test("parses --repo", () => {
+    expect(parseArgs(["--repo", "/some/path"])).toEqual({
+      repo: "/some/path",
+      include: undefined,
+    });
+  });
+
+  test("parses --include as a comma-split list", () => {
+    expect(parseArgs(["--repo", "/some/path", "--include", "**/*.ts,**/*.tsx"])).toEqual({
+      repo: "/some/path",
+      include: ["**/*.ts", "**/*.tsx"],
+    });
+  });
+
+  test("throws without --repo", () => {
+    expect(() => parseArgs([])).toThrow("--repo <path> is required");
+  });
+});

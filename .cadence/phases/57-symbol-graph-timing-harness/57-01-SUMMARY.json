@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "draftId": "57-01",
+  "completedAt": "2026-07-19T15:00:53.490Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-2",
+      "pass": true,
+      "evidence": "assertion"
+    }
+  ],
+  "gates": [
+    {
+      "gate": "draft-read",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    },
+    {
+      "gate": "structural-verifier",
+      "status": "ran"
+    },
+    {
+      "gate": "boundary-scan",
+      "status": "skipped",
+      "skipReason": "boundaryEnforcement is not \"block\""
+    },
+    {
+      "gate": "build-test-must-pass",
+      "status": "skipped",
+      "skipReason": "no test command configured — build-test-must-pass cannot verify your tests ran; this settle will NOT confirm the suite passes. Set verification.testCommand in .cadence/config.json to enable real enforcement."
+    },
+    {
+      "gate": "test-coverage",
+      "status": "ran"
+    },
+    {
+      "gate": "interactive-verdict",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "deep-verify",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "code-review",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    },
+    {
+      "gate": "security-audit",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "Added src/bench/symbol-graph-timing.ts (measureSymbolGraphTiming + CLI, mirrors python-import-resolution-rate.ts) and test/bench-symbol-graph-timing.test.ts (5 tests). Full suite: 741 passed, typecheck clean."
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "Ran src/bench/symbol-graph-timing.ts against both already-checked-out .bench-cache repos: honojs/hono@cadff88b — 378 files, 1387 decls, 14165 edges, discover 15ms, build 4367ms (~3.15ms/decl). trpc/trpc@c7360d4eb — 973 files, 4210 decls, 12973 edges, discover 32ms, build 44661ms (~10.6ms/decl). Discovery is negligible in both cases (<35ms); essentially all cost is in buildSymbolGraph's per-declaration findReferencesAsNodes walk. Per-decl cost roughly tripled going from hono to trpc (~2.6x the files), i.e. cost does not scale linearly with repo size — this substantiates rec-20260701-016's premise that reference-walking is the dominant, super-linear cost on larger repos, and that it's worth persisting/caching. Neither repo reaches the rec's stated \"5k-file monorepo\" scale, so the real-world cost there is plausibly much worse than these numbers suggest. Recommend promoting rec-20260701-016 to ready-for-milestone on the strength of this evidence."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": [
+      "superpowers:test-driven-development",
+      "handoff"
+    ]
+  }
+}
