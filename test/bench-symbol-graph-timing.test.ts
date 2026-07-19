@@ -67,3 +67,37 @@ describe("parseArgs (AC-1)", () => {
     expect(() => parseArgs([])).toThrow("--repo <path> is required");
   });
 });
+
+describe("measureSymbolGraphTiming with cached: true (AC-2)", () => {
+  test("uses the symbol-graph cache and reports a fast second run", async () => {
+    await writeFile(
+      join(dir, "src", "a.ts"),
+      "export function greet() { return 'hi'; }\n",
+    );
+
+    const first = await measureSymbolGraphTiming(dir, DEFAULT_CONFIG, { cached: true });
+    expect(first.declCount).toBe(1);
+
+    const second = await measureSymbolGraphTiming(dir, DEFAULT_CONFIG, { cached: true });
+    expect(second.declCount).toBe(1);
+    expect(second.buildMs).toBeLessThanOrEqual(first.buildMs + 1);
+  });
+});
+
+describe("parseArgs --twice (AC-2)", () => {
+  test("parses --twice as a boolean flag", () => {
+    expect(parseArgs(["--repo", "/some/path", "--twice"])).toEqual({
+      repo: "/some/path",
+      include: undefined,
+      twice: true,
+    });
+  });
+
+  test("defaults twice to undefined when absent", () => {
+    expect(parseArgs(["--repo", "/some/path"])).toEqual({
+      repo: "/some/path",
+      include: undefined,
+      twice: undefined,
+    });
+  });
+});

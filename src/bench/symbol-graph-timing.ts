@@ -1,6 +1,7 @@
 import { pathToFileURL } from "node:url";
 import { DEFAULT_CONFIG, type NecroConfig } from "../config.js";
 import { discoverFiles } from "../discover.js";
+import { buildSymbolGraphCached } from "../graph/symbol-graph-cache.js";
 import { buildSymbolGraph } from "../graph/symbol-graph.js";
 
 /**
@@ -26,16 +27,24 @@ export interface TimingResult {
   buildMs: number;
 }
 
+export interface MeasureOptions {
+  /** Route the build through the symbol-graph cache instead of a raw uncached build. */
+  cached?: boolean;
+}
+
 export async function measureSymbolGraphTiming(
   repoPath: string,
   config: NecroConfig = DEFAULT_CONFIG,
+  opts: MeasureOptions = {},
 ): Promise<TimingResult> {
   const discoverStart = performance.now();
   const files = await discoverFiles(repoPath, config);
   const discoverMs = performance.now() - discoverStart;
 
   const buildStart = performance.now();
-  const graph = buildSymbolGraph(files);
+  const graph = opts.cached
+    ? await buildSymbolGraphCached(repoPath, files)
+    : buildSymbolGraph(files);
   const buildMs = performance.now() - buildStart;
 
   return {
@@ -50,17 +59,19 @@ export async function measureSymbolGraphTiming(
 export interface TimingArgs {
   repo: string;
   include?: string[];
+  twice?: boolean;
 }
 
-/** Parse `--repo <path>` (required) and `--include <comma-separated-globs>` (optional). Pure — no I/O. */
+/** Parse `--repo <path>` (required), `--include <comma-separated-globs>` (optional), and `--twice` (optional). Pure — no I/O. */
 export function parseArgs(argv: string[]): TimingArgs {
   const args: Partial<TimingArgs> = {};
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--repo") args.repo = argv[++i];
     if (argv[i] === "--include") args.include = argv[++i]?.split(",");
+    if (argv[i] === "--twice") args.twice = true;
   }
   if (!args.repo) throw new Error("--repo <path> is required");
-  return { repo: args.repo, include: args.include };
+  return { repo: args.repo, include: args.include, twice: args.twice };
 }
 
 async function main(): Promise<void> {
@@ -68,6 +79,21 @@ async function main(): Promise<void> {
   const config = args.include
     ? { ...DEFAULT_CONFIG, include: args.include }
     : DEFAULT_CONFIG;
+
+  if (args.twice) {
+    const run1 = await measureSymbolGraphTiming(args.repo, config, { cached: true });
+    console.log(
+      `${args.repo} [run 1, cache miss expected]: ${run1.fileCount} files, ${run1.declCount} decls, ${run1.edgeCount} edges — ` +
+        `discover ${run1.discoverMs.toFixed(0)}ms, build ${run1.buildMs.toFixed(0)}ms`,
+    );
+    const run2 = await measureSymbolGraphTiming(args.repo, config, { cached: true });
+    console.log(
+      `${args.repo} [run 2, cache hit expected]: ${run2.fileCount} files, ${run2.declCount} decls, ${run2.edgeCount} edges — ` +
+        `discover ${run2.discoverMs.toFixed(0)}ms, build ${run2.buildMs.toFixed(0)}ms`,
+    );
+    return;
+  }
+
   const result = await measureSymbolGraphTiming(args.repo, config);
   console.log(
     `${args.repo}: ${result.fileCount} files, ${result.declCount} decls, ${result.edgeCount} edges — ` +

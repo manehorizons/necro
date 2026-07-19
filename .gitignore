@@ -25,6 +25,12 @@ docs/launch/
 # Competitor-bench external repo checkouts (maintainer-run, never committed)
 .bench-cache/
 
+# necro's own symbol-graph cache (phase 58) — derived/disposable, written
+# wherever a test or manual run scans a target in place, including nested
+# under test/fixtures/ real-repo corpora (those tests scan in place, not via
+# a tmpdir copy).
+**/.necro-cache/
+
 # test/library-exports.test.ts's scratch dir for self-reference resolution
 # checks — must live inside the repo (not the OS tmpdir) so Node/tsc's
 # package self-reference walk-up finds this repo's own package.json.

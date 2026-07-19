@@ -14,7 +14,7 @@ import {
   detectImportRoots,
 } from "../graph/python/module-resolver.js";
 import { buildPythonSymbolGraph } from "../graph/python/symbol-graph.js";
-import { buildSymbolGraph } from "../graph/symbol-graph.js";
+import { buildSymbolGraphCached } from "../graph/symbol-graph-cache.js";
 import type { SymbolEdge, SymbolGraph } from "../graph/types.js";
 import { resolveEntries } from "../plugins/entry-resolver.js";
 import { createNextjsPlugin } from "../plugins/nextjs/index.js";
@@ -133,7 +133,7 @@ export async function buildReachabilityModel(
   // Node ids are file-path-based, so concatenating the two never collides.
   const pyFiles = files.filter(isPythonFile);
   const tsFiles = files.filter((f) => !isPythonFile(f));
-  const tsGraph = buildSymbolGraph(tsFiles, {
+  const tsGraph = await buildSymbolGraphCached(targetPath, tsFiles, {
     isTestFile,
     packagePaths: workspaces.packagePaths,
   });
