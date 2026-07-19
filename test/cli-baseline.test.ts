@@ -72,33 +72,44 @@ describe("necro baseline", () => {
 });
 
 describe("necro scan with a baseline", () => {
-  test("AC-2: baselined findings are excluded and --fail-on medium passes", async () => {
-    await run(["baseline"], dir);
+  // Two sequential full CLI invocations (node startup + tree-sitter WASM load
+  // each time) push this right up against vitest's 5s default on a loaded CI
+  // runner — bump it rather than race it.
+  test(
+    "AC-2: baselined findings are excluded and --fail-on medium passes",
+    async () => {
+      await run(["baseline"], dir);
 
-    const scanned = await run(["scan", "--json", "--fail-on", "medium"], dir);
-    expect(scanned.code).toBe(0);
-    const parsed = JSON.parse(scanned.stdout);
-    expect(parsed.findings.some((f: { name: string }) => f.name === "orphan")).toBe(
-      false,
-    );
-  });
+      const scanned = await run(["scan", "--json", "--fail-on", "medium"], dir);
+      expect(scanned.code).toBe(0);
+      const parsed = JSON.parse(scanned.stdout);
+      expect(
+        parsed.findings.some((f: { name: string }) => f.name === "orphan"),
+      ).toBe(false);
+    },
+    15000,
+  );
 
-  test("AC-3: a finding introduced after baselining still shows and still gates", async () => {
-    await run(["baseline"], dir);
+  test(
+    "AC-3: a finding introduced after baselining still shows and still gates",
+    async () => {
+      await run(["baseline"], dir);
 
-    // introduce a second, unbaselined dead export
-    await write(
-      "src/util.ts",
-      `export function live() {}\nexport function orphan() {}\nexport function orphan2() {}\n`,
-    );
+      // introduce a second, unbaselined dead export
+      await write(
+        "src/util.ts",
+        `export function live() {}\nexport function orphan() {}\nexport function orphan2() {}\n`,
+      );
 
-    const scanned = await run(["scan", "--json", "--fail-on", "medium"], dir);
-    expect(scanned.code).toBe(1);
-    const parsed = JSON.parse(scanned.stdout);
-    const names = parsed.findings.map((f: { name: string }) => f.name);
-    expect(names).toContain("orphan2");
-    expect(names).not.toContain("orphan");
-  });
+      const scanned = await run(["scan", "--json", "--fail-on", "medium"], dir);
+      expect(scanned.code).toBe(1);
+      const parsed = JSON.parse(scanned.stdout);
+      const names = parsed.findings.map((f: { name: string }) => f.name);
+      expect(names).toContain("orphan2");
+      expect(names).not.toContain("orphan");
+    },
+    15000,
+  );
 });
 
 describe("necro scan with // necro-ignore", () => {
