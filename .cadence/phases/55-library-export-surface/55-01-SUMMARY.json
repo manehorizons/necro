@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "draftId": "55-01",
+  "completedAt": "2026-07-19T02:30:58.122Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-2",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-3",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-4",
+      "pass": true,
+      "evidence": "assertion"
+    }
+  ],
+  "gates": [
+    {
+      "gate": "draft-read",
+      "status": "ran"
+    },
+    {
+      "gate": "structural-verifier",
+      "status": "ran"
+    },
+    {
+      "gate": "boundary-scan",
+      "status": "skipped",
+      "skipReason": "boundaryEnforcement is not \"block\""
+    },
+    {
+      "gate": "build-test-must-pass",
+      "status": "skipped",
+      "skipReason": "no test command configured — build-test-must-pass cannot verify your tests ran; this settle will NOT confirm the suite passes. Set verification.testCommand in .cadence/config.json to enable real enforcement."
+    },
+    {
+      "gate": "test-coverage",
+      "status": "ran"
+    },
+    {
+      "gate": "interactive-verdict",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "deep-verify",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "code-review",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    },
+    {
+      "gate": "security-audit",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "Added src/index.ts re-exporting scan/ScanResult/ScanOptions/ScanDiagnostics/Finding, buildReachabilityModel/ReachabilityModel/EntryResolution/EntryResolutionRecord, explain/resolveQuery/ExplainResult/ExplainOptions/ExplainSymbol/TraceNode/InboundRef, loadConfig/NecroConfig/LlmOptions, ClassifiedFinding/Tier/Verdict/EvidenceSignal, SymbolNode. Named re-exports only, no default export. Biome's organize-imports auto-fix reordered the groups (now sorted by source module). typecheck + lint clean."
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "src/version.ts: replaced static `import pkg from \"../package.json\"` with a runtime `createRequire(import.meta.url)(\"../package.json\")` read, typed `as { version: string }`. Fixes the library build's rootDir:\"src\" blocker (a static import resolves outside src/, causing TS6059 under the tsconfig.build.json T3 adds next). Verified VERSION's observable value is unchanged: `node dist/cli.js --version` still prints 1.3.0 matching package.json, and the full suite (incl. release-shape.test.ts's VERSION===pkg.version assertion) passes 731/737."
+    },
+    {
+      "id": "T3",
+      "status": "DONE",
+      "notes": "Added tsconfig.build.json extending base tsconfig: module/moduleResolution NodeNext, types:[\"node\"], declaration:true, noEmit:false, outDir \"dist\", rootDir \"src\", include [\"src\"], exclude [\"src/cli.ts\",\"src/bench\",\"test\"]. Verified end-to-end: clean rm -rf dist -> npm run build (esbuild) -> npx tsc -p tsconfig.build.json produces dist/index.js + dist/index.d.ts + full per-module mirror (177 files, bench/ correctly absent), with dist/cli.js's sha256 identical before and after the tsc step (no collision). dist/index.d.ts re-exports resolve correctly with .js extensions intact."
+    },
+    {
+      "id": "T4",
+      "status": "DONE",
+      "notes": "package.json: added main:\"./dist/index.js\", types:\"./dist/index.d.ts\", exports map (\".\" -> types+import, plus \"./package.json\" passthrough). bin unchanged. Split build into build:cli (esbuild, unchanged command) + build:lib (tsc -p tsconfig.build.json); build now runs both in that order. Verified: npm run build produces dist/cli.js + dist/index.js + dist/index.d.ts; checksum of dist/cli.js identical before/after build:lib; prepublishOnly succeeds; lint/typecheck/full test suite (731/737) all clean."
+    },
+    {
+      "id": "T5",
+      "status": "DONE",
+      "notes": "Added test/library-exports.test.ts, 3 tests: (1) writes a temp consumer.ts + tsconfig (NodeNext) inside the repo (required for Node/tsc self-reference resolution to walk up to this repo's own package.json) importing scan/explain/buildReachabilityModel/loadConfig + types via the bare specifier \"@manehorizons/necro\", shells to tsc --noEmit, asserts success; (2) dynamic `import(\"@manehorizons/necro\")` (bare specifier, not a relative dist path) asserts each runtime export is a function; (3) calls the built scan()/loadConfig() against a real fixture directory (index.ts with one dead, non-exported function) and asserts the dead symbol appears in findings.\n\nCaught a real gap during the required sabotage checks: my first draft of tests (2) and (3) imported dist/index.js by relative path, which bypasses the exports map entirely — corrupting exports.\".\".import in package.json still passed. Fixed by switching to the bare specifier for both; re-verified the corrupted-import-path sabotage now fails with a clear vite/exports-resolution error, and reverted. Also verified the export-rename sabotage (scan -> scanRenamed) fails all 3 tests, then reverted. Added .tmp-lib-check-*/ to .gitignore for the scratch dir. Full suite from a clean dist/: lint, typecheck, build, 734/740 tests all green."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": [
+      "superpowers:test-driven-development",
+      "handoff"
+    ]
+  }
+}
