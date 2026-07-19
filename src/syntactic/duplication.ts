@@ -34,7 +34,10 @@ const MOD = 2_147_483_647; // a large prime, fits in a JS number
  * covered windows marked so each clone is reported once (not as overlapping
  * sub-windows). Operates on the normalized `Token[]` only.
  */
-export function findClones(files: FileTokens[], minTokens: number): DuplicationFinding[] {
+export function findClones(
+  files: FileTokens[],
+  minTokens: number,
+): DuplicationFinding[] {
   const W = minTokens;
   // Intern token strings to integer ids for fast equality + hashing.
   const ids = new Map<string, number>();
@@ -77,11 +80,13 @@ export function findClones(files: FileTokens[], minTokens: number): DuplicationF
   const runEnd = unitIds.map((ids) => {
     const n = ids.length;
     const re = new Array<number>(n);
-    for (let i = n - 1; i >= 0; i--) re[i] = i + 1 < n && ids[i + 1] === ids[i] ? re[i + 1]! : i;
+    for (let i = n - 1; i >= 0; i--)
+      re[i] = i + 1 < n && ids[i + 1] === ids[i] ? re[i + 1]! : i;
     return re;
   });
   // Does the window [i, i+W) lie entirely within one unit?
-  const windowInOneUnit = (f: number, i: number): boolean => i + W - 1 <= runEnd[f]![i]!;
+  const windowInOneUnit = (f: number, i: number): boolean =>
+    i + W - 1 <= runEnd[f]![i]!;
 
   // Top coefficient BASE^(W-1) mod MOD, for the rolling subtraction.
   let topCoef = 1;
@@ -106,7 +111,7 @@ export function findClones(files: FileTokens[], minTokens: number): DuplicationF
       }
       // roll forward
       if (i + W < arr.length) {
-        h = ((h - arr[i]! * topCoef) % MOD + MOD) % MOD;
+        h = (((h - arr[i]! * topCoef) % MOD) + MOD) % MOD;
         h = (h * BASE + arr[i + W]!) % MOD;
       }
     }
@@ -130,7 +135,9 @@ export function findClones(files: FileTokens[], minTokens: number): DuplicationF
       if (!windowInOneUnit(f, i)) continue; // a straddling window is never a clone start
       const self: Pos = { f, i };
       const bucket = index.get(windowHash[f]![i]!) ?? [];
-      const members = bucket.filter((p) => (p.f !== f || p.i !== i) && windowEqual(self, p));
+      const members = bucket.filter(
+        (p) => (p.f !== f || p.i !== i) && windowEqual(self, p),
+      );
       if (members.length === 0) continue;
       const group = [self, ...members];
       if (group.some((p) => covered.has(key(p.f, p.i)))) continue;
@@ -144,7 +151,10 @@ export function findClones(files: FileTokens[], minTokens: number): DuplicationF
         if (nextId === undefined) break;
         let allMatch = true;
         for (const p of group) {
-          if (fileIds[p.f]![p.i + len] !== nextId || p.i + len > runEnd[p.f]![p.i]!) {
+          if (
+            fileIds[p.f]![p.i + len] !== nextId ||
+            p.i + len > runEnd[p.f]![p.i]!
+          ) {
             allMatch = false;
             break;
           }

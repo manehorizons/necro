@@ -16,7 +16,11 @@ export interface ResolvedImport {
  * package's `__init__.py`); which named export `symbol` actually is remains
  * Phase C's job.
  */
-export function resolvePythonImport(fromFile: string, imp: PythonImport, map: PythonModuleMap): ResolvedImport[] {
+export function resolvePythonImport(
+  fromFile: string,
+  imp: PythonImport,
+  map: PythonModuleMap,
+): ResolvedImport[] {
   if (imp.kind === "import") {
     return imp.modules.map((m) => ({
       file: map.moduleToFile.get(m.segments.join(".")) ?? null,
@@ -27,14 +31,26 @@ export function resolvePythonImport(fromFile: string, imp: PythonImport, map: Py
   const base = resolveFromBase(fromFile, imp, map);
 
   if (imp.isStar) {
-    return [{ file: base === null ? null : (map.moduleToFile.get(base) ?? null), binding: "*" }];
+    return [
+      {
+        file: base === null ? null : (map.moduleToFile.get(base) ?? null),
+        binding: "*",
+      },
+    ];
   }
 
-  return imp.names.map((n) => ({ file: resolveFromName(base, n.name, map), binding: n.binding }));
+  return imp.names.map((n) => ({
+    file: resolveFromName(base, n.name, map),
+    binding: n.binding,
+  }));
 }
 
 /** The dotted module path a `from` clause's names should be resolved against, or `null` if a relative import walked above the topmost known package. Exported for callers (Phase C's reference walk) that need to distinguish a submodule-style binding from a package-fallback (re-exported symbol) binding. */
-export function resolveFromBase(fromFile: string, imp: Extract<PythonImport, { kind: "from" }>, map: PythonModuleMap): string | null {
+export function resolveFromBase(
+  fromFile: string,
+  imp: Extract<PythonImport, { kind: "from" }>,
+  map: PythonModuleMap,
+): string | null {
   if (imp.relativeDots === 0) return imp.moduleSegments.join(".");
 
   const ownPackage = containingPackage(fromFile, map);
@@ -42,11 +58,18 @@ export function resolveFromBase(fromFile: string, imp: Extract<PythonImport, { k
   const levelsUp = imp.relativeDots - 1;
   if (levelsUp > ownSegments.length) return null;
 
-  const baseSegments = [...ownSegments.slice(0, ownSegments.length - levelsUp), ...imp.moduleSegments];
+  const baseSegments = [
+    ...ownSegments.slice(0, ownSegments.length - levelsUp),
+    ...imp.moduleSegments,
+  ];
   return baseSegments.join(".");
 }
 
-function resolveFromName(base: string | null, name: string, map: PythonModuleMap): string | null {
+function resolveFromName(
+  base: string | null,
+  name: string,
+  map: PythonModuleMap,
+): string | null {
   if (base === null) return null;
   const submodule = base === "" ? name : `${base}.${name}`;
   const submoduleFile = map.moduleToFile.get(submodule);

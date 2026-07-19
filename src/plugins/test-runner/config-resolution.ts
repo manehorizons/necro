@@ -19,24 +19,44 @@ export interface ResolvedTestConfig {
   configFiles: string[];
 }
 
-const JEST_DEFAULT_MATCH = ["**/__tests__/**/*.[jt]s?(x)", "**/*.(spec|test).[jt]s?(x)"];
+const JEST_DEFAULT_MATCH = [
+  "**/__tests__/**/*.[jt]s?(x)",
+  "**/*.(spec|test).[jt]s?(x)",
+];
 const VITEST_DEFAULT_MATCH = ["**/*.{test,spec}.?(c|m)[jt]s?(x)"];
 
 const VITEST_CONFIG_NAMES = [
-  "vitest.config.ts", "vitest.config.mts", "vitest.config.cts",
-  "vitest.config.js", "vitest.config.mjs", "vitest.config.cjs",
-  "vite.config.ts", "vite.config.mts", "vite.config.js", "vite.config.mjs",
+  "vitest.config.ts",
+  "vitest.config.mts",
+  "vitest.config.cts",
+  "vitest.config.js",
+  "vitest.config.mjs",
+  "vitest.config.cjs",
+  "vite.config.ts",
+  "vite.config.mts",
+  "vite.config.js",
+  "vite.config.mjs",
 ];
 const JEST_CONFIG_NAMES = [
-  "jest.config.ts", "jest.config.js", "jest.config.mjs",
-  "jest.config.cjs", "jest.config.json",
+  "jest.config.ts",
+  "jest.config.js",
+  "jest.config.mjs",
+  "jest.config.cjs",
+  "jest.config.json",
 ];
 
 export function detectRunner(ctx: RepoContext): Runner {
-  if (ctx.hasDep(["vitest"]) || ctx.hasConfig(["vitest.config.*", "vite.config.*"])) {
+  if (
+    ctx.hasDep(["vitest"]) ||
+    ctx.hasConfig(["vitest.config.*", "vite.config.*"])
+  ) {
     return "vitest";
   }
-  if (ctx.hasDep(["jest", "@jest/core"]) || ctx.packageJsonHas("jest") || ctx.hasConfig(["jest.config.*"])) {
+  if (
+    ctx.hasDep(["jest", "@jest/core"]) ||
+    ctx.packageJsonHas("jest") ||
+    ctx.hasConfig(["jest.config.*"])
+  ) {
     return "jest";
   }
   return "unknown";
@@ -57,7 +77,8 @@ export function resolveTestConfigSync(ctx: RepoContext): ResolvedTestConfig {
   else if (runner === "jest") parseJest(ctx.root, base);
 
   if (base.testMatch.length === 0) {
-    base.testMatch = runner === "jest" ? JEST_DEFAULT_MATCH : VITEST_DEFAULT_MATCH;
+    base.testMatch =
+      runner === "jest" ? JEST_DEFAULT_MATCH : VITEST_DEFAULT_MATCH;
   }
   return base;
 }
@@ -120,7 +141,9 @@ const defaultShellOut: ShellResolver = async (runner, ctx) => {
   }
 };
 
-function parseJestShowConfig(stdout: string): Partial<ResolvedTestConfig> | null {
+function parseJestShowConfig(
+  stdout: string,
+): Partial<ResolvedTestConfig> | null {
   const parsed = safeJson(stdout);
   if (!parsed || typeof parsed !== "object") return null;
   const configs = (parsed as { configs?: unknown }).configs;
@@ -155,12 +178,16 @@ function parseJest(root: string, out: ResolvedTestConfig): void {
     if (found.name.endsWith(".json")) {
       applyJestObject(safeJson(found.contents), out);
     } else {
-      out.testMatch.push(...extractArray(found.contents, "testMatch").map(normalize));
+      out.testMatch.push(
+        ...extractArray(found.contents, "testMatch").map(normalize),
+      );
       out.setupFiles.push(
         ...extractArray(found.contents, "setupFiles").map(normalize),
         ...extractArray(found.contents, "setupFilesAfterEach").map(normalize),
       );
-      out.globalSetup.push(...extractArray(found.contents, "globalSetup").map(normalize));
+      out.globalSetup.push(
+        ...extractArray(found.contents, "globalSetup").map(normalize),
+      );
     }
     return;
   }
@@ -202,11 +229,14 @@ function extractArray(source: string, field: string): string[] {
   const re = new RegExp(`["']?${field}["']?\\s*:\\s*\\[([\\s\\S]*?)\\]`);
   const match = re.exec(source);
   if (!match || match[1] === undefined) return [];
-  return [...match[1].matchAll(/["'`]([^"'`]+)["'`]/g)].map((m) => m[1] as string);
+  return [...match[1].matchAll(/["'`]([^"'`]+)["'`]/g)].map(
+    (m) => m[1] as string,
+  );
 }
 
 function asStringArray(value: unknown): string[] {
-  if (Array.isArray(value)) return value.filter((v): v is string => typeof v === "string");
+  if (Array.isArray(value))
+    return value.filter((v): v is string => typeof v === "string");
   if (typeof value === "string") return [value];
   return [];
 }
@@ -234,7 +264,9 @@ function safeJson(text: string | undefined): unknown {
 
 function cacheKey(root: string, cfg: ResolvedTestConfig): string {
   const stamp = cfg.configFiles
-    .map((name) => `${name}:${(readFileSyncSafe(join(root, name)) ?? "").length}`)
+    .map(
+      (name) => `${name}:${(readFileSyncSafe(join(root, name)) ?? "").length}`,
+    )
     .join("|");
   return `${root}::${cfg.runner}::${stamp}`;
 }

@@ -1,12 +1,18 @@
 import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { Node as TsNode } from "web-tree-sitter";
-import type { SymbolNode } from "../graph/types.js";
 import type { PythonModuleMap } from "../graph/python/module-resolver.js";
+import type { SymbolNode } from "../graph/types.js";
 import { getParser } from "../syntactic/parse.js";
 import type { EntrySource } from "./prod-entries.js";
 
-const CONVENTIONAL_PY = ["main.py", "app.py", "manage.py", "wsgi.py", "asgi.py"];
+const CONVENTIONAL_PY = [
+  "main.py",
+  "app.py",
+  "manage.py",
+  "wsgi.py",
+  "asgi.py",
+];
 
 /** `pkg.module` or `pkg.module:func` — the shape every mechanism below ultimately produces. */
 const MODULE_SPEC = /^[A-Za-z_][\w.]*(?::[A-Za-z_]\w*)?$/;
@@ -56,7 +62,10 @@ export async function resolvePythonEntries(
   const declaredByFile = new Map<string, Map<string, number>>();
   for (const n of declaredSymbols) {
     let byName = declaredByFile.get(n.file);
-    if (!byName) declaredByFile.set(n.file, (byName = new Map()));
+    if (!byName) {
+      byName = new Map();
+      declaredByFile.set(n.file, byName);
+    }
     byName.set(n.name, n.line);
   }
 
@@ -70,21 +79,29 @@ export async function resolvePythonEntries(
   const addResolved = (specs: string[], source: EntrySource): void => {
     for (const spec of specs) {
       const resolved = resolveDottedModule(spec, moduleMap, declaredByFile);
-      if (resolved && fileSet.has(resolved.file)) add(resolved.file, source, resolved.symbolId);
+      if (resolved && fileSet.has(resolved.file))
+        add(resolved.file, source, resolved.symbolId);
     }
   };
 
   const pyproject = readIfExists(join(root, "pyproject.toml"));
   if (pyproject) {
     addResolved(
-      extractSectionedModuleSpecs(pyproject, ["project.scripts", "project.gui-scripts", "project.entry-points"]),
+      extractSectionedModuleSpecs(pyproject, [
+        "project.scripts",
+        "project.gui-scripts",
+        "project.entry-points",
+      ]),
       "pyproject-scripts",
     );
   }
 
   const setupCfg = readIfExists(join(root, "setup.cfg"));
   if (setupCfg) {
-    addResolved(extractSectionedModuleSpecs(setupCfg, ["options.entry_points"]), "setup-config");
+    addResolved(
+      extractSectionedModuleSpecs(setupCfg, ["options.entry_points"]),
+      "setup-config",
+    );
   }
 
   const setupPy = join(root, "setup.py");
@@ -132,7 +149,10 @@ function resolveDottedModule(
   if (!file) return null;
   if (!funcName) return { file };
   const line = declaredByFile.get(file)?.get(funcName);
-  return { file, symbolId: line !== undefined ? `${file}:${line}:${funcName}` : undefined };
+  return {
+    file,
+    symbolId: line !== undefined ? `${file}:${line}:${funcName}` : undefined,
+  };
 }
 
 const SECTION_HEADER = /^\s*\[([^\]]+)\]\s*$/;
@@ -141,7 +161,9 @@ const KEY_VALUE = /^\s*[\w.-]+\s*=\s*(.+?)\s*$/;
 /** True if a `[header]` (quotes stripped) is one of `prefixes`, or a dotted/quoted-subkey child of one (`project.entry-points."flake8.extension"` matches prefix `project.entry-points`). */
 function headerMatches(header: string, prefixes: string[]): boolean {
   const normalized = header.replace(/["']/g, "");
-  return prefixes.some((p) => normalized === p || normalized.startsWith(`${p}.`));
+  return prefixes.some(
+    (p) => normalized === p || normalized.startsWith(`${p}.`),
+  );
 }
 
 /**
@@ -156,7 +178,10 @@ function headerMatches(header: string, prefixes: string[]): boolean {
  * `name = pkg.mod:func` lines): each indented line matches `KEY_VALUE` in
  * its own right and its RHS is exactly the module spec we want.
  */
-function extractSectionedModuleSpecs(source: string, headerPrefixes: string[]): string[] {
+function extractSectionedModuleSpecs(
+  source: string,
+  headerPrefixes: string[],
+): string[] {
   const specs: string[] = [];
   let inSection = false;
   for (const rawLine of source.split(/\r?\n/)) {
@@ -198,7 +223,11 @@ function collectSetupCalls(node: TsNode, out: string[]): void {
   if (node.type === "call") {
     const fn = node.childForFieldName("function");
     const isSetup =
-      fn?.type === "identifier" ? fn.text === "setup" : fn?.type === "attribute" ? fn.childForFieldName("attribute")?.text === "setup" : false;
+      fn?.type === "identifier"
+        ? fn.text === "setup"
+        : fn?.type === "attribute"
+          ? fn.childForFieldName("attribute")?.text === "setup"
+          : false;
     if (isSetup) {
       const args = node.childForFieldName("arguments");
       if (args) collectEntryPointsKwarg(args, out);
@@ -224,7 +253,8 @@ function collectConsoleScriptsFromDict(dictNode: TsNode, out: string[]): void {
   for (let i = 0; i < dictNode.namedChildCount; i++) {
     const pair = dictNode.namedChild(i);
     if (pair?.type !== "pair") continue;
-    if (stringLiteralText(pair.childForFieldName("key")) !== "console_scripts") continue;
+    if (stringLiteralText(pair.childForFieldName("key")) !== "console_scripts")
+      continue;
     const value = pair.childForFieldName("value");
     if (value?.type !== "list") continue;
     for (let j = 0; j < value.namedChildCount; j++) {
@@ -238,7 +268,7 @@ function collectConsoleScriptsFromDict(dictNode: TsNode, out: string[]): void {
 
 /** A plain (non-f-string) string literal's text, or `null` if it isn't one. */
 function stringLiteralText(node: TsNode | null | undefined): string | null {
-  if (!node || node.type !== "string") return null;
+  if (node?.type !== "string") return null;
   let content = "";
   for (let i = 0; i < node.namedChildCount; i++) {
     const child = node.namedChild(i);
@@ -259,7 +289,11 @@ async function hasModuleLevelMainGuard(file: string): Promise<boolean> {
 
   for (let i = 0; i < tree.rootNode.namedChildCount; i++) {
     const stmt = tree.rootNode.namedChild(i);
-    if (stmt?.type === "if_statement" && isMainGuardCondition(stmt.childForFieldName("condition"))) return true;
+    if (
+      stmt?.type === "if_statement" &&
+      isMainGuardCondition(stmt.childForFieldName("condition"))
+    )
+      return true;
   }
   return false;
 }
@@ -267,11 +301,16 @@ async function hasModuleLevelMainGuard(file: string): Promise<boolean> {
 function isMainGuardCondition(node: TsNode | null): boolean {
   let cond = node;
   while (cond?.type === "parenthesized_expression") cond = cond.namedChild(0);
-  if (cond?.type !== "comparison_operator" || cond.namedChildCount !== 2) return false;
+  if (cond?.type !== "comparison_operator" || cond.namedChildCount !== 2)
+    return false;
 
   const a = cond.namedChild(0);
   const b = cond.namedChild(1);
-  const isDunderName = (n: TsNode | null) => n?.type === "identifier" && n.text === "__name__";
-  const isMainString = (n: TsNode | null) => stringLiteralText(n) === "__main__";
-  return (isDunderName(a) && isMainString(b)) || (isMainString(a) && isDunderName(b));
+  const isDunderName = (n: TsNode | null) =>
+    n?.type === "identifier" && n.text === "__name__";
+  const isMainString = (n: TsNode | null) =>
+    stringLiteralText(n) === "__main__";
+  return (
+    (isDunderName(a) && isMainString(b)) || (isMainString(a) && isDunderName(b))
+  );
 }

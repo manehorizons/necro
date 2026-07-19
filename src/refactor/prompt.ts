@@ -92,7 +92,10 @@ export function buildRefactorPrompt(ctx: RefactorContext): RefactorPrompt {
  */
 export function parseProposal(raw: unknown): ProposalResult {
   if (!raw || typeof raw !== "object") {
-    return { ok: false, reason: `unparseable model response: ${truncate(JSON.stringify(raw))}` };
+    return {
+      ok: false,
+      reason: `unparseable model response: ${truncate(JSON.stringify(raw))}`,
+    };
   }
   const obj = raw as Record<string, unknown>;
   const stringFields = ["summary", "replacement", "rationale"] as const;
@@ -101,8 +104,14 @@ export function parseProposal(raw: unknown): ProposalResult {
       return { ok: false, reason: `invalid proposal: "${f}" is not a string` };
     }
   }
-  if (!Array.isArray(obj.newFunctions) || !obj.newFunctions.every((n) => typeof n === "string")) {
-    return { ok: false, reason: 'invalid proposal: "newFunctions" is not a string array' };
+  if (
+    !Array.isArray(obj.newFunctions) ||
+    !obj.newFunctions.every((n) => typeof n === "string")
+  ) {
+    return {
+      ok: false,
+      reason: 'invalid proposal: "newFunctions" is not a string array',
+    };
   }
   return {
     ok: true,
@@ -176,7 +185,13 @@ export const DUP_PROPOSAL_SCHEMA = {
     },
     rationale: { type: "string" },
   },
-  required: ["summary", "sharedFunction", "sharedFunctionFile", "edits", "rationale"],
+  required: [
+    "summary",
+    "sharedFunction",
+    "sharedFunctionFile",
+    "edits",
+    "rationale",
+  ],
   additionalProperties: false,
 } as const;
 
@@ -206,11 +221,16 @@ export const DUP_SYSTEM_PROMPT = [
 
 /** Build the per-clone-group user message: every location's slice + its file's
  * imports, with the exact ranges the model must echo back in its edits. */
-export function buildDuplicatePrompt(ctx: DuplicateRefactorContext): RefactorPrompt {
+export function buildDuplicatePrompt(
+  ctx: DuplicateRefactorContext,
+): RefactorPrompt {
   const { finding, locations } = ctx;
   const sites = locations
     .map((l, i) => {
-      const imports = l.imports.length > 0 ? l.imports.map((s) => `  ${s}`).join("\n") : "  (none)";
+      const imports =
+        l.imports.length > 0
+          ? l.imports.map((s) => `  ${s}`).join("\n")
+          : "  (none)";
       return [
         `Location ${i + 1}: ${l.location.file}  lines ${l.location.startLine}-${l.location.endLine}`,
         "File imports (already in scope):",
@@ -244,12 +264,23 @@ export function buildDuplicatePrompt(ctx: DuplicateRefactorContext): RefactorPro
  * location's file + line range. Any mismatch degrades to `{ ok: false, reason }`
  * — never throws.
  */
-export function parseDuplicateProposal(raw: unknown, finding: DuplicationFinding): DuplicateProposalResult {
+export function parseDuplicateProposal(
+  raw: unknown,
+  finding: DuplicationFinding,
+): DuplicateProposalResult {
   if (!raw || typeof raw !== "object") {
-    return { ok: false, reason: `unparseable model response: ${truncate(JSON.stringify(raw))}` };
+    return {
+      ok: false,
+      reason: `unparseable model response: ${truncate(JSON.stringify(raw))}`,
+    };
   }
   const obj = raw as Record<string, unknown>;
-  for (const f of ["summary", "sharedFunction", "sharedFunctionFile", "rationale"] as const) {
+  for (const f of [
+    "summary",
+    "sharedFunction",
+    "sharedFunctionFile",
+    "rationale",
+  ] as const) {
     if (typeof obj[f] !== "string") {
       return { ok: false, reason: `invalid proposal: "${f}" is not a string` };
     }
@@ -259,7 +290,8 @@ export function parseDuplicateProposal(raw: unknown, finding: DuplicationFinding
   }
   const edits: DuplicateEdit[] = [];
   for (const e of obj.edits) {
-    if (!e || typeof e !== "object") return { ok: false, reason: "invalid proposal: edit is not an object" };
+    if (!e || typeof e !== "object")
+      return { ok: false, reason: "invalid proposal: edit is not an object" };
     const ed = e as Record<string, unknown>;
     if (
       typeof ed.file !== "string" ||
@@ -267,14 +299,25 @@ export function parseDuplicateProposal(raw: unknown, finding: DuplicationFinding
       typeof ed.endLine !== "number" ||
       typeof ed.replacement !== "string"
     ) {
-      return { ok: false, reason: "invalid proposal: edit has a malformed field" };
+      return {
+        ok: false,
+        reason: "invalid proposal: edit has a malformed field",
+      };
     }
-    edits.push({ file: ed.file, startLine: ed.startLine, endLine: ed.endLine, replacement: ed.replacement });
+    edits.push({
+      file: ed.file,
+      startLine: ed.startLine,
+      endLine: ed.endLine,
+      replacement: ed.replacement,
+    });
   }
 
   const files = new Set(finding.locations.map((l) => l.file));
   if (!files.has(obj.sharedFunctionFile as string)) {
-    return { ok: false, reason: `invalid proposal: sharedFunctionFile "${obj.sharedFunctionFile}" is not a clone-group file` };
+    return {
+      ok: false,
+      reason: `invalid proposal: sharedFunctionFile "${obj.sharedFunctionFile}" is not a clone-group file`,
+    };
   }
   if (edits.length !== finding.locations.length) {
     return {
@@ -286,7 +329,10 @@ export function parseDuplicateProposal(raw: unknown, finding: DuplicationFinding
   const remaining = [...edits];
   for (const loc of finding.locations) {
     const idx = remaining.findIndex(
-      (e) => e.file === loc.file && e.startLine === loc.startLine && e.endLine === loc.endLine,
+      (e) =>
+        e.file === loc.file &&
+        e.startLine === loc.startLine &&
+        e.endLine === loc.endLine,
     );
     if (idx === -1) {
       return {

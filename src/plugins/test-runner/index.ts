@@ -7,8 +7,8 @@ import type {
   TaintRule,
 } from "../types.js";
 import {
-  resolveTestConfigSync,
   type ResolvedTestConfig,
+  resolveTestConfigSync,
 } from "./config-resolution.js";
 
 export interface TestRunnerOptions {
@@ -21,13 +21,21 @@ export interface TestRunnerOptions {
  * from being flagged dead (entries), and keep test-only production code from
  * being flagged alive (test-kind edges feed two-color reachability in T5).
  */
-export function createTestRunnerPlugin(opts: TestRunnerOptions = {}): FrameworkPlugin {
+export function createTestRunnerPlugin(
+  opts: TestRunnerOptions = {},
+): FrameworkPlugin {
   return {
     name: "test-runner",
 
     detect(ctx) {
       return (
-        ctx.hasDep(["vitest", "jest", "@jest/core", "mocha", "@playwright/test"]) ||
+        ctx.hasDep([
+          "vitest",
+          "jest",
+          "@jest/core",
+          "mocha",
+          "@playwright/test",
+        ]) ||
         ctx.hasConfig(["vitest.config.*", "jest.config.*"]) ||
         ctx.packageJsonHas("jest")
       );

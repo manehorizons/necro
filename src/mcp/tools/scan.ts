@@ -19,8 +19,16 @@ export function registerScanTool(server: McpServer): void {
       description:
         "Read-only. Find dead code (with confidence tiers + evidence chains), complexity, hotspots, and duplication. Returns the same JSON as `necro scan --json`. Never edits files.",
       inputSchema: {
-        path: z.string().optional().describe("directory or file to scan (default: cwd)"),
-        top: z.number().int().positive().optional().describe("show only the worst N dead-code findings"),
+        path: z
+          .string()
+          .optional()
+          .describe("directory or file to scan (default: cwd)"),
+        top: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe("show only the worst N dead-code findings"),
         coverage: z.string().optional().describe("path to an lcov report"),
       },
       annotations: { readOnlyHint: true },
@@ -29,9 +37,24 @@ export function registerScanTool(server: McpServer): void {
       const target = resolve(process.cwd(), path ?? ".");
       const config = await loadConfig(await resolveConfigDir(target));
       if (coverage) config.coveragePath = coverage;
-      const { findings, complexity, hotspots, duplication } = await scan(target, config);
+      const { findings, complexity, hotspots, duplication } = await scan(
+        target,
+        config,
+      );
       const shown = top && top > 0 ? findings.slice(0, top) : findings;
-      return { content: [{ type: "text", text: toJson({ findings: shown, complexity, hotspots, duplication }) }] };
+      return {
+        content: [
+          {
+            type: "text",
+            text: toJson({
+              findings: shown,
+              complexity,
+              hotspots,
+              duplication,
+            }),
+          },
+        ],
+      };
     },
   );
 }

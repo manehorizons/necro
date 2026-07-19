@@ -117,7 +117,14 @@ export async function explain(
   };
 
   if (opts.narrate) {
-    out.narrative = await narrate(opts.narrate, out, model.sources, witness, inbound, node);
+    out.narrative = await narrate(
+      opts.narrate,
+      out,
+      model.sources,
+      witness,
+      inbound,
+      node,
+    );
   }
 
   return out;
@@ -148,7 +155,12 @@ async function narrate(
       if (t.file === null || t.line === null || seen.has(t.id)) continue;
       seen.add(t.id);
       const snippet = sliceSnippet(textByFile.get(t.file), t.line);
-      if (snippet) snippets.push({ name: t.name, location: `${t.file}:${t.line}`, code: snippet });
+      if (snippet)
+        snippets.push({
+          name: t.name,
+          location: `${t.file}:${t.line}`,
+          code: snippet,
+        });
     }
     const prompt = buildNarratePrompt(result, snippets);
     const prose = await client.narrate(prompt);
@@ -180,7 +192,9 @@ export function resolveQuery(nodes: SymbolNode[], query: string): SymbolNode[] {
   if (colon >= 0) {
     const fileHint = query.slice(0, colon);
     const name = query.slice(colon + 1);
-    return nodes.filter((n) => n.name === name && fileMatches(n.file, fileHint));
+    return nodes.filter(
+      (n) => n.name === name && fileMatches(n.file, fileHint),
+    );
   }
   return nodes.filter((n) => n.name === query);
 }

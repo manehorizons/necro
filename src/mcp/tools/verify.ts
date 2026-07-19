@@ -1,7 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { DEFAULT_CHECKS } from "../../refactor/index.js";
-import { gitWorktreeRunner, type VerifyRunner, verifyEdits } from "../../refactor/verify.js";
+import {
+  gitWorktreeRunner,
+  type VerifyRunner,
+  verifyEdits,
+} from "../../refactor/verify.js";
 
 export interface VerifyToolDeps {
   /** Build the worktree runner for a repo root (injected for tests). */
@@ -16,7 +20,10 @@ export interface VerifyToolDeps {
  * `gitWorktreeRunner` as-is: the user's working tree is never touched and the
  * worktree is always torn down.
  */
-export function registerVerifyTool(server: McpServer, deps: VerifyToolDeps = {}): void {
+export function registerVerifyTool(
+  server: McpServer,
+  deps: VerifyToolDeps = {},
+): void {
   const runnerFactory = deps.runnerFactory ?? gitWorktreeRunner;
   const defaultChecks = deps.checks ?? DEFAULT_CHECKS;
 
@@ -30,15 +37,26 @@ export function registerVerifyTool(server: McpServer, deps: VerifyToolDeps = {})
         edits: z
           .array(z.object({ file: z.string(), content: z.string() }))
           .min(1)
-          .describe("full-file replacements, file paths relative to the repo root"),
-        checks: z.array(z.string()).optional().describe("commands to run (default: typecheck + tests)"),
+          .describe(
+            "full-file replacements, file paths relative to the repo root",
+          ),
+        checks: z
+          .array(z.string())
+          .optional()
+          .describe("commands to run (default: typecheck + tests)"),
       },
       annotations: { readOnlyHint: true },
     },
     async ({ edits, checks }) => {
-      const badge = await verifyEdits(edits, checks ?? defaultChecks, runnerFactory(process.cwd()));
+      const badge = await verifyEdits(
+        edits,
+        checks ?? defaultChecks,
+        runnerFactory(process.cwd()),
+      );
       const result =
-        badge.status === "green" ? { ok: true, output: "" } : { ok: false, output: badge.output };
+        badge.status === "green"
+          ? { ok: true, output: "" }
+          : { ok: false, output: badge.output };
       return { content: [{ type: "text", text: JSON.stringify(result) }] };
     },
   );

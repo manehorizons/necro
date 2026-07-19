@@ -1,4 +1,4 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { isAbsolute, join, relative } from "node:path";
 import picomatch from "picomatch";
 import { resolveProdEntries } from "./prod-entries.js";
@@ -13,7 +13,13 @@ export interface WorkspaceInfo {
 
 const EMPTY: WorkspaceInfo = { packagePaths: new Map(), entryFiles: [] };
 
-const IGNORE_DIRS = new Set(["node_modules", ".git", "dist", "coverage", ".next"]);
+const IGNORE_DIRS = new Set([
+  "node_modules",
+  ".git",
+  "dist",
+  "coverage",
+  ".next",
+]);
 const MAX_DEPTH = 6;
 
 /**
@@ -29,7 +35,10 @@ const MAX_DEPTH = 6;
  * info (and never throws) when no workspaces are declared or manifests are
  * malformed.
  */
-export async function resolveWorkspaces(root: string, files: string[]): Promise<WorkspaceInfo> {
+export async function resolveWorkspaces(
+  root: string,
+  files: string[],
+): Promise<WorkspaceInfo> {
   const globs = await workspaceGlobs(root);
   if (globs.length === 0) return EMPTY;
 
@@ -47,7 +56,9 @@ export async function resolveWorkspaces(root: string, files: string[]): Promise<
     const memberFiles = files.filter((f) => isWithinDir(dir, f));
     if (memberFiles.length === 0) continue;
 
-    const { entries, records } = await resolveProdEntries(dir, memberFiles, { conventions: true });
+    const { entries, records } = await resolveProdEntries(dir, memberFiles, {
+      conventions: true,
+    });
     if (entries.size === 0) continue;
 
     for (const entry of entries) entryFiles.push(entry);
@@ -55,7 +66,9 @@ export async function resolveWorkspaces(root: string, files: string[]): Promise<
     // One canonical entry per package name for cross-package alias resolution;
     // prefer a manifest-declared (or dist→src mapped) entry over a bare
     // convention match, matching resolveProdEntries' own mechanism priority.
-    const canonical = records.find((r) => r.source === "manifest" || r.source === "mapped") ?? records[0];
+    const canonical =
+      records.find((r) => r.source === "manifest" || r.source === "mapped") ??
+      records[0];
     if (canonical) packagePaths.set(pkg.name, canonical.file);
   }
 
@@ -74,10 +87,17 @@ async function workspaceGlobs(root: string): Promise<string[]> {
 
   const pkg = await readJsonSafe(join(root, "package.json"));
   const ws = pkg?.workspaces;
-  if (Array.isArray(ws)) globs.push(...ws.filter((g): g is string => typeof g === "string"));
-  else if (ws && typeof ws === "object" && Array.isArray((ws as { packages?: unknown }).packages)) {
+  if (Array.isArray(ws))
+    globs.push(...ws.filter((g): g is string => typeof g === "string"));
+  else if (
+    ws &&
+    typeof ws === "object" &&
+    Array.isArray((ws as { packages?: unknown }).packages)
+  ) {
     globs.push(
-      ...(ws as { packages: unknown[] }).packages.filter((g): g is string => typeof g === "string"),
+      ...(ws as { packages: unknown[] }).packages.filter(
+        (g): g is string => typeof g === "string",
+      ),
     );
   }
 
@@ -99,10 +119,13 @@ async function memberDirs(root: string): Promise<string[]> {
     } catch {
       return;
     }
-    const hasManifest = entries.some((e) => e.isFile() && e.name === "package.json");
+    const hasManifest = entries.some(
+      (e) => e.isFile() && e.name === "package.json",
+    );
     if (hasManifest && dir !== root) out.push(dir);
     for (const e of entries) {
-      if (!e.isDirectory() || IGNORE_DIRS.has(e.name) || e.name.startsWith(".")) continue;
+      if (!e.isDirectory() || IGNORE_DIRS.has(e.name) || e.name.startsWith("."))
+        continue;
       await walk(join(dir, e.name), depth + 1);
     }
   }
@@ -140,7 +163,9 @@ function stripQuotes(s: string): string {
   return s.replace(/^['"]|['"]$/g, "");
 }
 
-async function readJsonSafe(path: string): Promise<Record<string, unknown> | undefined> {
+async function readJsonSafe(
+  path: string,
+): Promise<Record<string, unknown> | undefined> {
   const text = await readFileSafe(path);
   if (text === undefined) return undefined;
   try {

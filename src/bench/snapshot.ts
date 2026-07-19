@@ -131,10 +131,14 @@ function minMeanMax(values: number[]): MinMeanMax {
  * top-level precision/recall/f1/TP/FP/FN become the mean (rounded to the nearest
  * whole count for TP/FP/FN, which are additive per-run counts, not rates).
  */
-export function summarizeTriage(runs: TriageEvalLike | TriageEvalLike[], sources: BenchSource[]): BenchCorpusResult {
+export function summarizeTriage(
+  runs: TriageEvalLike | TriageEvalLike[],
+  sources: BenchSource[],
+): BenchCorpusResult {
   const list = Array.isArray(runs) ? runs : [runs];
   const f1s = list.map((r) => f1(r.precision, r.recall));
-  const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
+  const mean = (values: number[]) =>
+    values.reduce((a, b) => a + b, 0) / values.length;
 
   const metrics: TriageMetrics = {
     precision: mean(list.map((r) => r.precision)),
@@ -162,7 +166,10 @@ export function summarizeTriage(runs: TriageEvalLike | TriageEvalLike[], sources
 }
 
 /** Map a duplication eval result into a corpus result, counting passed/total from rows. */
-export function summarizeDup(m: DupEvalLike, sources: BenchSource[]): BenchCorpusResult {
+export function summarizeDup(
+  m: DupEvalLike,
+  sources: BenchSource[],
+): BenchCorpusResult {
   const total = m.rows.length;
   const passed = m.rows.filter((r) => r.pass).length;
   return {
@@ -176,7 +183,10 @@ export function summarizeDup(m: DupEvalLike, sources: BenchSource[]): BenchCorpu
 
 /** Merge a fresh competitor-bench report into a snapshot's `competitors`
  * field, replacing any prior one. Pure. */
-export function withCompetitors(results: BenchResults, competitors: CompetitorBenchResult): BenchResults {
+export function withCompetitors(
+  results: BenchResults,
+  competitors: CompetitorBenchResult,
+): BenchResults {
   return { ...results, competitors };
 }
 

@@ -12,7 +12,10 @@ import type { VerifyToolDeps } from "./verify.js";
  * the working tree (each removal is checked in its own scratch worktree, always
  * torn down). Reuses the same injected runner as `necro_verify`.
  */
-export function registerVerifyRemovalTool(server: McpServer, deps: VerifyToolDeps = {}): void {
+export function registerVerifyRemovalTool(
+  server: McpServer,
+  deps: VerifyToolDeps = {},
+): void {
   server.registerTool(
     "necro_verify_removal",
     {
@@ -23,9 +26,17 @@ export function registerVerifyRemovalTool(server: McpServer, deps: VerifyToolDep
         symbols: z
           .array(z.string())
           .min(1)
-          .describe("symbols to test-remove: name, file:name, or file:line:name"),
-        path: z.string().optional().describe("directory or file to analyze (default: cwd)"),
-        checks: z.array(z.string()).optional().describe("commands to run (default: typecheck + tests)"),
+          .describe(
+            "symbols to test-remove: name, file:name, or file:line:name",
+          ),
+        path: z
+          .string()
+          .optional()
+          .describe("directory or file to analyze (default: cwd)"),
+        checks: z
+          .array(z.string())
+          .optional()
+          .describe("commands to run (default: typecheck + tests)"),
       },
       annotations: { readOnlyHint: true },
     },
@@ -43,10 +54,17 @@ export function registerVerifyRemovalTool(server: McpServer, deps: VerifyToolDep
             : (symbol, index, total) =>
                 void extra.sendNotification({
                   method: "notifications/progress",
-                  params: { progressToken, progress: index, total, message: symbol },
+                  params: {
+                    progressToken,
+                    progress: index,
+                    total,
+                    message: symbol,
+                  },
                 }),
       });
-      return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+      return {
+        content: [{ type: "text", text: JSON.stringify(results, null, 2) }],
+      };
     },
   );
 }

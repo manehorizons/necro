@@ -11,16 +11,26 @@ import { toRelativePath } from "./paths.js";
  * tier), one line per checked signal (✓/✗/•), and a verdict line. This is the
  * trust artifact — the user audits the reasoning instead of trusting blind.
  */
-export function renderEvidenceChain(finding: ClassifiedFinding, root: string, color: boolean): string {
+export function renderEvidenceChain(
+  finding: ClassifiedFinding,
+  root: string,
+  color: boolean,
+): string {
   const { node, tier } = finding;
   const header = `${node.name}  ${toRelativePath(node.file, root)}:${node.line}   tier: ${tierColor(tier, color)}`;
-  const signals = finding.evidence.map((s) => `  ${glyph(s.ok, color)} ${s.text}`);
+  const signals = finding.evidence.map(
+    (s) => `  ${glyph(s.ok, color)} ${s.text}`,
+  );
   const verdict = `  → ${verdictLine(finding)}`;
   return [header, ...signals, verdict].join("\n");
 }
 
 /** Render multiple findings as separate evidence boxes. */
-export function renderFindings(findings: ClassifiedFinding[], root: string, color: boolean): string {
+export function renderFindings(
+  findings: ClassifiedFinding[],
+  root: string,
+  color: boolean,
+): string {
   return findings.map((f) => renderEvidenceChain(f, root, color)).join("\n\n");
 }
 

@@ -44,7 +44,10 @@ async function isAtPinnedSha(path: string, sha: string): Promise<boolean> {
 
 /** Checkout one repo into `cacheDir/<repo.dirName>`, pinned to `repo.sha`.
  * Idempotent: a checkout already at the pinned SHA is left untouched. */
-export async function checkoutRepo(repo: CorpusRepo, cacheDir: string): Promise<CheckoutResult> {
+export async function checkoutRepo(
+  repo: CorpusRepo,
+  cacheDir: string,
+): Promise<CheckoutResult> {
   const path = join(cacheDir, repo.dirName);
 
   if ((await dirExists(path)) && (await isAtPinnedSha(path, repo.sha))) {
@@ -71,7 +74,10 @@ export async function checkoutRepo(repo: CorpusRepo, cacheDir: string): Promise<
 /** Checkout every repo, sequentially (clones are network- and disk-heavy —
  * concurrency isn't worth the contention). Never throws; failures are
  * reported per-repo in the results. */
-export async function checkoutAll(repos: CorpusRepo[], cacheDir: string): Promise<CheckoutResult[]> {
+export async function checkoutAll(
+  repos: CorpusRepo[],
+  cacheDir: string,
+): Promise<CheckoutResult[]> {
   const results: CheckoutResult[] = [];
   for (const repo of repos) {
     results.push(await checkoutRepo(repo, cacheDir));
@@ -89,10 +95,16 @@ export async function resolveCheckout(
 ): Promise<{ ok: true; path: string } | { ok: false; reason: string }> {
   const path = join(cacheDir, repo.dirName);
   if (!(await dirExists(path))) {
-    return { ok: false, reason: `no checkout found at ${path} — run the checkout step first` };
+    return {
+      ok: false,
+      reason: `no checkout found at ${path} — run the checkout step first`,
+    };
   }
   if (!(await isAtPinnedSha(path, repo.sha))) {
-    return { ok: false, reason: `checkout at ${path} is not at the pinned SHA ${repo.sha}` };
+    return {
+      ok: false,
+      reason: `checkout at ${path} is not at the pinned SHA ${repo.sha}`,
+    };
   }
   return { ok: true, path };
 }

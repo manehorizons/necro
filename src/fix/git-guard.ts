@@ -12,7 +12,9 @@ export type WorkingTreeState = "clean" | "dirty" | "unknown";
  * Empty output → `clean`; any output → `dirty`; not a repo / git missing / any
  * error → `unknown` (the caller treats `unknown` as "no undo available").
  */
-export async function workingTreeState(targetPath: string): Promise<WorkingTreeState> {
+export async function workingTreeState(
+  targetPath: string,
+): Promise<WorkingTreeState> {
   try {
     const { stdout } = await execFileAsync("git", ["status", "--porcelain"], {
       cwd: targetPath,

@@ -11,7 +11,11 @@ export function createPytestPlugin(): FrameworkPlugin {
     name: "pytest",
 
     detect(ctx: RepoContext): boolean {
-      return ctx.hasDep(["pytest"]) || ctx.hasConfig(["pytest.ini"]) || ctx.pyprojectHas("tool.pytest.ini_options");
+      return (
+        ctx.hasDep(["pytest"]) ||
+        ctx.hasConfig(["pytest.ini"]) ||
+        ctx.pyprojectHas("tool.pytest.ini_options")
+      );
     },
 
     entryPatterns(): EntrySpec[] {

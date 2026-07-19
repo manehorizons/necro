@@ -23,7 +23,8 @@ function badgeLabel(badge: VerifyBadge | null): string {
  * never applies these — the report is the whole output.
  */
 export function renderRefactor(res: RefactorRunResult): string {
-  if (res.consideredGodFunctions === 0) return "no god-function findings to refactor";
+  if (res.consideredGodFunctions === 0)
+    return "no god-function findings to refactor";
   if (res.outcomes.length === 0) return "nothing to refactor";
 
   const header = `suggested split(s) for ${res.outcomes.length} god function(s) — apply by hand`;
@@ -57,7 +58,8 @@ function renderOutcome(o: RefactorOutcome): string {
  * per-file diffs to apply by hand. Suggest-only — necro never applies these.
  */
 export function renderExtractDuplicate(res: ExtractDuplicateRunResult): string {
-  if (res.consideredCloneGroups === 0) return "no duplication findings to refactor";
+  if (res.consideredCloneGroups === 0)
+    return "no duplication findings to refactor";
   if (res.outcomes.length === 0) return "nothing to refactor";
 
   const header = `suggested extraction(s) for ${res.outcomes.length} clone group(s) — apply by hand`;
@@ -66,7 +68,9 @@ export function renderExtractDuplicate(res: ExtractDuplicateRunResult): string {
 }
 
 function renderDuplicateOutcome(o: ExtractDuplicateOutcome): string {
-  const locs = o.finding.locations.map((l) => `${l.file}:${l.startLine}-${l.endLine}`).join(", ");
+  const locs = o.finding.locations
+    .map((l) => `${l.file}:${l.startLine}-${l.endLine}`)
+    .join(", ");
   const head = `  ${o.finding.tokens} tokens duplicated: ${locs}`;
   if (!o.proposal) {
     return `${head}\n    no proposal — ${o.failure ?? "unknown error"}`;

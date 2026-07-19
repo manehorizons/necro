@@ -15,7 +15,9 @@ export interface FileEdit {
 }
 
 /** The outcome of verifying an edit in a throwaway worktree. */
-export type VerifyBadge = { status: "green" } | { status: "red"; output: string };
+export type VerifyBadge =
+  | { status: "green" }
+  | { status: "red"; output: string };
 
 /** The side-effecting steps of verification — injected so the orchestration is
  * testable with no real git or test run. */
@@ -25,7 +27,10 @@ export interface VerifyRunner {
   /** Write the edit's new file content into the worktree. */
   writeEdit(worktree: string, edit: FileEdit): Promise<void>;
   /** Run a check command in the worktree. */
-  runCheck(worktree: string, command: string): Promise<{ ok: boolean; output: string }>;
+  runCheck(
+    worktree: string,
+    command: string,
+  ): Promise<{ ok: boolean; output: string }>;
   /** Tear the worktree down. */
   removeWorktree(worktree: string): Promise<void>;
 }
@@ -63,7 +68,8 @@ export async function verifyEdits(
     for (const edit of edits) await runner.writeEdit(worktree, edit);
     for (const command of checks) {
       const { ok, output } = await runner.runCheck(worktree, command);
-      if (!ok) return { status: "red", output: `$ ${command}\n${output}`.trim() };
+      if (!ok)
+        return { status: "red", output: `$ ${command}\n${output}`.trim() };
     }
     return { status: "green" };
   } finally {
@@ -87,7 +93,11 @@ export function gitWorktreeRunner(repoRoot: string): VerifyRunner {
       const wt = join(parent, "wt");
       await git(["worktree", "add", "--detach", "-q", wt, "HEAD"]);
       // Untracked node_modules isn't in the worktree; link it so checks resolve.
-      await symlink(join(repoRoot, "node_modules"), join(wt, "node_modules"), "dir").catch(() => {});
+      await symlink(
+        join(repoRoot, "node_modules"),
+        join(wt, "node_modules"),
+        "dir",
+      ).catch(() => {});
       return wt;
     },
 
@@ -97,19 +107,31 @@ export function gitWorktreeRunner(repoRoot: string): VerifyRunner {
       await writeFile(dest, edit.content);
     },
 
-    async runCheck(worktree: string, command: string): Promise<{ ok: boolean; output: string }> {
+    async runCheck(
+      worktree: string,
+      command: string,
+    ): Promise<{ ok: boolean; output: string }> {
       try {
-        const { stdout, stderr } = await execAsync(command, { cwd: worktree, timeout: GIT_TIMEOUT_MS });
+        const { stdout, stderr } = await execAsync(command, {
+          cwd: worktree,
+          timeout: GIT_TIMEOUT_MS,
+        });
         return { ok: true, output: `${stdout}${stderr}` };
       } catch (err) {
         const e = err as { stdout?: string; stderr?: string; message?: string };
-        return { ok: false, output: `${e.stdout ?? ""}${e.stderr ?? ""}` || e.message || String(err) };
+        return {
+          ok: false,
+          output:
+            `${e.stdout ?? ""}${e.stderr ?? ""}` || e.message || String(err),
+        };
       }
     },
 
     async removeWorktree(worktree: string): Promise<void> {
       await git(["worktree", "remove", "--force", worktree]).catch(() => {});
-      await rm(dirname(worktree), { recursive: true, force: true }).catch(() => {});
+      await rm(dirname(worktree), { recursive: true, force: true }).catch(
+        () => {},
+      );
     },
   };
 }

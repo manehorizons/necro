@@ -9,7 +9,10 @@ import type { NecroConfig } from "../config.js";
 import { discoverFiles } from "../discover.js";
 import { globMatcher } from "../glob.js";
 import { isPythonFile } from "../graph/python/language.js";
-import { buildPythonModuleMap, detectImportRoots } from "../graph/python/module-resolver.js";
+import {
+  buildPythonModuleMap,
+  detectImportRoots,
+} from "../graph/python/module-resolver.js";
 import { buildPythonSymbolGraph } from "../graph/python/symbol-graph.js";
 import { buildSymbolGraph } from "../graph/symbol-graph.js";
 import type { SymbolEdge, SymbolGraph } from "../graph/types.js";
@@ -19,11 +22,15 @@ import { createPytestPlugin } from "../plugins/pytest/index.js";
 import { createRepoContext, detectPlugins } from "../plugins/registry.js";
 import { createTestRunnerPlugin } from "../plugins/test-runner/index.js";
 import type { FrameworkPlugin, RepoContext } from "../plugins/types.js";
+import { type EntrySource, resolveProdEntries } from "./prod-entries.js";
 import { resolvePythonEntries } from "./python-entries.js";
-import { resolveProdEntries, type EntrySource } from "./prod-entries.js";
 import { resolveWorkspaces } from "./workspaces.js";
 
-const PLUGINS: FrameworkPlugin[] = [createTestRunnerPlugin(), createNextjsPlugin(), createPytestPlugin()];
+const PLUGINS: FrameworkPlugin[] = [
+  createTestRunnerPlugin(),
+  createNextjsPlugin(),
+  createPytestPlugin(),
+];
 
 /** One resolved production entry, for the `entryResolution` diagnostic (§2.1). */
 export interface EntryResolutionRecord {
@@ -106,45 +113,59 @@ export async function buildReachabilityModel(
   const entrySpecs = resolveEntries(detected, ctx);
   const relToRoot = (abs: string) => relative(targetPath, abs);
 
-  const testGlobs = entrySpecs.filter((e) => e.kind === "test").map((e) => e.glob);
+  const testGlobs = entrySpecs
+    .filter((e) => e.kind === "test")
+    .map((e) => e.glob);
   const matchesTestGlob = globMatcher(testGlobs);
   const isTestFile = (abs: string) => matchesTestGlob(relToRoot(abs));
   const testEntries = new Set(files.filter(isTestFile));
 
-  const prodGlobs = entrySpecs.filter((e) => e.kind === "prod").map((e) => e.glob);
+  const prodGlobs = entrySpecs
+    .filter((e) => e.kind === "prod")
+    .map((e) => e.glob);
   const matchesProdGlob = globMatcher(prodGlobs);
-  const pluginProdEntryFiles = new Set(files.filter((abs) => matchesProdGlob(relToRoot(abs))));
+  const pluginProdEntryFiles = new Set(
+    files.filter((abs) => matchesProdGlob(relToRoot(abs))),
+  );
 
   // Language partition (AC-5): the TS graph (ts-morph) covers everything but
   // `.py`; the Python graph is hand-rolled (no ts-morph equivalent exists).
   // Node ids are file-path-based, so concatenating the two never collides.
   const pyFiles = files.filter(isPythonFile);
   const tsFiles = files.filter((f) => !isPythonFile(f));
-  const tsGraph = buildSymbolGraph(tsFiles, { isTestFile, packagePaths: workspaces.packagePaths });
+  const tsGraph = buildSymbolGraph(tsFiles, {
+    isTestFile,
+    packagePaths: workspaces.packagePaths,
+  });
   const pyRoots = detectImportRoots(targetPath, pyFiles);
   const pyModuleMap = buildPythonModuleMap(pyFiles, pyRoots);
-  const { graph: pyGraph, starTaintedFiles } = await buildPythonSymbolGraph(pyFiles, pyModuleMap);
+  const { graph: pyGraph, starTaintedFiles } = await buildPythonSymbolGraph(
+    pyFiles,
+    pyModuleMap,
+  );
   const graph: SymbolGraph = {
     nodes: [...tsGraph.nodes, ...pyGraph.nodes],
     edges: [...tsGraph.edges, ...pyGraph.edges],
   };
 
   const syntheticEdges: SymbolEdge[] = detected.flatMap((p) =>
-    p.resolveEdges(ctx, graph).map((e) => ({ from: e.from, to: e.to, kind: e.kind })),
+    p
+      .resolveEdges(ctx, graph)
+      .map((e) => ({ from: e.from, to: e.to, kind: e.kind })),
   );
 
-  const { entries: prodEntries, records: prodEntryRecords } = await resolveProdEntries(
-    targetPath,
-    files,
-    { configEntries: config.entries },
-  );
+  const { entries: prodEntries, records: prodEntryRecords } =
+    await resolveProdEntries(targetPath, files, {
+      configEntries: config.entries,
+    });
   // A framework entry file is invoked by convention, not imported — so root the
   // symbols it *exports* (a file-path seed alone only roots module-top-level
   // references, not the declared-but-unreferenced exports). Genuinely-dead
   // non-entry symbols are untouched.
   for (const file of pluginProdEntryFiles) prodEntries.add(file);
   for (const node of graph.nodes) {
-    if (node.exported && pluginProdEntryFiles.has(node.file)) prodEntries.add(node.id);
+    if (node.exported && pluginProdEntryFiles.has(node.file))
+      prodEntries.add(node.id);
   }
   // Symmetric fix for test-kind entry files (e.g. a pytest `test_*.py` file's
   // top-level `def test_foo():`): also invoked by convention, never via an
@@ -163,7 +184,12 @@ export async function buildReachabilityModel(
   // console_scripts, __main__/if-name-main modules, conventional filenames) —
   // additive, first-mechanism-wins merge into the same prod-entry diagnostic
   // (§2.3); conftest.py roots into testEntries instead.
-  const pythonEntries = await resolvePythonEntries(targetPath, pyFiles, pyModuleMap, pyGraph.nodes);
+  const pythonEntries = await resolvePythonEntries(
+    targetPath,
+    pyFiles,
+    pyModuleMap,
+    pyGraph.nodes,
+  );
   for (const record of pythonEntries.records) {
     if (!prodEntries.has(record.file)) {
       prodEntries.add(record.file);
@@ -186,7 +212,10 @@ export async function buildReachabilityModel(
   });
 
   const sources = await readSources(files);
-  const taintedFiles = new Set([...findTaintedFiles(sources), ...starTaintedFiles]);
+  const taintedFiles = new Set([
+    ...findTaintedFiles(sources),
+    ...starTaintedFiles,
+  ]);
 
   const edges = [...graph.edges, ...syntheticEdges];
   const reachability = computeReachability({

@@ -1,7 +1,18 @@
 import type { LlmOptions } from "../config.js";
-import { lazyAnthropic, type LlmUsage, MissingApiKeyError, resolveApiKey, structuredCall } from "../llm/client.js";
+import {
+  type LlmUsage,
+  lazyAnthropic,
+  MissingApiKeyError,
+  resolveApiKey,
+  structuredCall,
+} from "../llm/client.js";
 import { hostCliStructuredCall } from "../llm/host-cli-client.js";
-import { parseVerdict, VERDICT_SCHEMA, type TriagePrompt, type TriageResult } from "./prompt.js";
+import {
+  parseVerdict,
+  type TriagePrompt,
+  type TriageResult,
+  VERDICT_SCHEMA,
+} from "./prompt.js";
 
 /** The one capability triage needs from a model backend — injectable so tests
  * run against a mock with no network. */
@@ -26,7 +37,10 @@ const MAX_TOKENS = 2048;
  * (via `../llm/client.js`) only on the first `classify` call, so `scan`/`fix`
  * never pull it in.
  */
-export function createTriageClient(llm: LlmOptions, opts: TriageClientOptions = {}): TriageClient {
+export function createTriageClient(
+  llm: LlmOptions,
+  opts: TriageClientOptions = {},
+): TriageClient {
   if (llm.provider === "host-cli") {
     return {
       async classify(prompt: TriagePrompt): Promise<TriageResult> {

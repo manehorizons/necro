@@ -29,13 +29,19 @@ const PROVIDERS = new Set(["anthropic", "host-cli"]);
 
 /** Parse `--corpus <id> --out <path> --dry-run --provider <id> --host-cli-bin <bin>`. Pure — no I/O. */
 export function parseArgs(argv: string[]): BenchArgs {
-  const args: BenchArgs = { corpus: "all", out: "bench/results.json", dryRun: false };
+  const args: BenchArgs = {
+    corpus: "all",
+    out: "bench/results.json",
+    dryRun: false,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--corpus") {
       const v = argv[++i];
       if (!v || !CORPORA.has(v)) {
-        throw new Error(`--corpus must be one of triage | dup | all (got ${v ?? "nothing"})`);
+        throw new Error(
+          `--corpus must be one of triage | dup | all (got ${v ?? "nothing"})`,
+        );
       }
       args.corpus = v as BenchArgs["corpus"];
     } else if (a === "--out") {
@@ -47,7 +53,9 @@ export function parseArgs(argv: string[]): BenchArgs {
     } else if (a === "--provider") {
       const v = argv[++i];
       if (!v || !PROVIDERS.has(v)) {
-        throw new Error(`--provider must be one of anthropic | host-cli (got ${v ?? "nothing"})`);
+        throw new Error(
+          `--provider must be one of anthropic | host-cli (got ${v ?? "nothing"})`,
+        );
       }
       args.provider = v as BenchArgs["provider"];
     } else if (a === "--host-cli-bin") {
@@ -73,7 +81,10 @@ async function readExisting(path: string): Promise<BenchResults | undefined> {
 
 /** Merge a fresh (possibly partial) run's corpora over an existing snapshot's,
  * by `id` — corpora not re-run this time are carried over unchanged. */
-export function mergeCorpora(existing: BenchResults | undefined, fresh: BenchResults): BenchResults {
+export function mergeCorpora(
+  existing: BenchResults | undefined,
+  fresh: BenchResults,
+): BenchResults {
   if (!existing) return fresh;
   const freshIds = new Set(fresh.corpora.map((c) => c.id));
   const carried = existing.corpora.filter((c) => !freshIds.has(c.id));
@@ -101,7 +112,10 @@ async function main(): Promise<void> {
     },
   );
 
-  const results = args.corpus === "all" ? fresh : mergeCorpora(await readExisting(args.out), fresh);
+  const results =
+    args.corpus === "all"
+      ? fresh
+      : mergeCorpora(await readExisting(args.out), fresh);
   const text = serialize(results);
   if (args.dryRun) {
     process.stdout.write(text);
@@ -114,10 +128,13 @@ async function main(): Promise<void> {
 
 // Only run when invoked directly (`tsx src/bench/cli-bench.ts`), never on import.
 const invokedDirectly =
-  Boolean(process.argv[1]) && import.meta.url === pathToFileURL(process.argv[1] as string).href;
+  Boolean(process.argv[1]) &&
+  import.meta.url === pathToFileURL(process.argv[1] as string).href;
 if (invokedDirectly) {
   main().catch((err) => {
-    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+    process.stderr.write(
+      `${err instanceof Error ? err.message : String(err)}\n`,
+    );
     process.exit(1);
   });
 }

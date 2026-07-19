@@ -4,7 +4,11 @@ import { DEFAULT_CONFIG } from "../config.js";
 import { discoverFiles } from "../discover.js";
 import type { PythonImport } from "../graph/python/import-parser.js";
 import { parsePythonImports } from "../graph/python/import-parser.js";
-import { buildPythonModuleMap, detectImportRoots, type PythonModuleMap } from "../graph/python/module-resolver.js";
+import {
+  buildPythonModuleMap,
+  detectImportRoots,
+  type PythonModuleMap,
+} from "../graph/python/module-resolver.js";
 import { resolvePythonImport } from "../graph/python/resolve-import.js";
 
 /**
@@ -60,19 +64,29 @@ function isVendoredBundle(segments: string[]): boolean {
  * judged once and shared across all its names, since they all resolve
  * against the same base module.
  */
-export function isLocalImportCandidate(imp: PythonImport, topLevelPackages: ReadonlySet<string>): boolean[] {
+export function isLocalImportCandidate(
+  imp: PythonImport,
+  topLevelPackages: ReadonlySet<string>,
+): boolean[] {
   if (imp.kind === "import") {
-    return imp.modules.map((m) => topLevelPackages.has(m.segments[0] ?? "") && !isVendoredBundle(m.segments));
+    return imp.modules.map(
+      (m) =>
+        topLevelPackages.has(m.segments[0] ?? "") &&
+        !isVendoredBundle(m.segments),
+    );
   }
   const local =
-    (imp.relativeDots > 0 || topLevelPackages.has(imp.moduleSegments[0] ?? "")) && !isVendoredBundle(imp.moduleSegments);
+    (imp.relativeDots > 0 ||
+      topLevelPackages.has(imp.moduleSegments[0] ?? "")) &&
+    !isVendoredBundle(imp.moduleSegments);
   const count = imp.isStar ? 1 : imp.names.length;
   return Array(count).fill(local);
 }
 
 function topLevelPackagesOf(map: PythonModuleMap): Set<string> {
   const out = new Set<string>();
-  for (const dotted of map.moduleToFile.keys()) out.add(dotted.split(".")[0] ?? dotted);
+  for (const dotted of map.moduleToFile.keys())
+    out.add(dotted.split(".")[0] ?? dotted);
   return out;
 }
 
@@ -96,7 +110,9 @@ export function parseArgs(argv: string[]): RateArgs {
  * repo's own module map. Stdlib/third-party imports are excluded from both
  * `total` and `resolved` — they are out of scope by definition, not failures.
  */
-export async function computeResolutionRate(repoPath: string): Promise<ResolutionRateResult> {
+export async function computeResolutionRate(
+  repoPath: string,
+): Promise<ResolutionRateResult> {
   const files = await discoverFiles(repoPath, PY_CONFIG);
   const roots = detectImportRoots(repoPath, files);
   const map = buildPythonModuleMap(files, roots);
@@ -124,7 +140,9 @@ export async function computeResolutionRate(repoPath: string): Promise<Resolutio
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const { total, resolved, rate } = await computeResolutionRate(args.repo);
-  console.log(`${args.repo}: ${resolved}/${total} import statements resolved (${(rate * 100).toFixed(1)}%)`);
+  console.log(
+    `${args.repo}: ${resolved}/${total} import statements resolved (${(rate * 100).toFixed(1)}%)`,
+  );
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {

@@ -38,11 +38,15 @@ export function parseTsPruneOutput(text: string): RawUnusedExport[] {
 export async function runTsPrune(repoPath: string): Promise<CompetitorToolRun> {
   const [version, stdout] = await Promise.all([
     necroPackageVersion("ts-prune"),
-    run(necroBinPath("ts-prune"), [], { cwd: repoPath, maxBuffer: 64 * 1024 * 1024 })
+    run(necroBinPath("ts-prune"), [], {
+      cwd: repoPath,
+      maxBuffer: 64 * 1024 * 1024,
+    })
       .then((r) => r.stdout)
       .catch((err: unknown) => {
         const e = err as { stdout?: string };
-        if (typeof e.stdout === "string" && e.stdout.length > 0) return e.stdout;
+        if (typeof e.stdout === "string" && e.stdout.length > 0)
+          return e.stdout;
         throw err;
       }),
   ]);

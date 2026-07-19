@@ -18,6 +18,9 @@ export function necroBinPath(bin: string): string {
 /** The exact resolved version of a pinned devDependency, read from its own
  * `package.json` (not the semver range in necro's `package.json`). */
 export async function necroPackageVersion(pkg: string): Promise<string> {
-  const text = await readFile(`${NECRO_ROOT}node_modules/${pkg}/package.json`, "utf8");
+  const text = await readFile(
+    `${NECRO_ROOT}node_modules/${pkg}/package.json`,
+    "utf8",
+  );
   return (JSON.parse(text) as { version: string }).version;
 }

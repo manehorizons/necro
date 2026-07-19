@@ -1,12 +1,30 @@
 import { readFile } from "node:fs/promises";
 import { relative } from "node:path";
 import type { LlmOptions } from "../config.js";
-import type { ComplexityFinding, DuplicationFinding } from "../syntactic/types.js";
+import type {
+  ComplexityFinding,
+  DuplicationFinding,
+} from "../syntactic/types.js";
 import type { RefactorClient } from "./client.js";
 import { contextForFinding, dupContextForFinding } from "./context.js";
-import { buildDuplicatePrompt, buildRefactorPrompt, type DuplicateProposal, type RefactorProposal } from "./prompt.js";
-import { computeUnifiedDiff, type DuplicateSpliceResult, spliceDuplicate, spliceLines } from "./splice.js";
-import { verifyEdits, verifyProposal, type VerifyBadge, type VerifyRunner } from "./verify.js";
+import {
+  buildDuplicatePrompt,
+  buildRefactorPrompt,
+  type DuplicateProposal,
+  type RefactorProposal,
+} from "./prompt.js";
+import {
+  computeUnifiedDiff,
+  type DuplicateSpliceResult,
+  spliceDuplicate,
+  spliceLines,
+} from "./splice.js";
+import {
+  type VerifyBadge,
+  type VerifyRunner,
+  verifyEdits,
+  verifyProposal,
+} from "./verify.js";
 
 /** The default checks run against a proposal in the scratch worktree. */
 export const DEFAULT_CHECKS = ["npm run typecheck", "npx vitest run"];
@@ -72,19 +90,41 @@ export async function runRefactor(
     const context = await contextForFinding(finding, llm.snippetRadius);
     const result = await client.propose(buildRefactorPrompt(context));
     if (!result.ok) {
-      outcomes.push({ finding, model: llm.model, proposal: null, diff: null, badge: null, failure: result.reason });
+      outcomes.push({
+        finding,
+        model: llm.model,
+        proposal: null,
+        diff: null,
+        badge: null,
+        failure: result.reason,
+      });
       continue;
     }
 
     const original = await readFile(finding.file, "utf8");
-    const newContent = spliceLines(original, finding.line, context.snippet.endLine, result.proposal.replacement);
+    const newContent = spliceLines(
+      original,
+      finding.line,
+      context.snippet.endLine,
+      result.proposal.replacement,
+    );
     const diff = await computeUnifiedDiff(original, newContent);
 
     const badge = opts.verifyRunner
-      ? await verifyProposal({ file: relative(repoRoot, finding.file), content: newContent }, checks, opts.verifyRunner)
+      ? await verifyProposal(
+          { file: relative(repoRoot, finding.file), content: newContent },
+          checks,
+          opts.verifyRunner,
+        )
       : null;
 
-    outcomes.push({ finding, model: llm.model, proposal: result.proposal, diff, badge });
+    outcomes.push({
+      finding,
+      model: llm.model,
+      proposal: result.proposal,
+      diff,
+      badge,
+    });
   }
 
   return { outcomes, consideredGodFunctions: godFunctions.length };
@@ -151,9 +191,19 @@ export async function runExtractDuplicate(
 
   for (const finding of selected) {
     const context = await dupContextForFinding(finding);
-    const result = await client.proposeDuplicate(buildDuplicatePrompt(context), finding);
+    const result = await client.proposeDuplicate(
+      buildDuplicatePrompt(context),
+      finding,
+    );
     if (!result.ok) {
-      outcomes.push({ finding, model: llm.model, proposal: null, files: null, badge: null, failure: result.reason });
+      outcomes.push({
+        finding,
+        model: llm.model,
+        proposal: null,
+        files: null,
+        badge: null,
+        failure: result.reason,
+      });
       continue;
     }
 
@@ -166,19 +216,35 @@ export async function runExtractDuplicate(
       files = await spliceDuplicate(originals, result.proposal);
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
-      outcomes.push({ finding, model: llm.model, proposal: result.proposal, files: null, badge: null, failure: reason });
+      outcomes.push({
+        finding,
+        model: llm.model,
+        proposal: result.proposal,
+        files: null,
+        badge: null,
+        failure: reason,
+      });
       continue;
     }
 
     const badge = opts.verifyRunner
       ? await verifyEdits(
-          files.map((f) => ({ file: relative(repoRoot, f.file), content: f.newContent })),
+          files.map((f) => ({
+            file: relative(repoRoot, f.file),
+            content: f.newContent,
+          })),
           checks,
           opts.verifyRunner,
         )
       : null;
 
-    outcomes.push({ finding, model: llm.model, proposal: result.proposal, files, badge });
+    outcomes.push({
+      finding,
+      model: llm.model,
+      proposal: result.proposal,
+      files,
+      badge,
+    });
   }
 
   return { outcomes, consideredCloneGroups: duplication.length };

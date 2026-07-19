@@ -10,7 +10,8 @@ export function renderHotspots(entries: HotspotEntry[], root: string): string {
   if (entries.length === 0) return "";
   const header = `Risk hotspots (top ${entries.length})`;
   const lines = entries.map((e) => {
-    const cov = e.coverage === null ? "n/a" : `${Math.round(e.coverage * 100)}%`;
+    const cov =
+      e.coverage === null ? "n/a" : `${Math.round(e.coverage * 100)}%`;
     const crap = e.crap === null ? "n/a" : round(e.crap);
     const churn = e.churn === null ? "n/a" : String(e.churn);
     return `  ${e.name}  ${toRelativePath(e.file, root)}:${e.line}   cx=${e.complexity} cov=${cov} crap=${crap} churn=${churn}`;

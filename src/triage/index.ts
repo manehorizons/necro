@@ -46,7 +46,9 @@ export async function runTriage(
   const selected = cap !== undefined && cap >= 0 ? maybe.slice(0, cap) : maybe;
   const dropped = maybe.length - selected.length;
   if (dropped > 0) {
-    console.warn(`necro triage: ${maybe.length} maybe findings, triaging ${selected.length} (llm.maxFindings=${cap}).`);
+    console.warn(
+      `necro triage: ${maybe.length} maybe findings, triaging ${selected.length} (llm.maxFindings=${cap}).`,
+    );
   }
 
   if (selected.length === 0) {
@@ -59,7 +61,12 @@ export async function runTriage(
     async (finding): Promise<TriagedFinding> => {
       const snippet = await snippetForFinding(finding, llm.snippetRadius);
       const result = await client.classify(buildPrompt(finding, snippet));
-      return { finding, verdict: result.verdict, reasoning: result.reasoning, model: llm.model };
+      return {
+        finding,
+        verdict: result.verdict,
+        reasoning: result.reasoning,
+        model: llm.model,
+      };
     },
   );
 
@@ -67,15 +74,22 @@ export async function runTriage(
 }
 
 /** Run `fn` over `items` with at most `limit` in flight, preserving order. */
-async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+async function mapPool<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
   const results = new Array<R>(items.length);
   let next = 0;
-  const workers = Array.from({ length: Math.min(Math.max(limit, 1), items.length) }, async () => {
-    while (next < items.length) {
-      const idx = next++;
-      results[idx] = await fn(items[idx] as T);
-    }
-  });
+  const workers = Array.from(
+    { length: Math.min(Math.max(limit, 1), items.length) },
+    async () => {
+      while (next < items.length) {
+        const idx = next++;
+        results[idx] = await fn(items[idx] as T);
+      }
+    },
+  );
   await Promise.all(workers);
   return results;
 }

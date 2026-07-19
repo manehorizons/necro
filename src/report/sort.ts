@@ -14,7 +14,9 @@ function rank(finding: ClassifiedFinding): number {
 }
 
 /** Sort findings worst-first: by tier severity, then file, then line. */
-export function sortWorstFirst(findings: ClassifiedFinding[]): ClassifiedFinding[] {
+export function sortWorstFirst(
+  findings: ClassifiedFinding[],
+): ClassifiedFinding[] {
   return [...findings].sort((a, b) => {
     const byRank = rank(a) - rank(b);
     if (byRank !== 0) return byRank;

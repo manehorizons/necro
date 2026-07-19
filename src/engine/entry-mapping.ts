@@ -21,14 +21,19 @@ const FALLBACK_EXTS = [".ts", ".tsx"];
  * level of a local `extends` chain (deeper chains are out of scope — §2.3).
  * Never throws: missing or unparseable tsconfig yields `{}`.
  */
-export async function readTsconfigMapping(root: string): Promise<TsconfigMapping> {
+export async function readTsconfigMapping(
+  root: string,
+): Promise<TsconfigMapping> {
   const own = await readTsconfigFile(join(root, "tsconfig.json"));
   if (!own) return {};
 
   let outDir = own.compilerOptions?.outDir;
   let rootDir = own.compilerOptions?.rootDir;
 
-  if ((outDir === undefined || rootDir === undefined) && typeof own.extends === "string") {
+  if (
+    (outDir === undefined || rootDir === undefined) &&
+    typeof own.extends === "string"
+  ) {
     const parent = await readTsconfigFile(join(root, own.extends));
     if (parent) {
       outDir = outDir ?? parent.compilerOptions?.outDir;
@@ -54,7 +59,9 @@ export function mapDistToSrc(
   if (mapping.outDir !== undefined) {
     const base = stripPrefix(relOutputPath, trimSlashes(mapping.outDir));
     if (base !== undefined) {
-      const withRoot = mapping.rootDir ? joinRel(trimSlashes(mapping.rootDir), base) : base;
+      const withRoot = mapping.rootDir
+        ? joinRel(trimSlashes(mapping.rootDir), base)
+        : base;
       const found = tryExtensions(withRoot, root, fileSet);
       if (found) return found;
     }
@@ -69,7 +76,11 @@ export function mapDistToSrc(
   return undefined;
 }
 
-function tryExtensions(relPath: string, root: string, fileSet: Set<string>): string | undefined {
+function tryExtensions(
+  relPath: string,
+  root: string,
+  fileSet: Set<string>,
+): string | undefined {
   const dot = relPath.lastIndexOf(".");
   const ext = dot === -1 ? "" : relPath.slice(dot);
   const base = dot === -1 ? relPath : relPath.slice(0, dot);
@@ -94,7 +105,9 @@ function replaceLeadingBuildDir(relPath: string): string | undefined {
 function stripPrefix(relPath: string, prefix: string): string | undefined {
   if (prefix === "" || prefix === ".") return relPath;
   const withSlash = `${prefix}/`;
-  return relPath.startsWith(withSlash) ? relPath.slice(withSlash.length) : undefined;
+  return relPath.startsWith(withSlash)
+    ? relPath.slice(withSlash.length)
+    : undefined;
 }
 
 function trimSlashes(p: string): string {
@@ -110,7 +123,9 @@ interface RawTsconfig {
   extends?: string;
 }
 
-async function readTsconfigFile(path: string): Promise<RawTsconfig | undefined> {
+async function readTsconfigFile(
+  path: string,
+): Promise<RawTsconfig | undefined> {
   try {
     const raw = await readFile(path, "utf8");
     return JSON.parse(raw) as RawTsconfig;

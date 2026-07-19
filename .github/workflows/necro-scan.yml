@@ -20,12 +20,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      # fail-on is intentionally empty here: necro's own entry points resolve to
-      # dist/ (files:["dist"]), so a src/ self-scan is non-discriminating and
-      # must not gate necro's own PRs. This run proves the Action runs and the
-      # SARIF uploads; downstream consumers get `fail-on: high` by default.
+      # necro.config.json seeds entries (bin + bench scripts) so the src/-only
+      # self-scan isn't the degenerate 0-entry case, and src/.necro-baseline.json
+      # snapshots pre-existing findings so fail-on only gates new regressions.
       - name: necro
         uses: ./.github/actions/necro
         with:
           path: src
-          fail-on: ""
+          fail-on: high

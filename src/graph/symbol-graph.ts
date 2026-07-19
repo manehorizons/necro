@@ -65,7 +65,11 @@ export function buildSymbolGraph(
         if (isReExport(ref)) continue;
         const refFile = ref.getSourceFile().getFilePath();
         const kind: EdgeKind = isTestFile(refFile) ? "test" : "prod";
-        edges.push({ from: enclosingFrom(ref, idByDeclKey, refFile), to: toId, kind });
+        edges.push({
+          from: enclosingFrom(ref, idByDeclKey, refFile),
+          to: toId,
+          kind,
+        });
       }
     }
   }
@@ -80,26 +84,38 @@ export function buildSymbolGraph(
  */
 function workspacePathsOptions(
   packagePaths?: Map<string, string>,
-): { baseUrl: string; paths: Record<string, string[]> } | Record<string, never> {
+):
+  | { baseUrl: string; paths: Record<string, string[]> }
+  | Record<string, never> {
   if (!packagePaths || packagePaths.size === 0) return {};
   const paths: Record<string, string[]> = {};
   for (const [name, entry] of packagePaths) paths[name] = [entry];
   return { baseUrl: ".", paths };
 }
 
-export function collectDeclarations(sf: import("ts-morph").SourceFile): Declaration[] {
+export function collectDeclarations(
+  sf: import("ts-morph").SourceFile,
+): Declaration[] {
   const out: Declaration[] = [];
-  const push = (declNode: Node, nameNode: Node | undefined, exported: boolean) => {
+  const push = (
+    declNode: Node,
+    nameNode: Node | undefined,
+    exported: boolean,
+  ) => {
     if (!nameNode) return;
     const name = nameNode.getText();
     if (!name) return;
     out.push({ name, nameNode, declNode, exported });
   };
 
-  for (const fn of sf.getFunctions()) push(fn, fn.getNameNode(), fn.isExported());
-  for (const cls of sf.getClasses()) push(cls, cls.getNameNode(), cls.isExported());
-  for (const iface of sf.getInterfaces()) push(iface, iface.getNameNode(), iface.isExported());
-  for (const ta of sf.getTypeAliases()) push(ta, ta.getNameNode(), ta.isExported());
+  for (const fn of sf.getFunctions())
+    push(fn, fn.getNameNode(), fn.isExported());
+  for (const cls of sf.getClasses())
+    push(cls, cls.getNameNode(), cls.isExported());
+  for (const iface of sf.getInterfaces())
+    push(iface, iface.getNameNode(), iface.isExported());
+  for (const ta of sf.getTypeAliases())
+    push(ta, ta.getNameNode(), ta.isExported());
   for (const en of sf.getEnums()) push(en, en.getNameNode(), en.isExported());
   for (const vs of sf.getVariableStatements()) {
     const exported = vs.isExported();
@@ -118,7 +134,8 @@ function declKey(node: Node): string {
 
 function isSelfReference(ref: Node, nameNode: Node): boolean {
   return (
-    ref.getSourceFile().getFilePath() === nameNode.getSourceFile().getFilePath() &&
+    ref.getSourceFile().getFilePath() ===
+      nameNode.getSourceFile().getFilePath() &&
     ref.getStart() === nameNode.getStart()
   );
 }

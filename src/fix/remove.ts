@@ -57,7 +57,10 @@ export function planRemovalOf(targets: RemovalTarget[]): Edit[] {
     // Resolve all targets first (line numbers are stable until we remove).
     const resolved = group
       .map((t) =>
-        decls.find((d) => d.name === t.name && d.nameNode.getStartLineNumber() === t.line),
+        decls.find(
+          (d) =>
+            d.name === t.name && d.nameNode.getStartLineNumber() === t.line,
+        ),
       )
       .filter((d): d is NonNullable<typeof d> => d !== undefined)
       .map((d) => d.declNode as unknown as { remove?: () => void });

@@ -1,5 +1,10 @@
 import { readFile } from "node:fs/promises";
-import type { ClassifiedFinding, EvidenceSignal, Tier, Verdict } from "../analyze/classify.js";
+import type {
+  ClassifiedFinding,
+  EvidenceSignal,
+  Tier,
+  Verdict,
+} from "../analyze/classify.js";
 
 /** A finding as serialized by `necro scan --json` (the flattened shape). */
 interface ScanJsonFinding {

@@ -21,7 +21,9 @@ export function lazyAnthropic(apiKey: string): () => Promise<Anthropic> {
   let clientPromise: Promise<Anthropic> | undefined;
   return () => {
     if (!clientPromise) {
-      clientPromise = import("@anthropic-ai/sdk").then((m) => new m.default({ apiKey }));
+      clientPromise = import("@anthropic-ai/sdk").then(
+        (m) => new m.default({ apiKey }),
+      );
     }
     return clientPromise;
   };
@@ -78,7 +80,11 @@ export async function structuredCall<T>(
     max_tokens: opts.maxTokens,
     ...(opts.thinking ? { thinking: { type: "adaptive" } } : {}),
     ...(opts.schema
-      ? { output_config: { format: { type: "json_schema", schema: opts.schema } } }
+      ? {
+          output_config: {
+            format: { type: "json_schema", schema: opts.schema },
+          },
+        }
       : {}),
     system: opts.system,
     messages: [{ role: "user", content: opts.user }],
@@ -88,11 +94,19 @@ export async function structuredCall<T>(
   // Only schema-constrained calls (triage/refactor) get their text block JSON-parsed;
   // free-form calls (narrate) hand `parse` the raw prose untouched, matching each
   // client's pre-extraction behavior.
-  const raw = block && block.type === "text" ? (opts.schema ? jsonOrText(block.text) : block.text) : undefined;
+  const raw =
+    block && block.type === "text"
+      ? opts.schema
+        ? jsonOrText(block.text)
+        : block.text
+      : undefined;
 
   return {
     result: opts.parse(raw),
-    usage: { inputTokens: res.usage.input_tokens, outputTokens: res.usage.output_tokens },
+    usage: {
+      inputTokens: res.usage.input_tokens,
+      outputTokens: res.usage.output_tokens,
+    },
   };
 }
 

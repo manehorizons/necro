@@ -21,11 +21,18 @@ function mergeOverlapping(locations: CloneLocation[]): CloneLocation[] {
 
   const merged: CloneLocation[] = [];
   for (const file of order) {
-    const sorted = byFile.get(file)!.slice().sort((a, b) => a.startLine - b.startLine);
+    const sorted = byFile
+      .get(file)!
+      .slice()
+      .sort((a, b) => a.startLine - b.startLine);
     let current = sorted[0]!;
     for (const next of sorted.slice(1)) {
       if (next.startLine <= current.endLine + 1) {
-        current = { file, startLine: current.startLine, endLine: Math.max(current.endLine, next.endLine) };
+        current = {
+          file,
+          startLine: current.startLine,
+          endLine: Math.max(current.endLine, next.endLine),
+        };
       } else {
         merged.push(current);
         current = next;
@@ -41,7 +48,10 @@ function mergeOverlapping(locations: CloneLocation[]): CloneLocation[] {
  * clone group: the matched token length and each merged location. Returns ""
  * when there are no clones.
  */
-export function renderDuplication(findings: DuplicationFinding[], root: string): string {
+export function renderDuplication(
+  findings: DuplicationFinding[],
+  root: string,
+): string {
   if (findings.length === 0) return "";
   const noun = findings.length === 1 ? "clone" : "clones";
   const header = `Duplication (${findings.length} ${noun})`;

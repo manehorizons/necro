@@ -1,7 +1,7 @@
-import type { LcovReport } from "./coverage/lcov.js";
-import { coverageRatio } from "./coverage/ratio.js";
 import type { FunctionUnit } from "../syntactic/ir.js";
 import { metrics } from "../syntactic/metrics.js";
+import type { LcovReport } from "./coverage/lcov.js";
+import { coverageRatio } from "./coverage/ratio.js";
 
 /** One function ranked by composite risk. */
 export interface HotspotEntry {
@@ -37,11 +37,22 @@ export function rankHotspots(
 ): HotspotEntry[] {
   const entries = units.map((u): HotspotEntry => {
     const complexity = metrics(u).cyclomatic;
-    const cov = coverage ? coverageRatio(coverage, u.file, u.line, u.line + u.loc - 1) : null;
+    const cov = coverage
+      ? coverageRatio(coverage, u.file, u.line, u.line + u.loc - 1)
+      : null;
     const crap = cov === null ? null : crapScore(complexity, cov);
     const fileChurn = churn?.get(u.file) ?? null;
     const risk = (crap ?? complexity) * (fileChurn ?? 1);
-    return { name: u.name, file: u.file, line: u.line, complexity, coverage: cov, crap, churn: fileChurn, risk };
+    return {
+      name: u.name,
+      file: u.file,
+      line: u.line,
+      complexity,
+      coverage: cov,
+      crap,
+      churn: fileChurn,
+      risk,
+    };
   });
 
   entries.sort((a, b) => {

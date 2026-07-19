@@ -1,6 +1,9 @@
-import { readFile, readdir } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { pyprojectHasSection, readPythonDependencyNames } from "./python-manifest.js";
+import {
+  pyprojectHasSection,
+  readPythonDependencyNames,
+} from "./python-manifest.js";
 import type { FrameworkPlugin, RepoContext } from "./types.js";
 
 interface PackageJson {
@@ -31,7 +34,7 @@ export async function createRepoContext(root: string): Promise<RepoContext> {
       const matchers = globs.map(globToRegExp);
       return rootEntries.some((entry) => matchers.some((re) => re.test(entry)));
     },
-    packageJsonHas: (key) => Object.prototype.hasOwnProperty.call(pkg, key),
+    packageJsonHas: (key) => Object.hasOwn(pkg, key),
     pyprojectHas: (header) => pyprojectHasSection(root, header),
   };
 }

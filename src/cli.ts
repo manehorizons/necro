@@ -1,9 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { Command } from "commander";
-import { loadConfig } from "./config.js";
-import { VERSION } from "./version.js";
-import { scan } from "./engine/index.js";
+import type { ClassifiedFinding } from "./analyze/classify.js";
 import {
   complexityKey,
   DEFAULT_BASELINE_FILE,
@@ -12,21 +10,27 @@ import {
   readBaseline,
   writeBaseline,
 } from "./baseline.js";
-import { supportsColor } from "./report/color.js";
+import { loadConfig } from "./config.js";
 import { explain } from "./engine/explain.js";
+import { scan } from "./engine/index.js";
 import { verifyRemovals } from "./engine/verify-removal.js";
 import { createNarrateClient, type NarrateClient } from "./explain/client.js";
-import { MissingApiKeyError } from "./llm/client.js";
-import { renderExplain } from "./report/explain.js";
-import { renderVerifyRemoval } from "./report/verify-removal.js";
 import { fixExitCode, runFix } from "./fix/index.js";
+import { MissingApiKeyError } from "./llm/client.js";
+import { supportsColor } from "./report/color.js";
 import { renderComplexity } from "./report/complexity.js";
 import { renderDuplication } from "./report/duplication.js";
+import { renderExplain } from "./report/explain.js";
 import { renderHotspots } from "./report/hotspots.js";
 import { toJson } from "./report/json.js";
 import { toSarif } from "./report/sarif.js";
 import { gate, isSeverity, SEVERITIES } from "./report/severity.js";
-import { renderEntryCollapseBanner, renderTerminal } from "./report/terminal.js";
+import {
+  renderEntryCollapseBanner,
+  renderTerminal,
+} from "./report/terminal.js";
+import { renderVerifyRemoval } from "./report/verify-removal.js";
+import { VERSION } from "./version.js";
 
 // Commander coercion for a repeatable --checks flag: one command per
 // occurrence, so a check command containing a comma is never split.
@@ -92,9 +96,18 @@ program
   .argument("[path]", "directory or file to scan", ".")
   .option("--json", "emit findings as JSON")
   .option("--top <n>", "show only the worst N findings")
-  .option("--coverage <path>", "path to an lcov report (default: coverage/lcov.info)")
-  .option("--sarif <file>", "write a SARIF 2.1.0 report to <file> (for CI / code-scanning)")
-  .option("--fail-on <severity>", "exit non-zero if a finding at/above high|medium|low exists")
+  .option(
+    "--coverage <path>",
+    "path to an lcov report (default: coverage/lcov.info)",
+  )
+  .option(
+    "--sarif <file>",
+    "write a SARIF 2.1.0 report to <file> (for CI / code-scanning)",
+  )
+  .option(
+    "--fail-on <severity>",
+    "exit non-zero if a finding at/above high|medium|low exists",
+  )
   .action(async (path: string, opts: ScanOptions) => {
     const failOn = opts.failOn;
     if (failOn !== undefined && !isSeverity(failOn)) {
@@ -113,15 +126,19 @@ program
 
     // Baseline + `// necro-ignore` subtract before any consumer (terminal,
     // --json, SARIF, --fail-on) sees the result — filter once, upstream.
-    const baselineKeys = await readBaseline(join(target, DEFAULT_BASELINE_FILE));
+    const baselineKeys = await readBaseline(
+      join(target, DEFAULT_BASELINE_FILE),
+    );
     const ignoreCache = new Map<string, string[]>();
     const findings: typeof scanned.findings = [];
     for (const f of scanned.findings) {
-      if (baselineKeys?.has(findingKey(f))) continue;
+      if (baselineKeys?.has(findingKey(f, target))) continue;
       if (await isIgnored(f.node.file, f.node.line, ignoreCache)) continue;
       findings.push(f);
     }
-    const complexity = scanned.complexity.filter((c) => !baselineKeys?.has(complexityKey(c)));
+    const complexity = scanned.complexity.filter(
+      (c) => !baselineKeys?.has(complexityKey(c, target)),
+    );
 
     // SARIF and --fail-on consider the full result set, never the --top view.
     const full = { findings, complexity, hotspots, duplication, diagnostics };
@@ -129,7 +146,15 @@ program
     const shown = top && top > 0 ? findings.slice(0, top) : findings;
 
     if (opts.json) {
-      console.log(toJson({ findings: shown, complexity, hotspots, duplication, diagnostics }));
+      console.log(
+        toJson({
+          findings: shown,
+          complexity,
+          hotspots,
+          duplication,
+          diagnostics,
+        }),
+      );
     } else {
       const root = process.cwd();
       const color = supportsColor(process.stdout);
@@ -145,7 +170,10 @@ program
 
     if (opts.sarif) {
       const sarif = toSarif(full, { srcRoot: process.cwd() });
-      await writeFile(resolve(process.cwd(), opts.sarif), `${JSON.stringify(sarif, null, 2)}\n`);
+      await writeFile(
+        resolve(process.cwd(), opts.sarif),
+        `${JSON.stringify(sarif, null, 2)}\n`,
+      );
     }
 
     if (failOn !== undefined && gate(full, failOn)) {
@@ -163,17 +191,25 @@ program
     const target = resolve(process.cwd(), path);
     const config = await loadConfig(process.cwd());
     const { findings, complexity } = await scan(target, config);
-    const keys = [...findings.map(findingKey), ...complexity.map(complexityKey)];
+    const keys = [
+      ...findings.map((f) => findingKey(f, target)),
+      ...complexity.map((c) => complexityKey(c, target)),
+    ];
     await writeBaseline(join(target, DEFAULT_BASELINE_FILE), keys);
     console.log(`baseline: ${keys.length} finding(s) recorded`);
   });
 
 program
   .command("explain")
-  .description("Explain why a symbol is alive, test-only, or dead (reachability trace)")
+  .description(
+    "Explain why a symbol is alive, test-only, or dead (reachability trace)",
+  )
   .argument("<symbol>", "symbol to explain: name, file:name, or file:line:name")
   .option("--json", "emit the explanation as JSON")
-  .option("--narrate", "add an LLM plain-English explanation of the verdict (needs an API key)")
+  .option(
+    "--narrate",
+    "add an LLM plain-English explanation of the verdict (needs an API key)",
+  )
   .action(async (symbol: string, opts: ExplainOptions) => {
     const target = resolve(process.cwd(), ".");
     const config = await loadConfig(process.cwd());
@@ -205,8 +241,13 @@ program
 
 program
   .command("verify-removal")
-  .description("Verify whether deleting each symbol keeps the build green (isolated worktree per symbol)")
-  .argument("<symbols...>", "symbols to test-remove: name, file:name, or file:line:name")
+  .description(
+    "Verify whether deleting each symbol keeps the build green (isolated worktree per symbol)",
+  )
+  .argument(
+    "<symbols...>",
+    "symbols to test-remove: name, file:name, or file:line:name",
+  )
   .option("--json", "emit the per-symbol verdicts as JSON")
   .option(
     "--checks <cmd>",
@@ -243,7 +284,10 @@ program
   .argument("[path]", "directory or file to fix", ".")
   .option("--write", "apply the removals to disk (default: preview only)")
   .option("--force", "bypass the dirty git-tree guard")
-  .option("--coverage <path>", "path to an lcov report (default: coverage/lcov.info)")
+  .option(
+    "--coverage <path>",
+    "path to an lcov report (default: coverage/lcov.info)",
+  )
   .option(
     "--verify",
     "gate each removal on verify-removal's empirical build-green check (isolated worktree per symbol; slower)",
@@ -290,15 +334,21 @@ program
       case "refused-no-entries":
         console.error(
           "Refused: 0 production entry points resolved — reachability is unseeded, so nothing is auto-fix eligible. " +
-            "Run `necro scan` for remedies (fix package.json main/bin/exports, add an \"entries\" config, or use a conventional entry filename).",
+            'Run `necro scan` for remedies (fix package.json main/bin/exports, add an "entries" config, or use a conventional entry filename).',
         );
         break;
       case "written":
-        console.log(`Removed ${result.count} symbol(s) across ${result.files.length} file(s).`);
+        console.log(
+          `Removed ${result.count} symbol(s) across ${result.files.length} file(s).`,
+        );
         if (result.skipped.length > 0) {
-          console.log(`Skipped ${result.skipped.length} symbol(s) that failed verification:`);
+          console.log(
+            `Skipped ${result.skipped.length} symbol(s) that failed verification:`,
+          );
           for (const s of result.skipped) {
-            console.log(`  ✗ ${s.symbol} (${s.reason})${s.output ? ` — ${s.output.split("\n")[0]}` : ""}`);
+            console.log(
+              `  ✗ ${s.symbol} (${s.reason})${s.output ? ` — ${s.output.split("\n")[0]}` : ""}`,
+            );
           }
         }
         break;
@@ -308,9 +358,14 @@ program
 
 program
   .command("triage")
-  .description("LLM-resolve the quarantined `maybe` findings (advisory; opt-in; uses the Anthropic API)")
+  .description(
+    "LLM-resolve the quarantined `maybe` findings (advisory; opt-in; uses the Anthropic API)",
+  )
   .argument("[path]", "directory or file to scan, then triage", ".")
-  .option("--input <file>", "triage a prior `necro scan --json` document instead of re-scanning")
+  .option(
+    "--input <file>",
+    "triage a prior `necro scan --json` document instead of re-scanning",
+  )
   .option("--json", "emit triaged findings as JSON")
   .action(async (path: string, opts: TriageOptions) => {
     const config = await loadConfig(process.cwd());
@@ -339,20 +394,24 @@ program
       throw err;
     }
 
-    let findings;
+    let findings: ClassifiedFinding[];
     if (opts.input) {
       const { loadScanJson } = await import("./triage/load.js");
       findings = await loadScanJson(resolve(process.cwd(), opts.input));
     } else {
       // Triage only needs dead-code findings — skip the tree-sitter axis.
-      const result = await scan(resolve(process.cwd(), path), config, { complexity: false });
+      const result = await scan(resolve(process.cwd(), path), config, {
+        complexity: false,
+      });
       findings = result.findings;
     }
 
     const res = await runTriage(findings, config.llm, client);
     console.log(opts.json ? toTriageJson(res) : renderTriage(res));
     if (res.triaged.length > 0) {
-      console.error(`tokens: ${usage.inputTokens} in / ${usage.outputTokens} out`);
+      console.error(
+        `tokens: ${usage.inputTokens} in / ${usage.outputTokens} out`,
+      );
     }
   });
 
@@ -362,17 +421,26 @@ program
     "Suggest LLM-assisted refactors — god-function splits or extract-duplicate (advisory; opt-in; uses the Anthropic API). Prints proposals — never edits your files.",
   )
   .argument("[path]", "directory or file to scan, then refactor", ".")
-  .option("--type <type>", "refactor type: god-function | extract-duplicate (default god-function)", "god-function")
+  .option(
+    "--type <type>",
+    "refactor type: god-function | extract-duplicate (default god-function)",
+    "god-function",
+  )
   .option("--json", "emit proposals as JSON")
   .option("--limit <n>", "max findings to propose refactors for (default 1)")
-  .option("--no-verify", "skip scratch-worktree verification (typecheck + tests)")
+  .option(
+    "--no-verify",
+    "skip scratch-worktree verification (typecheck + tests)",
+  )
   .action(async (path: string, opts: RefactorOptions) => {
     const target = resolve(process.cwd(), path);
     const config = await loadConfig(process.cwd());
 
     const type = opts.type ?? "god-function";
     if (type !== "god-function" && type !== "extract-duplicate") {
-      console.error(`unknown --type "${type}" (expected god-function | extract-duplicate)`);
+      console.error(
+        `unknown --type "${type}" (expected god-function | extract-duplicate)`,
+      );
       process.exitCode = 1;
       return;
     }
@@ -405,7 +473,9 @@ program
     if (opts.verify !== false) {
       const { workingTreeState } = await import("./fix/git-guard.js");
       if ((await workingTreeState(process.cwd())) === "unknown") {
-        console.error("note: not a git repository — skipping scratch-worktree verification.");
+        console.error(
+          "note: not a git repository — skipping scratch-worktree verification.",
+        );
       } else {
         const { gitWorktreeRunner } = await import("./refactor/verify.js");
         verifyRunner = gitWorktreeRunner(process.cwd());
@@ -416,21 +486,39 @@ program
 
     if (type === "extract-duplicate") {
       const { runExtractDuplicate } = await import("./refactor/index.js");
-      const { renderExtractDuplicate, toExtractDuplicateJson } = await import("./report/refactor.js");
-      const res = await runExtractDuplicate(scanResult.duplication, config.llm, client, { limit, verifyRunner });
-      console.log(opts.json ? toExtractDuplicateJson(res) : renderExtractDuplicate(res));
+      const { renderExtractDuplicate, toExtractDuplicateJson } = await import(
+        "./report/refactor.js"
+      );
+      const res = await runExtractDuplicate(
+        scanResult.duplication,
+        config.llm,
+        client,
+        { limit, verifyRunner },
+      );
+      console.log(
+        opts.json ? toExtractDuplicateJson(res) : renderExtractDuplicate(res),
+      );
       if (res.outcomes.length > 0) {
-        console.error(`tokens: ${usage.inputTokens} in / ${usage.outputTokens} out`);
+        console.error(
+          `tokens: ${usage.inputTokens} in / ${usage.outputTokens} out`,
+        );
       }
       return;
     }
 
     const { runRefactor } = await import("./refactor/index.js");
-    const { renderRefactor, toRefactorJson } = await import("./report/refactor.js");
-    const res = await runRefactor(scanResult.complexity, config.llm, client, { limit, verifyRunner });
+    const { renderRefactor, toRefactorJson } = await import(
+      "./report/refactor.js"
+    );
+    const res = await runRefactor(scanResult.complexity, config.llm, client, {
+      limit,
+      verifyRunner,
+    });
     console.log(opts.json ? toRefactorJson(res) : renderRefactor(res));
     if (res.outcomes.length > 0) {
-      console.error(`tokens: ${usage.inputTokens} in / ${usage.outputTokens} out`);
+      console.error(
+        `tokens: ${usage.inputTokens} in / ${usage.outputTokens} out`,
+      );
     }
   });
 

@@ -1,14 +1,20 @@
 import type { LlmOptions } from "../config.js";
-import { lazyAnthropic, type LlmUsage, MissingApiKeyError, resolveApiKey, structuredCall } from "../llm/client.js";
+import {
+  type LlmUsage,
+  lazyAnthropic,
+  MissingApiKeyError,
+  resolveApiKey,
+  structuredCall,
+} from "../llm/client.js";
 import { hostCliStructuredCall } from "../llm/host-cli-client.js";
 import type { DuplicationFinding } from "../syntactic/types.js";
 import {
   DUP_PROPOSAL_SCHEMA,
   type DuplicateProposalResult,
-  parseDuplicateProposal,
-  parseProposal,
   PROPOSAL_SCHEMA,
   type ProposalResult,
+  parseDuplicateProposal,
+  parseProposal,
   type RefactorPrompt,
 } from "./prompt.js";
 
@@ -19,7 +25,10 @@ export interface RefactorClient {
   propose(prompt: RefactorPrompt): Promise<ProposalResult>;
   /** Propose an extract-duplicate refactor for `finding` (used to validate the
    * response covers the actual clone group). */
-  proposeDuplicate(prompt: RefactorPrompt, finding: DuplicationFinding): Promise<DuplicateProposalResult>;
+  proposeDuplicate(
+    prompt: RefactorPrompt,
+    finding: DuplicationFinding,
+  ): Promise<DuplicateProposalResult>;
 }
 
 export interface RefactorClientOptions {
@@ -38,7 +47,10 @@ const MAX_TOKENS = 8192;
  * SDK is imported or any request is made. The SDK is loaded lazily via the
  * shared `../llm/client.js` helpers, so `scan`/`fix` never pull it in.
  */
-export function createRefactorClient(llm: LlmOptions, opts: RefactorClientOptions = {}): RefactorClient {
+export function createRefactorClient(
+  llm: LlmOptions,
+  opts: RefactorClientOptions = {},
+): RefactorClient {
   if (llm.provider === "host-cli") {
     return {
       async propose(prompt: RefactorPrompt): Promise<ProposalResult> {
@@ -54,7 +66,10 @@ export function createRefactorClient(llm: LlmOptions, opts: RefactorClientOption
         return result;
       },
 
-      async proposeDuplicate(prompt: RefactorPrompt, finding: DuplicationFinding): Promise<DuplicateProposalResult> {
+      async proposeDuplicate(
+        prompt: RefactorPrompt,
+        finding: DuplicationFinding,
+      ): Promise<DuplicateProposalResult> {
         const { result, usage } = await hostCliStructuredCall({
           bin: llm.hostCliBin,
           model: llm.model,
@@ -89,7 +104,10 @@ export function createRefactorClient(llm: LlmOptions, opts: RefactorClientOption
       return result;
     },
 
-    async proposeDuplicate(prompt: RefactorPrompt, finding: DuplicationFinding): Promise<DuplicateProposalResult> {
+    async proposeDuplicate(
+      prompt: RefactorPrompt,
+      finding: DuplicationFinding,
+    ): Promise<DuplicateProposalResult> {
       const { result, usage } = await structuredCall(getClient, {
         model: llm.model,
         maxTokens: MAX_TOKENS,

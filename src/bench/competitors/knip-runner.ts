@@ -30,8 +30,10 @@ export function parseKnipJson(json: string): RawUnusedExport[] {
   const report = JSON.parse(json) as KnipReport;
   const out: RawUnusedExport[] = [];
   for (const issue of report.issues) {
-    for (const e of issue.exports ?? []) out.push({ file: issue.file, symbol: e.name });
-    for (const t of issue.types ?? []) out.push({ file: issue.file, symbol: t.name });
+    for (const e of issue.exports ?? [])
+      out.push({ file: issue.file, symbol: e.name });
+    for (const t of issue.types ?? [])
+      out.push({ file: issue.file, symbol: t.name });
   }
   return out;
 }
@@ -43,11 +45,15 @@ export function parseKnipJson(json: string): RawUnusedExport[] {
 export async function runKnip(repoPath: string): Promise<CompetitorToolRun> {
   const [version, stdout] = await Promise.all([
     necroPackageVersion("knip"),
-    run(necroBinPath("knip"), ["--reporter", "json"], { cwd: repoPath, maxBuffer: 64 * 1024 * 1024 })
+    run(necroBinPath("knip"), ["--reporter", "json"], {
+      cwd: repoPath,
+      maxBuffer: 64 * 1024 * 1024,
+    })
       .then((r) => r.stdout)
       .catch((err: unknown) => {
         const e = err as { stdout?: string };
-        if (typeof e.stdout === "string" && e.stdout.length > 0) return e.stdout;
+        if (typeof e.stdout === "string" && e.stdout.length > 0)
+          return e.stdout;
         throw err;
       }),
   ]);

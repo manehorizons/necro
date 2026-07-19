@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { VERSION } from "../version.js";
-import { registerExplainTool, type ExplainToolDeps } from "./tools/explain.js";
+import { type ExplainToolDeps, registerExplainTool } from "./tools/explain.js";
 import { registerScanTool } from "./tools/scan.js";
 import { registerVerifyTool, type VerifyToolDeps } from "./tools/verify.js";
 import { registerVerifyRemovalTool } from "./tools/verify-removal.js";

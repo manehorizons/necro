@@ -14,7 +14,9 @@ export function renderVerifyRemoval(results: RemovalVerdict[]): string {
       lines.push(`✗ ${r.symbol} — removal breaks the build`);
       if (r.output) lines.push(...r.output.split("\n").map((l) => `    ${l}`));
     } else {
-      lines.push(`? ${r.symbol} — unresolved${r.output ? ` (${r.output})` : ""}`);
+      lines.push(
+        `? ${r.symbol} — unresolved${r.output ? ` (${r.output})` : ""}`,
+      );
     }
   }
   return lines.join("\n");

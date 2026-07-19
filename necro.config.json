@@ -1,0 +1,8 @@
+{
+  "entries": [
+    "cli.ts",
+    "bench/cli-bench.ts",
+    "bench/cli-checkout.ts",
+    "bench/cli-competitors.ts"
+  ]
+}

@@ -1,5 +1,5 @@
-import type { SymbolEdge, SymbolNode } from "../graph/types.js";
 import { isPythonFile } from "../graph/python/language.js";
+import type { SymbolEdge, SymbolNode } from "../graph/types.js";
 
 export type Reachability = "alive" | "test-only" | "dead";
 
@@ -28,11 +28,18 @@ export interface ReachabilityInput {
  * A node in reachedByProd is `alive`; in reachedByAny but not prod is `test-only`;
  * in neither is a `dead` candidate.
  */
-export function computeReachability(input: ReachabilityInput): ReachabilityResult[] {
+export function computeReachability(
+  input: ReachabilityInput,
+): ReachabilityResult[] {
   const nodeIds = new Set(input.nodes.map((n) => n.id));
   const taintedFiles = input.taintedFiles ?? new Set<string>();
 
-  const reachedByProd = bfs(input.edges, input.prodEntries, nodeIds, (kind) => kind === "prod");
+  const reachedByProd = bfs(
+    input.edges,
+    input.prodEntries,
+    nodeIds,
+    (kind) => kind === "prod",
+  );
   const reachedByAny = bfs(
     input.edges,
     union(input.prodEntries, input.testEntries),
@@ -133,7 +140,10 @@ export function tracePath(
       if (next === target) {
         const path = [target];
         let cur: string | undefined = target;
-        while ((cur = parent.get(cur)) !== undefined) path.unshift(cur);
+        for (let p = parent.get(cur); p !== undefined; p = parent.get(cur)) {
+          path.unshift(p);
+          cur = p;
+        }
         return path;
       }
       queue.push(next);

@@ -5,8 +5,8 @@
  * head-to-head is a genuine apples-to-apples comparison. Pure — no I/O.
  */
 
-import { f1 } from "../snapshot.js";
 import type { EvalCase } from "../../triage/eval.js";
+import { f1 } from "../snapshot.js";
 import type { RawUnusedExport } from "./types.js";
 
 export interface CompetitorMetrics {
@@ -33,12 +33,17 @@ function key(file: string, symbol: string): string {
 /** Predict each case "dead" iff the tool's raw findings include that case's
  * exact provenance file+symbol. Cases without provenance (synthetic corpus
  * entries) are skipped — the competitor bench only scores real-repo cases. */
-export function predictCases(cases: EvalCase[], unused: RawUnusedExport[]): CompetitorPrediction[] {
+export function predictCases(
+  cases: EvalCase[],
+  unused: RawUnusedExport[],
+): CompetitorPrediction[] {
   const unusedSet = new Set(unused.map((u) => key(u.file, u.symbol)));
   const out: CompetitorPrediction[] = [];
   for (const c of cases) {
     if (!c.provenance) continue;
-    const predictedDead = unusedSet.has(key(c.provenance.file, c.provenance.symbol));
+    const predictedDead = unusedSet.has(
+      key(c.provenance.file, c.provenance.symbol),
+    );
     out.push({ name: c.name, truth: c.truth, predictedDead });
   }
   return out;
@@ -47,7 +52,9 @@ export function predictCases(cases: EvalCase[], unused: RawUnusedExport[]): Comp
 /** Score predictions on the "dead" positive class — identical derivation to
  * `runEval`: no positive predictions ⇒ precision 1; no actual positives ⇒
  * recall 1 (avoids 0/0). */
-export function scorePredictions(predictions: CompetitorPrediction[]): CompetitorMetrics {
+export function scorePredictions(
+  predictions: CompetitorPrediction[],
+): CompetitorMetrics {
   let tp = 0;
   let fp = 0;
   let fn = 0;
@@ -70,6 +77,9 @@ export function scorePredictions(predictions: CompetitorPrediction[]): Competito
 }
 
 /** Convenience: predict + score in one call. */
-export function scoreTool(cases: EvalCase[], unused: RawUnusedExport[]): CompetitorMetrics {
+export function scoreTool(
+  cases: EvalCase[],
+  unused: RawUnusedExport[],
+): CompetitorMetrics {
   return scorePredictions(predictCases(cases, unused));
 }

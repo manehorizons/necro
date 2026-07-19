@@ -23,7 +23,11 @@ const MAX_SPAN = 200;
  * not skip braces inside strings/comments) — this is context for an LLM, not a
  * parse, so approximate boundaries are fine. The span is clamped to {@link MAX_SPAN}.
  */
-export function extractSnippet(text: string, line: number, radius: number): Omit<Snippet, "file"> {
+export function extractSnippet(
+  text: string,
+  line: number,
+  radius: number,
+): Omit<Snippet, "file"> {
   const lines = text.split("\n");
   const total = lines.length;
   if (total === 0) return { startLine: 1, endLine: 1, code: "" };
@@ -46,13 +50,20 @@ export function extractSnippet(text: string, line: number, radius: number): Omit
  * it slices precisely the requested range, which is what a clone location gives
  * us. The range is clamped into the file and to {@link MAX_SPAN} lines.
  */
-export function extractRange(text: string, startLine: number, endLine: number): Omit<Snippet, "file"> {
+export function extractRange(
+  text: string,
+  startLine: number,
+  endLine: number,
+): Omit<Snippet, "file"> {
   const lines = text.split("\n");
   const total = lines.length;
   if (total === 0) return { startLine: 1, endLine: 1, code: "" };
 
   const start = Math.min(Math.max(startLine, 1), total);
-  const end = Math.min(Math.max(endLine, start), Math.min(total, start + MAX_SPAN - 1));
+  const end = Math.min(
+    Math.max(endLine, start),
+    Math.min(total, start + MAX_SPAN - 1),
+  );
   const code = lines
     .slice(start - 1, end)
     .map((l, i) => `${start + i}\t${l}`)

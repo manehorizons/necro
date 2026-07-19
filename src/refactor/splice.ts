@@ -10,7 +10,12 @@ const execFileAsync = promisify(execFile);
 /** Replace 1-based lines [startLine, endLine] of `original` with `replacement`.
  * An `endLine < startLine` (e.g. `startLine, startLine-1`) inserts before
  * `startLine` without removing anything. */
-export function spliceLines(original: string, startLine: number, endLine: number, replacement: string): string {
+export function spliceLines(
+  original: string,
+  startLine: number,
+  endLine: number,
+  replacement: string,
+): string {
   const lines = original.split("\n");
   const before = lines.slice(0, Math.max(startLine - 1, 0));
   const after = lines.slice(Math.max(endLine, startLine - 1));
@@ -22,7 +27,10 @@ export function spliceLines(original: string, startLine: number, endLine: number
  * Returns "" when identical, the diff text otherwise, or `null` if git failed
  * to produce one. Writes only to a temp dir, which is always removed — never the
  * user's tree. */
-export async function computeUnifiedDiff(original: string, updated: string): Promise<string | null> {
+export async function computeUnifiedDiff(
+  original: string,
+  updated: string,
+): Promise<string | null> {
   const dir = await mkdtemp(join(tmpdir(), "necro-refdiff-"));
   try {
     const a = join(dir, "a");
@@ -31,7 +39,9 @@ export async function computeUnifiedDiff(original: string, updated: string): Pro
     await writeFile(b, updated);
     try {
       // Differing files make git exit 1 with the diff on stdout — that's success here.
-      await execFileAsync("git", ["diff", "--no-index", "--", a, b], { timeout: 10_000 });
+      await execFileAsync("git", ["diff", "--no-index", "--", a, b], {
+        timeout: 10_000,
+      });
       return ""; // identical
     } catch (err) {
       const e = err as { stdout?: string };
@@ -76,24 +86,40 @@ export async function spliceDuplicate(
   proposal: DuplicateProposal,
 ): Promise<DuplicateSpliceResult[]> {
   const sharedName = exportedName(proposal.sharedFunction);
-  const affected = new Set<string>([proposal.sharedFunctionFile, ...proposal.edits.map((e) => e.file)]);
+  const affected = new Set<string>([
+    proposal.sharedFunctionFile,
+    ...proposal.edits.map((e) => e.file),
+  ]);
 
   const results: DuplicateSpliceResult[] = [];
   for (const file of affected) {
     const original = files.get(file);
-    if (original === undefined) throw new Error(`spliceDuplicate: missing content for "${file}"`);
+    if (original === undefined)
+      throw new Error(`spliceDuplicate: missing content for "${file}"`);
 
     const ops: Op[] = proposal.edits
       .filter((e) => e.file === file)
-      .map((e) => ({ start: e.startLine, end: e.endLine, text: e.replacement }));
+      .map((e) => ({
+        start: e.startLine,
+        end: e.endLine,
+        text: e.replacement,
+      }));
 
     if (file === proposal.sharedFunctionFile) {
       const at = afterImports(original);
-      ops.push({ start: at, end: at - 1, text: `\n${proposal.sharedFunction.replace(/\n$/, "")}\n` });
+      ops.push({
+        start: at,
+        end: at - 1,
+        text: `\n${proposal.sharedFunction.replace(/\n$/, "")}\n`,
+      });
     } else if (sharedName) {
       const spec = importSpecifier(file, proposal.sharedFunctionFile);
       const at = afterImports(original);
-      ops.push({ start: at, end: at - 1, text: `import { ${sharedName} } from "${spec}";` });
+      ops.push({
+        start: at,
+        end: at - 1,
+        text: `import { ${sharedName} } from "${spec}";`,
+      });
     }
 
     const newContent = applyOps(original, ops);
@@ -116,7 +142,9 @@ function applyOps(content: string, ops: Op[]): string {
   const replacements = ops.filter((o) => o.end >= o.start);
   for (const o of replacements) {
     if (o.start < 1 || o.end > lineCount) {
-      throw new Error(`extract-duplicate: edit range ${o.start}-${o.end} is out of bounds (1-${lineCount})`);
+      throw new Error(
+        `extract-duplicate: edit range ${o.start}-${o.end} is out of bounds (1-${lineCount})`,
+      );
     }
   }
   // Detect overlap among replacement ranges (insertions can't overlap content).
@@ -149,7 +177,9 @@ function afterImports(content: string): number {
 
 /** The exported symbol name from `export function NAME` / `export const NAME`. */
 function exportedName(source: string): string | null {
-  const fn = source.match(/\bexport\s+(?:async\s+)?function\s+([A-Za-z0-9_$]+)/);
+  const fn = source.match(
+    /\bexport\s+(?:async\s+)?function\s+([A-Za-z0-9_$]+)/,
+  );
   if (fn) return fn[1] ?? null;
   const c = source.match(/\bexport\s+(?:const|let|var)\s+([A-Za-z0-9_$]+)/);
   return c ? (c[1] ?? null) : null;
@@ -157,7 +187,9 @@ function exportedName(source: string): string | null {
 
 /** A relative ESM import specifier from `fromFile` to `toFile` (`.ts`→`.js`). */
 function importSpecifier(fromFile: string, toFile: string): string {
-  let spec = relative(dirname(fromFile), toFile).replace(/\\/g, "/").replace(/\.tsx?$/, ".js");
+  let spec = relative(dirname(fromFile), toFile)
+    .replace(/\\/g, "/")
+    .replace(/\.tsx?$/, ".js");
   if (!spec.startsWith(".")) spec = `./${spec}`;
   return spec;
 }

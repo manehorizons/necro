@@ -8,6 +8,8 @@ import type { Edit } from "./remove.js";
  */
 export function renderDiff(edits: Edit[], targetPath: string): string {
   return edits
-    .map((e) => createPatch(relative(targetPath, e.file), e.before, e.after, "", ""))
+    .map((e) =>
+      createPatch(relative(targetPath, e.file), e.before, e.after, "", ""),
+    )
     .join("\n");
 }

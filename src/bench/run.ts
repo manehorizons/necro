@@ -2,24 +2,30 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { RefactorClient } from "../refactor/client.js";
 import {
+  type DuplicateEvalCase,
   loadDuplicateEvalCases,
   runDuplicateEval,
-  type DuplicateEvalCase,
 } from "../refactor/eval.js";
 import type { TriageClient } from "../triage/client.js";
-import { loadEvalCases, runEval, type EvalCase } from "../triage/eval.js";
+import { type EvalCase, loadEvalCases, runEval } from "../triage/eval.js";
 import {
+  type BenchCorpusResult,
+  type BenchResults,
   deriveSources,
   summarizeDup,
   summarizeTriage,
-  type BenchCorpusResult,
-  type BenchResults,
 } from "./snapshot.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 /** The two published corpora live in the repo's test fixtures (not in the npm tarball). */
-const TRIAGE_CORPUS = join(here, "../../test/fixtures/triage-realrepo/cases.json");
-const DUP_CORPUS = join(here, "../../test/fixtures/refactor-dup-realrepo/cases.json");
+const TRIAGE_CORPUS = join(
+  here,
+  "../../test/fixtures/triage-realrepo/cases.json",
+);
+const DUP_CORPUS = join(
+  here,
+  "../../test/fixtures/refactor-dup-realrepo/cases.json",
+);
 
 /** Model-backed capabilities the benchmark needs — injected so tests use stubs. */
 export interface BenchClients {
@@ -53,21 +59,30 @@ export interface RunBenchOptions {
  * provenance. The model clients and the clock are injected, so it is fully
  * deterministic under test with no network.
  */
-export async function runBench(clients: BenchClients, opts: RunBenchOptions): Promise<BenchResults> {
+export async function runBench(
+  clients: BenchClients,
+  opts: RunBenchOptions,
+): Promise<BenchResults> {
   const corpora: BenchCorpusResult[] = [];
 
   if (opts.corpus === "triage" || opts.corpus === "all") {
-    const cases = await (opts.loadTriageCases?.() ?? loadEvalCases(TRIAGE_CORPUS));
+    const cases = await (opts.loadTriageCases?.() ??
+      loadEvalCases(TRIAGE_CORPUS));
     const n = opts.triageRuns ?? 3;
     const runs = [];
     for (let i = 0; i < n; i++) {
-      runs.push(await runEval(cases, clients.triageClient, { concurrency: opts.concurrency }));
+      runs.push(
+        await runEval(cases, clients.triageClient, {
+          concurrency: opts.concurrency,
+        }),
+      );
     }
     corpora.push(summarizeTriage(runs, deriveSources(cases)));
   }
 
   if (opts.corpus === "dup" || opts.corpus === "all") {
-    const cases = await (opts.loadDupCases?.() ?? loadDuplicateEvalCases(DUP_CORPUS));
+    const cases = await (opts.loadDupCases?.() ??
+      loadDuplicateEvalCases(DUP_CORPUS));
     const metrics = await runDuplicateEval(cases, clients.refactorClient, {
       concurrency: opts.concurrency,
     });

@@ -1,12 +1,15 @@
-import { classify, type ClassifiedFinding } from "../analyze/classify.js";
+import { type ClassifiedFinding, classify } from "../analyze/classify.js";
+import type { LcovReport } from "../analyze/coverage/lcov.js";
 import { loadCoverage } from "../analyze/coverage/load.js";
 import { coverageFor } from "../analyze/coverage/lookup.js";
+import type { HotspotEntry } from "../analyze/hotspots.js";
 import type { NecroConfig } from "../config.js";
 import type { SymbolNode } from "../graph/types.js";
 import { sortWorstFirst } from "../report/sort.js";
-import type { LcovReport } from "../analyze/coverage/lcov.js";
-import type { HotspotEntry } from "../analyze/hotspots.js";
-import type { ComplexityFinding, DuplicationFinding } from "../syntactic/types.js";
+import type {
+  ComplexityFinding,
+  DuplicationFinding,
+} from "../syntactic/types.js";
 import { buildReachabilityModel, type EntryResolution } from "./model.js";
 
 /** A single anti-pattern finding (a classified dead/test-only symbol). */
@@ -76,7 +79,11 @@ export async function scan(
     }),
   );
 
-  let heavy: { complexity: ComplexityFinding[]; hotspots: HotspotEntry[]; duplication: DuplicationFinding[] };
+  let heavy: {
+    complexity: ComplexityFinding[];
+    hotspots: HotspotEntry[];
+    duplication: DuplicationFinding[];
+  };
   if (opts.complexity === false) {
     heavy = { complexity: [], hotspots: [], duplication: [] };
   } else {
@@ -115,23 +122,35 @@ async function analyzeHeavy(
   const { tokenize } = await import("../syntactic/tokens.js");
   const { findClones } = await import("../syntactic/duplication.js");
 
-  const units = (await Promise.all(sources.map(({ file, text }) => lowerSource(file, text)))).flat();
+  const units = (
+    await Promise.all(sources.map(({ file, text }) => lowerSource(file, text)))
+  ).flat();
 
-  const complexity = units.flatMap((u) => detect(u, config.complexity)).sort((a, b) => {
-    // Worst-first: largest overshoot ratio, then file/line for stability.
-    const byRatio = b.value / b.threshold - a.value / a.threshold;
-    if (byRatio !== 0) return byRatio;
-    const byFile = a.file.localeCompare(b.file);
-    return byFile !== 0 ? byFile : a.line - b.line;
-  });
+  const complexity = units
+    .flatMap((u) => detect(u, config.complexity))
+    .sort((a, b) => {
+      // Worst-first: largest overshoot ratio, then file/line for stability.
+      const byRatio = b.value / b.threshold - a.value / a.threshold;
+      if (byRatio !== 0) return byRatio;
+      const byFile = a.file.localeCompare(b.file);
+      return byFile !== 0 ? byFile : a.line - b.line;
+    });
 
   const churn = await fileChurn(targetPath);
-  const hotspots = rankHotspots(units, coverageReport, churn, config.hotspots.top);
+  const hotspots = rankHotspots(
+    units,
+    coverageReport,
+    churn,
+    config.hotspots.top,
+  );
 
   // Group the already-computed function units by file as line ranges, so the
   // duplication detector never reports a clone window straddling a function
   // boundary (the cross-function windows phases 16–17 curated around).
-  const unitsByFile = new Map<string, { startLine: number; endLine: number }[]>();
+  const unitsByFile = new Map<
+    string,
+    { startLine: number; endLine: number }[]
+  >();
   for (const u of units) {
     const range = { startLine: u.line, endLine: u.line + u.loc - 1 };
     const arr = unitsByFile.get(u.file);

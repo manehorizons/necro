@@ -1,5 +1,5 @@
+import type { TriagedFinding, TriageRunResult } from "../triage/index.js";
 import type { TriageVerdict } from "../triage/prompt.js";
-import type { TriageRunResult, TriagedFinding } from "../triage/index.js";
 
 /** Worst-first: a confident "dead" call is the most actionable, "alive" the least. */
 const VERDICT_RANK: Record<TriageVerdict, number> = {
@@ -23,10 +23,14 @@ export function renderTriage(res: TriageRunResult): string {
   if (res.triaged.length === 0) return "nothing triaged";
 
   const counts = new Map<TriageVerdict, number>();
-  for (const t of res.triaged) counts.set(t.verdict, (counts.get(t.verdict) ?? 0) + 1);
+  for (const t of res.triaged)
+    counts.set(t.verdict, (counts.get(t.verdict) ?? 0) + 1);
   const order: TriageVerdict[] = ["likely-dead", "unsure", "likely-alive"];
-  const parts = order.filter((v) => counts.has(v)).map((v) => `${counts.get(v)} ${v}`);
-  const dropped = res.dropped > 0 ? ` — ${res.dropped} skipped (maxFindings)` : "";
+  const parts = order
+    .filter((v) => counts.has(v))
+    .map((v) => `${counts.get(v)} ${v}`);
+  const dropped =
+    res.dropped > 0 ? ` — ${res.dropped} skipped (maxFindings)` : "";
   const header = `triaged ${res.triaged.length} maybe finding(s) (${parts.join(", ")})${dropped}`;
 
   const body = sortWorstFirst(res.triaged)

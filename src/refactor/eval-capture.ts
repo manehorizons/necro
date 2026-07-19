@@ -1,7 +1,11 @@
 import { readFile } from "node:fs/promises";
 import { basename, extname, isAbsolute, join, relative } from "node:path";
 import { type FunctionUnit, lowerSource } from "../syntactic/ir.js";
-import type { CloneLocation, ComplexityFinding, DuplicationFinding } from "../syntactic/types.js";
+import type {
+  CloneLocation,
+  ComplexityFinding,
+  DuplicationFinding,
+} from "../syntactic/types.js";
 import type { CaseProvenance } from "../triage/eval-capture.js";
 import type { DuplicateEvalCase, RefactorEvalCase } from "./eval.js";
 
@@ -40,7 +44,9 @@ export async function captureRefactorSkeletons(
 ): Promise<RefactorEvalCase[]> {
   const threshold = opts.threshold ?? 50;
   const doc = JSON.parse(scanJson) as ScanJsonComplexity;
-  const gods = (doc.complexity ?? []).filter((f) => f.detector === "god-function");
+  const gods = (doc.complexity ?? []).filter(
+    (f) => f.detector === "god-function",
+  );
 
   const textCache = new Map<string, string>();
   const unitsCache = new Map<string, FunctionUnit[]>();
@@ -51,7 +57,11 @@ export async function captureRefactorSkeletons(
     textCache.set(absPath, text);
     return text;
   };
-  const lowerOnce = async (rel: string, absPath: string, text: string): Promise<FunctionUnit[]> => {
+  const lowerOnce = async (
+    rel: string,
+    absPath: string,
+    text: string,
+  ): Promise<FunctionUnit[]> => {
     const cached = unitsCache.get(absPath);
     if (cached !== undefined) return cached;
     const units = await lowerSource(rel, text); // `rel` keeps the extension hint clean
@@ -72,10 +82,25 @@ export async function captureRefactorSkeletons(
     if (!unit || unit.loc <= threshold) continue; // loc-over only — short params-god functions aren't split targets
 
     const lines = text.split("\n");
-    const source = lines.slice(unit.line - 1, unit.line - 1 + unit.loc).join("\n");
+    const source = lines
+      .slice(unit.line - 1, unit.line - 1 + unit.loc)
+      .join("\n");
     const signature = lines[unit.line - 1] ?? "";
-    const provenance: CaseProvenance = { repo: opts.repo, sha: opts.sha, file: rel, line: unit.line, symbol: unit.name };
-    cases.push({ name: unit.name, file: rel, source, signature, threshold, provenance });
+    const provenance: CaseProvenance = {
+      repo: opts.repo,
+      sha: opts.sha,
+      file: rel,
+      line: unit.line,
+      symbol: unit.name,
+    };
+    cases.push({
+      name: unit.name,
+      file: rel,
+      source,
+      signature,
+      threshold,
+      provenance,
+    });
   }
   return cases;
 }
@@ -143,11 +168,14 @@ export async function captureDuplicateSkeletons(
     if (g.locations.length === 0) continue;
     // necro scan emits absolute paths; tolerate relative too. Read absolute, store repo-relative.
     const sourceByRel = new Map<string, string>();
-    const relOf = (file: string) => (isAbsolute(file) ? relative(opts.sourceRoot, file) : file);
+    const relOf = (file: string) =>
+      isAbsolute(file) ? relative(opts.sourceRoot, file) : file;
     for (const loc of g.locations) {
       const rel = relOf(loc.file);
       if (sourceByRel.has(rel)) continue;
-      const absPath = isAbsolute(loc.file) ? loc.file : join(opts.sourceRoot, loc.file);
+      const absPath = isAbsolute(loc.file)
+        ? loc.file
+        : join(opts.sourceRoot, loc.file);
       sourceByRel.set(rel, await readOnce(absPath));
     }
 
@@ -158,7 +186,10 @@ export async function captureDuplicateSkeletons(
     }));
     const files = [...sourceByRel].map(([path, source]) => ({ path, source }));
     const signatures = locations.map((loc) =>
-      callSurfaceLine((sourceByRel.get(loc.file) ?? "").split("\n"), loc.startLine),
+      callSurfaceLine(
+        (sourceByRel.get(loc.file) ?? "").split("\n"),
+        loc.startLine,
+      ),
     );
 
     const anchor = locations[0] as CloneLocation;
@@ -170,7 +201,15 @@ export async function captureDuplicateSkeletons(
       line: anchor.startLine,
       symbol: name,
     };
-    cases.push({ name, files, locations, tokens: g.tokens, minTokens, signatures, provenance });
+    cases.push({
+      name,
+      files,
+      locations,
+      tokens: g.tokens,
+      minTokens,
+      signatures,
+      provenance,
+    });
   }
   return cases;
 }

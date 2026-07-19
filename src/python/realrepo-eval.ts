@@ -57,7 +57,10 @@ export interface EvalMetrics {
  * (necro found no reason to suspect the symbol — a confident "alive"). */
 export function isPredictedDead(finding: ClassifiedFinding | null): boolean {
   if (finding === null) return false;
-  return finding.verdict === "dead" && (finding.tier === "likely" || finding.tier === "certain");
+  return (
+    finding.verdict === "dead" &&
+    (finding.tier === "likely" || finding.tier === "certain")
+  );
 }
 
 /**
@@ -69,7 +72,13 @@ export function scoreRealrepoCases(pairs: RealrepoPair[]): EvalMetrics {
   const rows: RealrepoResultRow[] = pairs.map(({ case: c, finding }) => {
     const predictedDead = isPredictedDead(finding);
     const misclassified = predictedDead !== (c.truth === "dead");
-    return { name: c.name, truth: c.truth, finding, misclassified, provenance: c.provenance };
+    return {
+      name: c.name,
+      truth: c.truth,
+      finding,
+      misclassified,
+      provenance: c.provenance,
+    };
   });
 
   let tp = 0;
@@ -92,10 +101,23 @@ export function scoreRealrepoCases(pairs: RealrepoPair[]): EvalMetrics {
     },
     misclassified: rows.filter((r) => r.misclassified),
   };
-  return { total: rows.length, truePositives: tp, falsePositives: fp, falseNegatives: fn, precision, recall, rows, breakdown };
+  return {
+    total: rows.length,
+    truePositives: tp,
+    falsePositives: fp,
+    falseNegatives: fn,
+    precision,
+    recall,
+    rows,
+    breakdown,
+  };
 }
 
 /** The accuracy gate: both precision and recall must clear their own floor. */
-export function meetsFloors(m: EvalMetrics, precisionFloor: number, recallFloor: number): boolean {
+export function meetsFloors(
+  m: EvalMetrics,
+  precisionFloor: number,
+  recallFloor: number,
+): boolean {
   return m.precision >= precisionFloor && m.recall >= recallFloor;
 }

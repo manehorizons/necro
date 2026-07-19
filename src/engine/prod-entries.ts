@@ -4,8 +4,12 @@ import { globMatcher } from "../glob.js";
 import { mapDistToSrc, readTsconfigMapping } from "./entry-mapping.js";
 
 const CONVENTIONAL = [
-  "index.ts", "index.tsx", "src/index.ts", "src/index.tsx",
-  "main.ts", "src/main.ts",
+  "index.ts",
+  "index.tsx",
+  "src/index.ts",
+  "src/index.tsx",
+  "main.ts",
+  "src/main.ts",
 ];
 
 /** Where a resolved production entry came from (§2.1 diagnostics). */
@@ -85,14 +89,17 @@ export async function resolveProdEntries(
 
   for (const rel of scriptEntries(pkg, root, fileSet)) add(rel, "scripts");
 
-  for (const rel of configEntries(root, files, opts.configEntries ?? [])) add(rel, "config");
+  for (const rel of configEntries(root, files, opts.configEntries ?? []))
+    add(rel, "config");
 
   return { entries, records };
 }
 
 function readPackageJson(root: string): Record<string, unknown> {
   try {
-    return JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as Record<string, unknown>;
+    return JSON.parse(
+      readFileSync(join(root, "package.json"), "utf8"),
+    ) as Record<string, unknown>;
   } catch {
     return {};
   }
@@ -113,7 +120,11 @@ function manifestEntries(pkg: Record<string, unknown>): string[] {
  * quotes — no shell parsing; false negatives are acceptable, but the
  * existence gate below prevents false positives.
  */
-function scriptEntries(pkg: Record<string, unknown>, root: string, fileSet: Set<string>): string[] {
+function scriptEntries(
+  pkg: Record<string, unknown>,
+  root: string,
+  fileSet: Set<string>,
+): string[] {
   const scripts = pkg.scripts;
   if (!scripts || typeof scripts !== "object") return [];
 
@@ -135,7 +146,11 @@ function stripQuotes(s: string): string {
 }
 
 /** Resolve `NecroConfig.entries` globs against the discovered files (§2.2). */
-function configEntries(root: string, files: string[], globs: string[]): string[] {
+function configEntries(
+  root: string,
+  files: string[],
+  globs: string[],
+): string[] {
   if (globs.length === 0) return [];
   const matches = globMatcher(globs);
   return files

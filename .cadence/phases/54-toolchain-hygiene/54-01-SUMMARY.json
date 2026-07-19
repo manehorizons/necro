@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "draftId": "54-01",
+  "completedAt": "2026-07-19T00:54:43.729Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-2",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-3",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-4",
+      "pass": true,
+      "evidence": "assertion"
+    }
+  ],
+  "gates": [
+    {
+      "gate": "draft-read",
+      "status": "ran"
+    },
+    {
+      "gate": "structural-verifier",
+      "status": "ran"
+    },
+    {
+      "gate": "boundary-scan",
+      "status": "skipped",
+      "skipReason": "boundaryEnforcement is not \"block\""
+    },
+    {
+      "gate": "build-test-must-pass",
+      "status": "skipped",
+      "skipReason": "no test command configured — build-test-must-pass cannot verify your tests ran; this settle will NOT confirm the suite passes. Set verification.testCommand in .cadence/config.json to enable real enforcement."
+    },
+    {
+      "gate": "test-coverage",
+      "status": "ran"
+    },
+    {
+      "gate": "interactive-verdict",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "deep-verify",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "code-review",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    },
+    {
+      "gate": "security-audit",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "Installed @biomejs/biome 2.5.4, biome.json scoped to src/** (2-space indent, double quotes, noNonNullAssertion off — 36 idiomatic `!` uses, disabling it avoids a large unrelated behavior-touching diff). Ran biome check --write to reformat 82 files, then hand-fixed the 4 real lint errors (2x noAssignInExpressions, 1x noImplicitAnyLet, applied 2 safe auto-fixes). npm run lint added, exits 0. Added Lint step to ci.yml. Full suite verified: typecheck clean, 729/735 tests pass (6 skipped, pre-existing), biome check src exits 0."
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "Added .github/dependabot.yml with weekly update checks for npm (root) and github-actions (root) ecosystems, matching GitHub's documented dependabot.yml v2 schema."
+    },
+    {
+      "id": "T3",
+      "status": "DONE",
+      "notes": "Replaced single ubuntu/node-20 runner with strategy.matrix over os:[ubuntu-latest, macos-latest] x node-version:[20,22,24] (6 jobs), fail-fast:false so all combos report independently. YAML validated. Steps unchanged (npm ci -> lint -> typecheck -> build -> test:coverage). Actual green-across-the-matrix confirmation requires GitHub Actions (can't run macos/node22/24 combos locally) — will show on first push/PR."
+    },
+    {
+      "id": "T4",
+      "status": "DONE",
+      "notes": "Added necro.config.json (entries: cli.ts + 3 bench script entries, matching package.json scripts) — fixed the degenerate 0-entry self-scan (635 maybe -> 50 real findings, 9 certain/high). Generated src/.necro-baseline.json (135 findings) via `necro baseline src` so fail-on:high gates only new regressions, not pre-existing debt. Along the way found and fixed a real portability bug in src/baseline.ts: findingKey/complexityKey used the raw absolute-path node.id as the baseline key, so a baseline committed from one machine would never match on a CI runner's different absolute checkout path, silently defeating the whole gate on day one (verified by reproducing the failure against a copy at a different absolute path, then re-verifying it's fixed after making keys root-relative). Added 2 new portability tests to test/baseline.test.ts; updated its existing tests for the new (finding, root) signature. Wired necro-scan.yml's fail-on: \"\" -> \"high\". Verified end-to-end: clean scan passes (exit 0), a freshly introduced dead symbol still fails the gate (exit 1) both locally and simulated from a different absolute path. Full suite: typecheck clean, biome check clean, 731/737 tests pass (6 pre-existing skips)."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": [
+      "superpowers:test-driven-development",
+      "handoff"
+    ]
+  }
+}

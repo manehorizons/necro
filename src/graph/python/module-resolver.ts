@@ -35,7 +35,10 @@ export function detectImportRoots(repoRoot: string, files: string[]): string[] {
  * given import root are silently skipped (best-effort, per AC-4) rather than
  * throwing.
  */
-export function buildPythonModuleMap(files: string[], importRoots: string[]): PythonModuleMap {
+export function buildPythonModuleMap(
+  files: string[],
+  importRoots: string[],
+): PythonModuleMap {
   const roots = [...importRoots].sort((a, b) => b.length - a.length);
   const fileToModule = new Map<string, string>();
   const moduleToFile = new Map<string, string>();

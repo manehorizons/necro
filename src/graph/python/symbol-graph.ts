@@ -1,8 +1,13 @@
 import { readFile } from "node:fs/promises";
 import type { Node as TsNode } from "web-tree-sitter";
 import { getParser } from "../../syntactic/parse.js";
-import type { EdgeKind, SymbolEdge, SymbolGraph, SymbolNode } from "../types.js";
-import { parsePythonImports, type PythonImport } from "./import-parser.js";
+import type {
+  EdgeKind,
+  SymbolEdge,
+  SymbolGraph,
+  SymbolNode,
+} from "../types.js";
+import { type PythonImport, parsePythonImports } from "./import-parser.js";
 import type { PythonModuleMap } from "./module-resolver.js";
 import { resolveFromBase, resolvePythonImport } from "./resolve-import.js";
 
@@ -52,7 +57,12 @@ interface FileIndex {
 
 type UseSite =
   | { kind: "bare"; name: string; position: number }
-  | { kind: "attribute"; objectName: string; attrName: string; position: number };
+  | {
+      kind: "attribute";
+      objectName: string;
+      attrName: string;
+      position: number;
+    };
 
 /**
  * Build a Python symbol graph — the hand-rolled counterpart to
@@ -94,13 +104,25 @@ export async function buildPythonSymbolGraph(
 
     const bindings = buildBindingTable(file, imports, moduleMap);
 
-    fileIndex.set(file, { file, declared, declarations, bindings, skipPositions });
+    fileIndex.set(file, {
+      file,
+      declared,
+      declarations,
+      bindings,
+      skipPositions,
+    });
   }
 
   const nodes: SymbolNode[] = [];
   for (const fi of fileIndex.values()) {
     for (const d of fi.declarations) {
-      nodes.push({ id: `${fi.file}:${d.line}:${d.name}`, name: d.name, file: fi.file, line: d.line, exported: d.exported });
+      nodes.push({
+        id: `${fi.file}:${d.line}:${d.name}`,
+        name: d.name,
+        file: fi.file,
+        line: d.line,
+        exported: d.exported,
+      });
     }
   }
 
@@ -118,7 +140,11 @@ export async function buildPythonSymbolGraph(
           ? resolveBareName(use.name, file, fileIndex, new Set())
           : resolveAttribute(use.objectName, use.attrName, fi, fileIndex);
       if (!toId) continue;
-      edges.push({ from: enclosingId(use.position, file, fi.declarations), to: toId, kind });
+      edges.push({
+        from: enclosingId(use.position, file, fi.declarations),
+        to: toId,
+        kind,
+      });
     }
   }
 
@@ -140,14 +166,19 @@ export async function buildPythonSymbolGraph(
 }
 
 /** Resolve every import in a file into a local-name → binding table via Phase B's resolver. */
-function buildBindingTable(file: string, imports: PythonImport[], moduleMap: PythonModuleMap): Map<string, ImportBinding> {
+function buildBindingTable(
+  file: string,
+  imports: PythonImport[],
+  moduleMap: PythonModuleMap,
+): Map<string, ImportBinding> {
   const table = new Map<string, ImportBinding>();
 
   for (const imp of imports) {
     const results = resolvePythonImport(file, imp, moduleMap);
 
     if (imp.kind === "import") {
-      for (const r of results) table.set(r.binding, { targetFile: r.file, importedName: null });
+      for (const r of results)
+        table.set(r.binding, { targetFile: r.file, importedName: null });
       continue;
     }
 
@@ -158,7 +189,10 @@ function buildBindingTable(file: string, imports: PythonImport[], moduleMap: Pyt
       const name = imp.names[i];
       const result = results[i];
       if (!name || !result) continue;
-      table.set(result.binding, classifyFromBinding(result.file, base, name.name, moduleMap));
+      table.set(
+        result.binding,
+        classifyFromBinding(result.file, base, name.name, moduleMap),
+      );
     }
   }
 
@@ -166,12 +200,21 @@ function buildBindingTable(file: string, imports: PythonImport[], moduleMap: Pyt
 }
 
 /** Whether a resolved `from` name landed on the submodule itself (whole-module binding) or a package-fallback re-export (symbol binding). */
-function classifyFromBinding(resolvedFile: string | null, base: string | null, name: string, moduleMap: PythonModuleMap): ImportBinding {
+function classifyFromBinding(
+  resolvedFile: string | null,
+  base: string | null,
+  name: string,
+  moduleMap: PythonModuleMap,
+): ImportBinding {
   if (resolvedFile === null) return { targetFile: null, importedName: null };
   if (base === null) return { targetFile: resolvedFile, importedName: name };
   const submoduleDotted = base === "" ? name : `${base}.${name}`;
-  const isModuleBinding = moduleMap.moduleToFile.get(submoduleDotted) === resolvedFile;
-  return { targetFile: resolvedFile, importedName: isModuleBinding ? null : name };
+  const isModuleBinding =
+    moduleMap.moduleToFile.get(submoduleDotted) === resolvedFile;
+  return {
+    targetFile: resolvedFile,
+    importedName: isModuleBinding ? null : name,
+  };
 }
 
 /**
@@ -180,7 +223,12 @@ function classifyFromBinding(resolvedFile: string | null, base: string | null, n
  * `__init__.py` re-export chains. Returns `null` on a dead end — unresolved
  * (stdlib/third-party/dynamic), not a crash.
  */
-function resolveBareName(name: string, file: string, fileIndex: Map<string, FileIndex>, visited: Set<string>): string | null {
+function resolveBareName(
+  name: string,
+  file: string,
+  fileIndex: Map<string, FileIndex>,
+  visited: Set<string>,
+): string | null {
   const key = `${file} ${name}`;
   if (visited.has(key)) return null;
   visited.add(key);
@@ -194,20 +242,35 @@ function resolveBareName(name: string, file: string, fileIndex: Map<string, File
   const binding = fi.bindings.get(name);
   if (!binding || binding.targetFile === null) return null;
 
-  return resolveBareName(binding.importedName ?? name, binding.targetFile, fileIndex, visited);
+  return resolveBareName(
+    binding.importedName ?? name,
+    binding.targetFile,
+    fileIndex,
+    visited,
+  );
 }
 
 /** `object.attr` where `object` is a plain identifier bound by an import: resolve `attr` starting from the binding's target file. */
-function resolveAttribute(objectName: string, attrName: string, fi: FileIndex, fileIndex: Map<string, FileIndex>): string | null {
+function resolveAttribute(
+  objectName: string,
+  attrName: string,
+  fi: FileIndex,
+  fileIndex: Map<string, FileIndex>,
+): string | null {
   const binding = fi.bindings.get(objectName);
   if (!binding || binding.targetFile === null) return null;
   return resolveBareName(attrName, binding.targetFile, fileIndex, new Set());
 }
 
 /** The nearest top-level declaration whose span contains `position`, else the file itself (module-level code). */
-function enclosingId(position: number, file: string, declarations: PyDeclaration[]): string {
+function enclosingId(
+  position: number,
+  file: string,
+  declarations: PyDeclaration[],
+): string {
   for (const d of declarations) {
-    if (position >= d.startIndex && position < d.endIndex) return `${file}:${d.line}:${d.name}`;
+    if (position >= d.startIndex && position < d.endIndex)
+      return `${file}:${d.line}:${d.name}`;
   }
   return file;
 }
@@ -218,21 +281,32 @@ function enclosingId(position: number, file: string, declarations: PyDeclaration
  * bindings, not uses) and never independently visiting an `attribute` node's
  * `attribute` field as a bare name (it's only meaningful in that access).
  */
-function walkUses(node: TsNode, skipPositions: Set<number>, out: UseSite[]): void {
-  if (node.type === "import_statement" || node.type === "import_from_statement") return;
+function walkUses(
+  node: TsNode,
+  skipPositions: Set<number>,
+  out: UseSite[],
+): void {
+  if (node.type === "import_statement" || node.type === "import_from_statement")
+    return;
 
   if (node.type === "attribute") {
     const objectNode = node.childForFieldName("object");
     const attrNode = node.childForFieldName("attribute");
     if (objectNode?.type === "identifier" && attrNode) {
-      out.push({ kind: "attribute", objectName: objectNode.text, attrName: attrNode.text, position: node.startIndex });
+      out.push({
+        kind: "attribute",
+        objectName: objectNode.text,
+        attrName: attrNode.text,
+        position: node.startIndex,
+      });
     }
     if (objectNode) walkUses(objectNode, skipPositions, out);
     return;
   }
 
   if (node.type === "identifier") {
-    if (!skipPositions.has(node.startIndex)) out.push({ kind: "bare", name: node.text, position: node.startIndex });
+    if (!skipPositions.has(node.startIndex))
+      out.push({ kind: "bare", name: node.text, position: node.startIndex });
     return;
   }
 
@@ -288,10 +362,16 @@ function collectDeclarations(root: TsNode): PyDeclaration[] {
 
 /** `function_definition`/`class_definition`, unwrapping one level of `decorated_definition`. */
 function topLevelDefinitionNode(node: TsNode): TsNode | null {
-  if (node.type === "function_definition" || node.type === "class_definition") return node;
+  if (node.type === "function_definition" || node.type === "class_definition")
+    return node;
   if (node.type === "decorated_definition") {
     const inner = node.childForFieldName("definition");
-    if (inner && (inner.type === "function_definition" || inner.type === "class_definition")) return inner;
+    if (
+      inner &&
+      (inner.type === "function_definition" ||
+        inner.type === "class_definition")
+    )
+      return inner;
   }
   return null;
 }

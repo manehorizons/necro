@@ -11,9 +11,9 @@ import {
 } from "../src/baseline.js";
 import type { ComplexityFinding } from "../src/syntactic/types.js";
 
-function deadCodeFinding(id: string): ClassifiedFinding {
+function deadCodeFinding(file: string, line = 1, name = "fn"): ClassifiedFinding {
   return {
-    node: { id, name: id, file: `${id}.ts`, line: 1, exported: false },
+    node: { id: `${file}:${line}:${name}`, name, file, line, exported: false },
     verdict: "dead",
     tier: "certain",
     autoFixEligible: true,
@@ -36,24 +36,59 @@ function complexityFinding(overrides: Partial<ComplexityFinding> = {}): Complexi
 
 describe("findingKey", () => {
   test("is stable across repeated calls for the same finding", () => {
-    const f = deadCodeFinding("a.ts:1:fn");
-    expect(findingKey(f)).toBe(findingKey(deadCodeFinding("a.ts:1:fn")));
+    const f = deadCodeFinding("/repo/a.ts", 1, "fn");
+    expect(findingKey(f, "/repo")).toBe(
+      findingKey(deadCodeFinding("/repo/a.ts", 1, "fn"), "/repo"),
+    );
   });
 
-  test("uses the symbol node's stable id", () => {
-    expect(findingKey(deadCodeFinding("a.ts:1:fn"))).toBe("a.ts:1:fn");
+  test("makes the file portion relative to root, not the raw absolute path", () => {
+    const f = deadCodeFinding("/repo/src/a.ts", 1, "fn");
+    expect(findingKey(f, "/repo")).toBe("src/a.ts:1:fn");
+  });
+
+  test("is identical from two different absolute roots for the same relative file (portable across machines/CI)", () => {
+    const oneMachine = findingKey(
+      deadCodeFinding("/home/dev/repo/src/a.ts", 1, "fn"),
+      "/home/dev/repo/src",
+    );
+    const ciRunner = findingKey(
+      deadCodeFinding("/home/runner/work/repo/repo/src/a.ts", 1, "fn"),
+      "/home/runner/work/repo/repo/src",
+    );
+    expect(oneMachine).toBe(ciRunner);
   });
 });
 
 describe("complexityKey", () => {
   test("is stable across repeated calls for the same finding", () => {
-    expect(complexityKey(complexityFinding())).toBe(complexityKey(complexityFinding()));
+    expect(complexityKey(complexityFinding(), "/repo")).toBe(
+      complexityKey(complexityFinding(), "/repo"),
+    );
   });
 
   test("differs by detector for the same location", () => {
-    const cyclomatic = complexityKey(complexityFinding({ detector: "cyclomatic" }));
-    const nesting = complexityKey(complexityFinding({ detector: "nesting" }));
+    const cyclomatic = complexityKey(
+      complexityFinding({ detector: "cyclomatic" }),
+      "/repo",
+    );
+    const nesting = complexityKey(
+      complexityFinding({ detector: "nesting" }),
+      "/repo",
+    );
     expect(cyclomatic).not.toBe(nesting);
+  });
+
+  test("is identical from two different absolute roots for the same relative file", () => {
+    const oneMachine = complexityKey(
+      complexityFinding({ file: "/home/dev/repo/src/a.ts" }),
+      "/home/dev/repo/src",
+    );
+    const ciRunner = complexityKey(
+      complexityFinding({ file: "/home/runner/work/repo/repo/src/a.ts" }),
+      "/home/runner/work/repo/repo/src",
+    );
+    expect(oneMachine).toBe(ciRunner);
   });
 });
 

@@ -12,7 +12,9 @@ export function readPythonDependencyNames(root: string): Set<string> {
   const names = new Set<string>();
 
   const pyproject = readIfExists(join(root, "pyproject.toml"));
-  if (pyproject) for (const spec of extractDependenciesArray(pyproject)) addBareName(spec, names);
+  if (pyproject)
+    for (const spec of extractDependenciesArray(pyproject))
+      addBareName(spec, names);
 
   const requirements = readIfExists(join(root, "requirements.txt"));
   if (requirements) {
@@ -79,8 +81,7 @@ function extractDependenciesArray(source: string): string[] {
 
 function collectQuotedStrings(segment: string, out: string[]): void {
   const re = /"([^"]*)"|'([^']*)'/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(segment)) !== null) {
+  for (let m = re.exec(segment); m !== null; m = re.exec(segment)) {
     out.push(m[1] ?? m[2] ?? "");
   }
 }

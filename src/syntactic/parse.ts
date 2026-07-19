@@ -42,7 +42,9 @@ function ensureRuntime(): Promise<void> {
 async function init(grammar: Grammar): Promise<Parser> {
   await ensureRuntime();
   const require = createRequire(import.meta.url);
-  const grammarRoot = dirname(require.resolve("tree-sitter-wasms/package.json"));
+  const grammarRoot = dirname(
+    require.resolve("tree-sitter-wasms/package.json"),
+  );
   const wasmPath = join(grammarRoot, "out", `tree-sitter-${grammar}.wasm`);
   const lang = await Language.load(wasmPath);
   const parser = new Parser();

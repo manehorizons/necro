@@ -62,13 +62,24 @@ export async function loadEvalCases(path: string): Promise<EvalCase[]> {
 function caseToPrompt(c: EvalCase) {
   const file = `${c.name}.ts`;
   const finding: ClassifiedFinding = {
-    node: { id: `${file}:1:${c.name}`, name: c.name, file, line: 1, exported: false },
+    node: {
+      id: `${file}:1:${c.name}`,
+      name: c.name,
+      file,
+      line: 1,
+      exported: false,
+    },
     verdict: "dead",
     tier: "maybe",
     autoFixEligible: false,
     evidence: c.evidence,
   };
-  const snippet: Snippet = { file, startLine: 1, endLine: c.code.split("\n").length, code: c.code };
+  const snippet: Snippet = {
+    file,
+    startLine: 1,
+    endLine: c.code.split("\n").length,
+    code: c.code,
+  };
   return buildPrompt(finding, snippet);
 }
 
@@ -93,7 +104,14 @@ export async function runEval(
       const { verdict } = await client.classify(caseToPrompt(c));
       const predictedDead = verdict === "likely-dead";
       const misclassified = predictedDead !== (c.truth === "dead");
-      rows[idx] = { name: c.name, truth: c.truth, verdict, misclassified, provenance: c.provenance, evidence: c.evidence };
+      rows[idx] = {
+        name: c.name,
+        truth: c.truth,
+        verdict,
+        misclassified,
+        provenance: c.provenance,
+        evidence: c.evidence,
+      };
     }
   });
   await Promise.all(workers);
@@ -118,17 +136,33 @@ export async function runEval(
     },
     misclassified: rows.filter((r) => r.misclassified),
   };
-  return { total: cases.length, truePositives: tp, falsePositives: fp, falseNegatives: fn, precision, recall, rows, breakdown };
+  return {
+    total: cases.length,
+    truePositives: tp,
+    falsePositives: fp,
+    falseNegatives: fn,
+    precision,
+    recall,
+    rows,
+    breakdown,
+  };
 }
 
 /** A compact, human-readable breakdown for eval logs: class balance plus each
  * missed case with its provenance and the evidence the model saw. */
 export function formatBreakdown(m: EvalMetrics): string {
   const head = `dead=${m.breakdown.byTruth.dead} alive=${m.breakdown.byTruth.alive}  precision=${m.precision.toFixed(2)} recall=${m.recall.toFixed(2)}`;
-  if (m.breakdown.misclassified.length === 0) return `${head}\n  (no misclassifications)`;
+  if (m.breakdown.misclassified.length === 0)
+    return `${head}\n  (no misclassifications)`;
   const lines = m.breakdown.misclassified.map((r) => {
-    const where = r.provenance ? `${r.provenance.repo}@${r.provenance.sha} ${r.provenance.file}:${r.provenance.line}` : "(synthetic)";
-    const ev = r.evidence.map((e) => `${e.ok === true ? "✓" : e.ok === false ? "✗" : "•"} ${e.text}`).join("; ");
+    const where = r.provenance
+      ? `${r.provenance.repo}@${r.provenance.sha} ${r.provenance.file}:${r.provenance.line}`
+      : "(synthetic)";
+    const ev = r.evidence
+      .map(
+        (e) => `${e.ok === true ? "✓" : e.ok === false ? "✗" : "•"} ${e.text}`,
+      )
+      .join("; ");
     return `  ✗ ${r.name} truth=${r.truth} got=${r.verdict}  [${where}]\n      evidence: ${ev || "(none)"}`;
   });
   return [head, ...lines].join("\n");

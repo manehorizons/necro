@@ -18,19 +18,26 @@ async function main(): Promise<void> {
   const results = await checkoutAll(repos, DEFAULT_CACHE_DIR);
 
   for (const r of results) {
-    process.stdout.write(`${r.status === "failed" ? "✗" : "✓"} ${r.repo.repo}@${r.repo.sha.slice(0, 7)} → ${r.status}${r.error ? `: ${r.error}` : ""}\n`);
+    process.stdout.write(
+      `${r.status === "failed" ? "✗" : "✓"} ${r.repo.repo}@${r.repo.sha.slice(0, 7)} → ${r.status}${r.error ? `: ${r.error}` : ""}\n`,
+    );
   }
   if (results.some((r) => r.status === "failed")) {
-    process.stderr.write("\nsome checkouts failed — competitor-bench will skip their cases and report them under skippedRepos\n");
+    process.stderr.write(
+      "\nsome checkouts failed — competitor-bench will skip their cases and report them under skippedRepos\n",
+    );
     process.exitCode = 1;
   }
 }
 
 const invokedDirectly =
-  Boolean(process.argv[1]) && import.meta.url === pathToFileURL(process.argv[1] as string).href;
+  Boolean(process.argv[1]) &&
+  import.meta.url === pathToFileURL(process.argv[1] as string).href;
 if (invokedDirectly) {
   main().catch((err) => {
-    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+    process.stderr.write(
+      `${err instanceof Error ? err.message : String(err)}\n`,
+    );
     process.exit(1);
   });
 }

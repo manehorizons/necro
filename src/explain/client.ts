@@ -1,5 +1,11 @@
 import type { LlmOptions } from "../config.js";
-import { lazyAnthropic, type LlmUsage, MissingApiKeyError, resolveApiKey, structuredCall } from "../llm/client.js";
+import {
+  type LlmUsage,
+  lazyAnthropic,
+  MissingApiKeyError,
+  resolveApiKey,
+  structuredCall,
+} from "../llm/client.js";
 import type { NarratePrompt } from "./prompt.js";
 
 /** The one capability the narrator needs — injectable so tests run with no network. */
@@ -21,7 +27,10 @@ const MAX_TOKENS = 1024;
  * request is made (reusing the shared `../llm/client.js` plumbing). The SDK
  * loads via dynamic `import()` on the first `narrate` call only.
  */
-export function createNarrateClient(llm: LlmOptions, opts: NarrateClientOptions = {}): NarrateClient {
+export function createNarrateClient(
+  llm: LlmOptions,
+  opts: NarrateClientOptions = {},
+): NarrateClient {
   const apiKey = resolveApiKey(llm);
   if (!apiKey) throw new MissingApiKeyError("explain --narrate");
 

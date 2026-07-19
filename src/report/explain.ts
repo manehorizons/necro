@@ -17,7 +17,9 @@ export function renderExplain(result: ExplainResult, srcRoot?: string): string {
   }
 
   if (result.status === "ambiguous") {
-    const lines = result.candidates.map((c) => `  ${c.name}  ${loc(c.file, c.line)}`);
+    const lines = result.candidates.map(
+      (c) => `  ${c.name}  ${loc(c.file, c.line)}`,
+    );
     return [
       `Ambiguous symbol: "${result.query}" matches ${result.candidates.length} candidates:`,
       ...lines,
@@ -37,7 +39,9 @@ export function renderExplain(result: ExplainResult, srcRoot?: string): string {
           ...inbound.map(
             (r) =>
               `  ${r.name}  ${
-                r.reachability ? `(${r.reachability})` : "(module-level reference)"
+                r.reachability
+                  ? `(${r.reachability})`
+                  : "(module-level reference)"
               }`,
           ),
         ]
@@ -50,7 +54,9 @@ export function renderExplain(result: ExplainResult, srcRoot?: string): string {
   }
 
   const chain = witness ?? [];
-  const steps = chain.map((s: TraceNode) => `  → ${s.name}  ${loc(s.file, s.line)}`);
+  const steps = chain.map(
+    (s: TraceNode) => `  → ${s.name}  ${loc(s.file, s.line)}`,
+  );
   return [`${header}`, "Reachable via:", ...steps, ...why].join("\n");
 }
 

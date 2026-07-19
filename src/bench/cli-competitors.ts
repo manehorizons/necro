@@ -3,7 +3,12 @@ import { dirname } from "node:path";
 import { pathToFileURL } from "node:url";
 import { loadEvalCases } from "../triage/eval.js";
 import { runCompetitorBench } from "./competitors/run.js";
-import { type BenchResults, parse, serialize, withCompetitors } from "./snapshot.js";
+import {
+  type BenchResults,
+  parse,
+  serialize,
+  withCompetitors,
+} from "./snapshot.js";
 
 /**
  * Repo-internal competitor benchmark runner (`npm run bench:competitors`).
@@ -19,7 +24,9 @@ const DEFAULT_OUT = "bench/competitors.json";
 const RESULTS_PATH = "bench/results.json";
 const CASES_PATH = "test/fixtures/triage-realrepo/cases.json";
 
-async function readResultsSnapshot(path: string): Promise<BenchResults | undefined> {
+async function readResultsSnapshot(
+  path: string,
+): Promise<BenchResults | undefined> {
   try {
     return parse(await readFile(path, "utf8"));
   } catch {
@@ -35,7 +42,11 @@ export interface CompetitorBenchArgs {
 
 /** Parse `--cache-dir <path> --out <path> --dry-run`. Pure — no I/O. */
 export function parseArgs(argv: string[]): CompetitorBenchArgs {
-  const args: CompetitorBenchArgs = { cacheDir: DEFAULT_CACHE_DIR, out: DEFAULT_OUT, dryRun: false };
+  const args: CompetitorBenchArgs = {
+    cacheDir: DEFAULT_CACHE_DIR,
+    out: DEFAULT_OUT,
+    dryRun: false,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--cache-dir") {
@@ -58,10 +69,15 @@ export function parseArgs(argv: string[]): CompetitorBenchArgs {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const cases = await loadEvalCases(CASES_PATH);
-  const result = await runCompetitorBench(cases, { cacheDir: args.cacheDir, now: new Date().toISOString() });
+  const result = await runCompetitorBench(cases, {
+    cacheDir: args.cacheDir,
+    now: new Date().toISOString(),
+  });
 
   for (const skipped of result.skippedRepos) {
-    process.stderr.write(`skipped ${skipped.repo}@${skipped.sha.slice(0, 7)} (${skipped.cases} cases): ${skipped.reason}\n`);
+    process.stderr.write(
+      `skipped ${skipped.repo}@${skipped.sha.slice(0, 7)} (${skipped.cases} cases): ${skipped.reason}\n`,
+    );
   }
   for (const tool of result.tools) {
     process.stdout.write(
@@ -80,7 +96,9 @@ async function main(): Promise<void> {
 
   const existing = await readResultsSnapshot(RESULTS_PATH);
   if (!existing) {
-    process.stdout.write(`competitor-bench: no ${RESULTS_PATH} found — run \`npm run bench\` first to merge into it\n`);
+    process.stdout.write(
+      `competitor-bench: no ${RESULTS_PATH} found — run \`npm run bench\` first to merge into it\n`,
+    );
     return;
   }
   await writeFile(RESULTS_PATH, serialize(withCompetitors(existing, result)));
@@ -88,10 +106,13 @@ async function main(): Promise<void> {
 }
 
 const invokedDirectly =
-  Boolean(process.argv[1]) && import.meta.url === pathToFileURL(process.argv[1] as string).href;
+  Boolean(process.argv[1]) &&
+  import.meta.url === pathToFileURL(process.argv[1] as string).href;
 if (invokedDirectly) {
   main().catch((err) => {
-    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+    process.stderr.write(
+      `${err instanceof Error ? err.message : String(err)}\n`,
+    );
     process.exit(1);
   });
 }

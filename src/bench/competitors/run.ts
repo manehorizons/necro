@@ -11,9 +11,18 @@
 import type { EvalCase } from "../../triage/eval.js";
 import { resolveCheckout } from "./checkout.js";
 import { runKnip } from "./knip-runner.js";
+import type {
+  CompetitorBenchResult,
+  CompetitorRunResult,
+  RepoCoverage,
+  SkippedRepo,
+} from "./report.js";
 import { deriveCorpusRepos } from "./repos.js";
-import type { CompetitorBenchResult, CompetitorRunResult, RepoCoverage, SkippedRepo } from "./report.js";
-import { predictCases, scorePredictions, type CompetitorPrediction } from "./score.js";
+import {
+  type CompetitorPrediction,
+  predictCases,
+  scorePredictions,
+} from "./score.js";
 import { runTsPrune } from "./ts-prune-runner.js";
 
 export interface RunCompetitorBenchOpts {
@@ -21,7 +30,10 @@ export interface RunCompetitorBenchOpts {
   now: string;
 }
 
-export async function runCompetitorBench(cases: EvalCase[], opts: RunCompetitorBenchOpts): Promise<CompetitorBenchResult> {
+export async function runCompetitorBench(
+  cases: EvalCase[],
+  opts: RunCompetitorBenchOpts,
+): Promise<CompetitorBenchResult> {
   const repos = deriveCorpusRepos(cases);
   const scoredRepos: RepoCoverage[] = [];
   const skippedRepos: SkippedRepo[] = [];
@@ -31,26 +43,48 @@ export async function runCompetitorBench(cases: EvalCase[], opts: RunCompetitorB
   let tsPruneVersion = "";
 
   for (const repo of repos) {
-    const repoCases = cases.filter((c) => c.provenance?.repo === repo.repo && c.provenance.sha === repo.sha);
+    const repoCases = cases.filter(
+      (c) => c.provenance?.repo === repo.repo && c.provenance.sha === repo.sha,
+    );
     const checkout = await resolveCheckout(repo, opts.cacheDir);
     if (!checkout.ok) {
-      skippedRepos.push({ repo: repo.repo, sha: repo.sha, cases: repoCases.length, reason: checkout.reason });
+      skippedRepos.push({
+        repo: repo.repo,
+        sha: repo.sha,
+        cases: repoCases.length,
+        reason: checkout.reason,
+      });
       continue;
     }
-    const [knip, tsPrune] = await Promise.all([runKnip(checkout.path), runTsPrune(checkout.path)]);
+    const [knip, tsPrune] = await Promise.all([
+      runKnip(checkout.path),
+      runTsPrune(checkout.path),
+    ]);
     knipVersion = knip.version;
     tsPruneVersion = tsPrune.version;
     knipPredictions.push(...predictCases(repoCases, knip.unused));
     tsPrunePredictions.push(...predictCases(repoCases, tsPrune.unused));
-    scoredRepos.push({ repo: repo.repo, sha: repo.sha, cases: repoCases.length });
+    scoredRepos.push({
+      repo: repo.repo,
+      sha: repo.sha,
+      cases: repoCases.length,
+    });
   }
 
   const tools: CompetitorRunResult[] = [];
   if (knipPredictions.length > 0) {
-    tools.push({ tool: "knip", version: knipVersion, metrics: scorePredictions(knipPredictions) });
+    tools.push({
+      tool: "knip",
+      version: knipVersion,
+      metrics: scorePredictions(knipPredictions),
+    });
   }
   if (tsPrunePredictions.length > 0) {
-    tools.push({ tool: "ts-prune", version: tsPruneVersion, metrics: scorePredictions(tsPrunePredictions) });
+    tools.push({
+      tool: "ts-prune",
+      version: tsPruneVersion,
+      metrics: scorePredictions(tsPrunePredictions),
+    });
   }
 
   return {

@@ -1,6 +1,14 @@
 import { readFile } from "node:fs/promises";
-import type { CloneLocation, ComplexityFinding, DuplicationFinding } from "../syntactic/types.js";
-import { extractRange, extractSnippet, type Snippet } from "../triage/snippet.js";
+import type {
+  CloneLocation,
+  ComplexityFinding,
+  DuplicationFinding,
+} from "../syntactic/types.js";
+import {
+  extractRange,
+  extractSnippet,
+  type Snippet,
+} from "../triage/snippet.js";
 
 /** The context handed to the LLM for a god-function split: the function body
  * plus the in-file imports needed to keep the proposed split's call surface
@@ -29,7 +37,10 @@ export async function contextForFinding(
     );
   }
   const text = await readFile(finding.file, "utf8");
-  const snippet: Snippet = { file: finding.file, ...extractSnippet(text, finding.line, radius) };
+  const snippet: Snippet = {
+    file: finding.file,
+    ...extractSnippet(text, finding.line, radius),
+  };
   return { finding, snippet, imports: collectImports(text) };
 }
 

@@ -31,7 +31,10 @@ export type PythonImport =
     };
 
 /** Parse every `import`/`from ... import` statement in a Python source file, anywhere in the tree (including nested inside functions). */
-export async function parsePythonImports(file: string, source: string): Promise<PythonImport[]> {
+export async function parsePythonImports(
+  file: string,
+  source: string,
+): Promise<PythonImport[]> {
   const parser = await getParser(file);
   const tree = parser.parse(source);
   if (!tree) return [];
@@ -86,7 +89,8 @@ function toImportFromStatement(node: TsNode): PythonImport {
     for (let i = 0; i < moduleNode.childCount; i++) {
       const part = moduleNode.child(i);
       if (part?.type === "import_prefix") relativeDots = countDots(part);
-      else if (part?.type === "dotted_name") moduleSegments = dottedNameSegments(part);
+      else if (part?.type === "dotted_name")
+        moduleSegments = dottedNameSegments(part);
     }
   } else if (moduleNode?.type === "dotted_name") {
     moduleSegments = dottedNameSegments(moduleNode);

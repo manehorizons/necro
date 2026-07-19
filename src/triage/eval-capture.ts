@@ -57,7 +57,9 @@ export async function captureEvalSkeletons(
   opts: CaptureOptions,
 ): Promise<EvalCaseSkeleton[]> {
   const radius = opts.radius ?? 20;
-  const maybes = findingsFromScanJson(scanJson).filter((f) => f.tier === "maybe");
+  const maybes = findingsFromScanJson(scanJson).filter(
+    (f) => f.tier === "maybe",
+  );
 
   const skeletons: EvalCaseSkeleton[] = [];
   for (const f of maybes) {
@@ -68,7 +70,13 @@ export async function captureEvalSkeletons(
       truth: null,
       code,
       evidence: f.evidence,
-      provenance: { repo: opts.repo, sha: opts.sha, file: f.node.file, line: f.node.line, symbol: f.node.name },
+      provenance: {
+        repo: opts.repo,
+        sha: opts.sha,
+        file: f.node.file,
+        line: f.node.line,
+        symbol: f.node.name,
+      },
       rationale: "",
     });
   }

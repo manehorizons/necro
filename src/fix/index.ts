@@ -2,7 +2,10 @@ import { writeFile } from "node:fs/promises";
 import type { ClassifiedFinding } from "../analyze/classify.js";
 import type { NecroConfig } from "../config.js";
 import { scan } from "../engine/index.js";
-import { type RemovalVerdict, verifyFindings } from "../engine/verify-removal.js";
+import {
+  type RemovalVerdict,
+  verifyFindings,
+} from "../engine/verify-removal.js";
 import type { VerifyRunner } from "../refactor/verify.js";
 import { renderDiff } from "./diff.js";
 import { workingTreeState } from "./git-guard.js";
@@ -41,7 +44,12 @@ export type FixResult =
   | { status: "preview-verified"; verdicts: RemovalVerdict[] }
   | { status: "refused-dirty" }
   | { status: "refused-no-entries" }
-  | { status: "written"; count: number; files: string[]; skipped: SkippedSymbol[] };
+  | {
+      status: "written";
+      count: number;
+      files: string[];
+      skipped: SkippedSymbol[];
+    };
 
 /**
  * Remove `certain`-dead code safely. Scans, plans the removals, and either
@@ -55,13 +63,16 @@ export async function runFix(
   opts: FixOptions,
 ): Promise<FixResult> {
   // fix only needs dead-code findings — skip the complexity (tree-sitter) axis.
-  const { findings, diagnostics } = await scan(targetPath, config, { complexity: false });
+  const { findings, diagnostics } = await scan(targetPath, config, {
+    complexity: false,
+  });
 
   // Fail-closed (§2): zero prod entries on a non-empty graph means reachability
   // is unseeded — refuse before the nothing-to-fix check (the user must learn
   // *why* nothing is eligible) and before the dirty-tree guard (no-entries wins,
   // so refusal reasons never shadow each other).
-  if (diagnostics.entryResolution.collapsed) return { status: "refused-no-entries" };
+  if (diagnostics.entryResolution.collapsed)
+    return { status: "refused-no-entries" };
 
   if (opts.verify) return runVerifiedFix(targetPath, config, findings, opts);
 
@@ -77,11 +88,18 @@ export async function runFix(
   const state = await workingTreeState(targetPath);
   if (state === "dirty" && !opts.force) return { status: "refused-dirty" };
   if (state === "unknown") {
-    console.warn("necro fix: no git repo detected — there is no undo. Proceeding because --write was given.");
+    console.warn(
+      "necro fix: no git repo detected — there is no undo. Proceeding because --write was given.",
+    );
   }
 
   await Promise.all(edits.map((e) => writeFile(e.file, e.after)));
-  return { status: "written", count, files: edits.map((e) => e.file), skipped: [] };
+  return {
+    status: "written",
+    count,
+    files: edits.map((e) => e.file),
+    skipped: [],
+  };
 }
 
 /**
@@ -127,11 +145,18 @@ async function runVerifiedFix(
   const state = await workingTreeState(targetPath);
   if (state === "dirty" && !opts.force) return { status: "refused-dirty" };
   if (state === "unknown") {
-    console.warn("necro fix: no git repo detected — there is no undo. Proceeding because --write was given.");
+    console.warn(
+      "necro fix: no git repo detected — there is no undo. Proceeding because --write was given.",
+    );
   }
 
   await Promise.all(edits.map((e) => writeFile(e.file, e.after)));
-  return { status: "written", count: edits.length, files: edits.map((e) => e.file), skipped };
+  return {
+    status: "written",
+    count: edits.length,
+    files: edits.map((e) => e.file),
+    skipped,
+  };
 }
 
 /**

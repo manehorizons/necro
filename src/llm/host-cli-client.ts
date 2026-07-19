@@ -23,16 +23,27 @@ export type SpawnFn = (bin: string, args: string[]) => SpawnedProcessLike;
 
 /** Real spawn implementation. Piped stdio only — stdin is ignored (not piped)
  * so `claude -p` never blocks waiting on input that will never arrive. */
-const realSpawn: SpawnFn = (bin, args) => spawn(bin, args, { stdio: ["ignore", "pipe", "pipe"] });
+const realSpawn: SpawnFn = (bin, args) =>
+  spawn(bin, args, { stdio: ["ignore", "pipe", "pipe"] });
 
-export type HostCliErrorReason = "not-found" | "spawn-error" | "nonzero-exit" | "output-error" | "timeout" | "self-invocation";
+export type HostCliErrorReason =
+  | "not-found"
+  | "spawn-error"
+  | "nonzero-exit"
+  | "output-error"
+  | "timeout"
+  | "self-invocation";
 
 /** Distinguishable error type for host-cli spawn/output failures — callers
  * can pattern-match on `reason` instead of parsing `message` text. */
 export class HostCliError extends Error {
   readonly reason: HostCliErrorReason;
 
-  constructor(message: string, reason: HostCliErrorReason, options?: { cause?: unknown }) {
+  constructor(
+    message: string,
+    reason: HostCliErrorReason,
+    options?: { cause?: unknown },
+  ) {
     super(message);
     this.name = "HostCliError";
     this.reason = reason;
@@ -75,7 +86,11 @@ export interface HostCliStructuredCallOptions<T> {
   timeoutMs?: number;
 }
 
-function buildPrompt(o: { system: string; user: string; schema?: Record<string, unknown> }): string {
+function buildPrompt(o: {
+  system: string;
+  user: string;
+  schema?: Record<string, unknown>;
+}): string {
   const parts = [`[SYSTEM]\n${o.system}`, `[USER]\n${o.user}`];
   if (o.schema) {
     parts.push(
@@ -85,7 +100,10 @@ function buildPrompt(o: { system: string; user: string; schema?: Record<string, 
   return parts.join("\n\n");
 }
 
-function buildInvocation(o: { prompt: string; model: string | undefined }): string[] {
+function buildInvocation(o: {
+  prompt: string;
+  model: string | undefined;
+}): string[] {
   const args = ["-p", o.prompt, "--output-format", "json"];
   if (o.model) args.push("--model", o.model);
   return args;
@@ -94,7 +112,11 @@ function buildInvocation(o: { prompt: string; model: string | undefined }): stri
 function toHostCliError(bin: string, err: unknown): HostCliError {
   const errno = err as NodeJS.ErrnoException;
   if (errno?.code === "ENOENT") {
-    return new HostCliError(`host-cli provider: binary "${bin}" not found on PATH`, "not-found", { cause: err });
+    return new HostCliError(
+      `host-cli provider: binary "${bin}" not found on PATH`,
+      "not-found",
+      { cause: err },
+    );
   }
   return new HostCliError(
     `host-cli provider: failed to spawn "${bin}": ${err instanceof Error ? err.message : String(err)}`,
@@ -186,7 +208,10 @@ interface ClaudeEnvelope {
 
 /** Parses `claude -p --output-format json`'s single JSON envelope, returning its
  * `result` text plus best-effort usage (zeroed when the envelope doesn't carry it). */
-function extractEnvelope(stdout: string, bin: string): { text: string; usage: LlmUsage } {
+function extractEnvelope(
+  stdout: string,
+  bin: string,
+): { text: string; usage: LlmUsage } {
   let envelope: ClaudeEnvelope;
   try {
     envelope = JSON.parse(stdout) as ClaudeEnvelope;
@@ -199,17 +224,25 @@ function extractEnvelope(stdout: string, bin: string): { text: string; usage: Ll
   if (envelope.is_error) {
     throw new HostCliError(
       `host-cli provider: "${bin}" reported an error (subtype=${envelope.subtype ?? "unknown"}): ${
-        typeof envelope.result === "string" ? envelope.result : JSON.stringify(envelope.result)
+        typeof envelope.result === "string"
+          ? envelope.result
+          : JSON.stringify(envelope.result)
       }`,
       "output-error",
     );
   }
   if (typeof envelope.result !== "string") {
-    throw new HostCliError(`host-cli provider: "${bin}" JSON envelope missing a string "result" field`, "output-error");
+    throw new HostCliError(
+      `host-cli provider: "${bin}" JSON envelope missing a string "result" field`,
+      "output-error",
+    );
   }
   return {
     text: envelope.result,
-    usage: { inputTokens: envelope.usage?.input_tokens ?? 0, outputTokens: envelope.usage?.output_tokens ?? 0 },
+    usage: {
+      inputTokens: envelope.usage?.input_tokens ?? 0,
+      outputTokens: envelope.usage?.output_tokens ?? 0,
+    },
   };
 }
 
@@ -221,7 +254,9 @@ function extractEnvelope(stdout: string, bin: string): { text: string; usage: Ll
  * plus embedding the schema as a prompt instruction since the headless CLI has
  * no API-level structured-output constraint to lean on.
  */
-export async function hostCliStructuredCall<T>(o: HostCliStructuredCallOptions<T>): Promise<StructuredCallResult<T>> {
+export async function hostCliStructuredCall<T>(
+  o: HostCliStructuredCallOptions<T>,
+): Promise<StructuredCallResult<T>> {
   const bin = o.bin ?? "claude";
   const spawnImpl = o.spawnImpl ?? realSpawn;
   const env = o.env ?? process.env;
@@ -236,7 +271,11 @@ export async function hostCliStructuredCall<T>(o: HostCliStructuredCallOptions<T
     );
   }
 
-  const prompt = buildPrompt({ system: o.system, user: o.user, schema: o.schema });
+  const prompt = buildPrompt({
+    system: o.system,
+    user: o.user,
+    schema: o.schema,
+  });
   const args = buildInvocation({ prompt, model: o.model });
   const { stdout } = await spawnCapture(spawnImpl, bin, args, timeoutMs);
   const { text, usage } = extractEnvelope(stdout, bin);

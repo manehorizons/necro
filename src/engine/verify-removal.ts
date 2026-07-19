@@ -3,13 +3,13 @@ import type { ClassifiedFinding } from "../analyze/classify.js";
 import type { NecroConfig } from "../config.js";
 import { planRemovalOf } from "../fix/remove.js";
 import { isPythonFile } from "../graph/python/language.js";
+import { DEFAULT_CHECKS } from "../refactor/index.js";
 import {
   type FileEdit,
   gitWorktreeRunner,
   type VerifyRunner,
   verifyEdits,
 } from "../refactor/verify.js";
-import { DEFAULT_CHECKS } from "../refactor/index.js";
 import { resolveQuery } from "./explain.js";
 import { buildReachabilityModel } from "./model.js";
 
@@ -81,15 +81,23 @@ export async function verifyRemovals(
       verdicts.push({
         symbol,
         status: "unresolved",
-        output: "Python removal is not supported yet — necro's Python support is report/explain/triage only",
+        output:
+          "Python removal is not supported yet — necro's Python support is report/explain/triage only",
         resolvedId: node.id,
       });
       continue;
     }
 
-    const edits = planRemovalOf([{ file: node.file, name: node.name, line: node.line }]);
+    const edits = planRemovalOf([
+      { file: node.file, name: node.name, line: node.line },
+    ]);
     if (edits.length === 0) {
-      verdicts.push({ symbol, status: "unresolved", output: "no removable declaration", resolvedId: node.id });
+      verdicts.push({
+        symbol,
+        status: "unresolved",
+        output: "no removable declaration",
+        resolvedId: node.id,
+      });
       continue;
     }
 

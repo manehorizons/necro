@@ -1,7 +1,10 @@
 import type { ClassifiedFinding } from "../analyze/classify.js";
 import type { HotspotEntry } from "../analyze/hotspots.js";
 import type { ScanDiagnostics } from "../engine/index.js";
-import type { ComplexityFinding, DuplicationFinding } from "../syntactic/types.js";
+import type {
+  ComplexityFinding,
+  DuplicationFinding,
+} from "../syntactic/types.js";
 
 export interface JsonInput {
   findings: ClassifiedFinding[];

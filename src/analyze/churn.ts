@@ -11,14 +11,20 @@ const GIT_TIMEOUT_MS = 15_000;
  * `git log --format= --name-only` pass. Returns `null` when the target is not a
  * git repo or git fails — churn is an optional hotspot signal, never fatal.
  */
-export async function fileChurn(targetPath: string): Promise<Map<string, number> | null> {
+export async function fileChurn(
+  targetPath: string,
+): Promise<Map<string, number> | null> {
   let stdout: string;
   try {
-    ({ stdout } = await execFileAsync("git", ["log", "--format=", "--name-only", "HEAD"], {
-      cwd: targetPath,
-      timeout: GIT_TIMEOUT_MS,
-      maxBuffer: 64 * 1024 * 1024,
-    }));
+    ({ stdout } = await execFileAsync(
+      "git",
+      ["log", "--format=", "--name-only", "HEAD"],
+      {
+        cwd: targetPath,
+        timeout: GIT_TIMEOUT_MS,
+        maxBuffer: 64 * 1024 * 1024,
+      },
+    ));
   } catch {
     return null;
   }

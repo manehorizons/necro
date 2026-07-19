@@ -4,7 +4,11 @@ import type { Snippet } from "./snippet.js";
 /** The advisory verdict the LLM returns for one `maybe` finding. */
 export type TriageVerdict = "likely-dead" | "likely-alive" | "unsure";
 
-export const VERDICTS: readonly TriageVerdict[] = ["likely-dead", "likely-alive", "unsure"];
+export const VERDICTS: readonly TriageVerdict[] = [
+  "likely-dead",
+  "likely-alive",
+  "unsure",
+];
 
 /** A parsed triage result. On a malformed response, `verdict` is `unsure` and
  * `reasoning` records the parse failure (never thrown). */
@@ -24,7 +28,10 @@ export interface TriagePrompt {
 export const VERDICT_SCHEMA = {
   type: "object",
   properties: {
-    verdict: { type: "string", enum: ["likely-dead", "likely-alive", "unsure"] },
+    verdict: {
+      type: "string",
+      enum: ["likely-dead", "likely-alive", "unsure"],
+    },
     reasoning: { type: "string" },
   },
   required: ["verdict", "reasoning"],
@@ -65,10 +72,16 @@ export const SYSTEM_PROMPT = [
 ].join("\n");
 
 /** Build the per-finding user message from its evidence chain and source snippet. */
-export function buildPrompt(finding: ClassifiedFinding, snippet: Snippet): TriagePrompt {
+export function buildPrompt(
+  finding: ClassifiedFinding,
+  snippet: Snippet,
+): TriagePrompt {
   const { node, verdict, evidence } = finding;
   const evidenceLines = evidence
-    .map((e) => `  ${e.ok === true ? "[+]" : e.ok === false ? "[-]" : "[?]"} ${e.text}`)
+    .map(
+      (e) =>
+        `  ${e.ok === true ? "[+]" : e.ok === false ? "[-]" : "[?]"} ${e.text}`,
+    )
     .join("\n");
 
   const user = [
@@ -100,7 +113,10 @@ export function parseVerdict(raw: unknown): TriageResult {
       (VERDICTS as readonly string[]).includes(obj.verdict) &&
       typeof obj.reasoning === "string"
     ) {
-      return { verdict: obj.verdict as TriageVerdict, reasoning: obj.reasoning };
+      return {
+        verdict: obj.verdict as TriageVerdict,
+        reasoning: obj.reasoning,
+      };
     }
   }
   return {

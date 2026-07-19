@@ -4,7 +4,10 @@ import { z } from "zod";
 import type { LlmOptions } from "../../config.js";
 import { loadConfig, resolveConfigDir } from "../../config.js";
 import { explain } from "../../engine/explain.js";
-import { createNarrateClient, type NarrateClient } from "../../explain/client.js";
+import {
+  createNarrateClient,
+  type NarrateClient,
+} from "../../explain/client.js";
 import { MissingApiKeyError } from "../../llm/client.js";
 
 /** Injectable dependencies for the explain tool (the narrator is faked in tests). */
@@ -20,7 +23,10 @@ export interface ExplainToolDeps {
  * the server's cwd, which is the agent's project root. `narrate:true` adds an
  * additive LLM prose layer — it never fails the call if the key is missing.
  */
-export function registerExplainTool(server: McpServer, deps: ExplainToolDeps = {}): void {
+export function registerExplainTool(
+  server: McpServer,
+  deps: ExplainToolDeps = {},
+): void {
   const narrateFactory = deps.narrateClientFactory ?? createNarrateClient;
 
   server.registerTool(
@@ -33,11 +39,16 @@ export function registerExplainTool(server: McpServer, deps: ExplainToolDeps = {
         symbol: z
           .string()
           .describe("symbol to explain: name, file:name, or file:line:name"),
-        path: z.string().optional().describe("directory or file to analyze (default: cwd)"),
+        path: z
+          .string()
+          .optional()
+          .describe("directory or file to analyze (default: cwd)"),
         narrate: z
           .boolean()
           .optional()
-          .describe("add an LLM plain-English explanation of the verdict (needs an API key)"),
+          .describe(
+            "add an LLM plain-English explanation of the verdict (needs an API key)",
+          ),
       },
       annotations: { readOnlyHint: true },
     },
@@ -55,8 +66,12 @@ export function registerExplainTool(server: McpServer, deps: ExplainToolDeps = {
         }
       }
 
-      const result = await explain(target, config, symbol, { narrate: narrateClient });
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      const result = await explain(target, config, symbol, {
+        narrate: narrateClient,
+      });
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
     },
   );
 }

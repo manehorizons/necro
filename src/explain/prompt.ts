@@ -33,20 +33,29 @@ export const NARRATE_SYSTEM_PROMPT = [
  * verdict, its witness chain (alive/test-only) or inbound referrers (dead), and
  * the relevant source snippets. Pure — no SDK, no network.
  */
-export function buildNarratePrompt(result: Resolved, snippets: NarrateSnippet[]): NarratePrompt {
+export function buildNarratePrompt(
+  result: Resolved,
+  snippets: NarrateSnippet[],
+): NarratePrompt {
   const { symbol, reachability, tainted, witness, inbound } = result;
 
   const traceLines =
     reachability === "dead"
       ? inbound.length
         ? inbound.map(
-            (r) => `  ← ${r.name}  ${r.reachability ? `(${r.reachability})` : "(module-level reference)"}`,
+            (r) =>
+              `  ← ${r.name}  ${r.reachability ? `(${r.reachability})` : "(module-level reference)"}`,
           )
         : ["  (no inbound references)"]
-      : (witness ?? []).map((s) => `  → ${s.name}  ${s.file ? `${s.file}:${s.line}` : "(entry)"}`);
+      : (witness ?? []).map(
+          (s) => `  → ${s.name}  ${s.file ? `${s.file}:${s.line}` : "(entry)"}`,
+        );
 
-  const traceHeader = reachability === "dead" ? "Referenced by:" : "Reachable via:";
-  const snippetBlocks = snippets.map((s) => `// ${s.name}  ${s.location}\n${s.code}`).join("\n\n");
+  const traceHeader =
+    reachability === "dead" ? "Referenced by:" : "Reachable via:";
+  const snippetBlocks = snippets
+    .map((s) => `// ${s.name}  ${s.location}\n${s.code}`)
+    .join("\n\n");
 
   const user = [
     `Symbol: ${symbol.name}  (${symbol.file}:${symbol.line})`,

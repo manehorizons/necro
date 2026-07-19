@@ -77,7 +77,8 @@ export async function evaluateProposal(
 
   const splitsIntoMultiple = units.length >= 2;
   const preservesCallSurface = proposal.replacement.includes(c.signature);
-  const reducesComplexity = units.length > 0 && units.every((u) => u.loc < c.threshold);
+  const reducesComplexity =
+    units.length > 0 && units.every((u) => u.loc < c.threshold);
 
   return { splitsIntoMultiple, preservesCallSurface, reducesComplexity };
 }
@@ -96,8 +97,15 @@ export function buildCasePrompt(c: RefactorEvalCase) {
       threshold: c.threshold,
       message: `god function — ${lines.length} lines > ${c.threshold}`,
     },
-    snippet: { file: c.file, startLine: 1, endLine: lines.length, code: numbered },
-    imports: lines.map((l) => l.trim()).filter((l) => l.startsWith("import ") && !l.startsWith("import(")),
+    snippet: {
+      file: c.file,
+      startLine: 1,
+      endLine: lines.length,
+      code: numbered,
+    },
+    imports: lines
+      .map((l) => l.trim())
+      .filter((l) => l.startsWith("import ") && !l.startsWith("import(")),
   };
   return buildRefactorPrompt(context);
 }
@@ -121,7 +129,12 @@ export async function runRefactorEval(
       const c = cases[idx] as RefactorEvalCase;
       const result = await client.propose(buildCasePrompt(c));
       if (!result.ok) {
-        rows[idx] = { name: c.name, pass: false, criteria: null, failure: result.reason };
+        rows[idx] = {
+          name: c.name,
+          pass: false,
+          criteria: null,
+          failure: result.reason,
+        };
         continue;
       }
       const criteria = await evaluateProposal(c, result.proposal);
@@ -136,7 +149,10 @@ export async function runRefactorEval(
 }
 
 /** The accuracy gate: the structural pass-rate must clear `threshold`. */
-export function meetsThreshold(m: { passRate: number }, threshold: number): boolean {
+export function meetsThreshold(
+  m: { passRate: number },
+  threshold: number,
+): boolean {
   return m.passRate >= threshold;
 }
 
@@ -203,11 +219,15 @@ export interface DuplicateEvalMetrics {
 
 /** All three criteria must hold. */
 export function duplicatePasses(c: DuplicateCriteria): boolean {
-  return c.extractsSharedFunction && c.collapsesDuplication && c.preservesCallSurface;
+  return (
+    c.extractsSharedFunction && c.collapsesDuplication && c.preservesCallSurface
+  );
 }
 
 /** Load the duplicate reference set (a JSON array of {@link DuplicateEvalCase}). */
-export async function loadDuplicateEvalCases(path: string): Promise<DuplicateEvalCase[]> {
+export async function loadDuplicateEvalCases(
+  path: string,
+): Promise<DuplicateEvalCase[]> {
   return JSON.parse(await readFile(path, "utf8")) as DuplicateEvalCase[];
 }
 
@@ -218,14 +238,20 @@ export function buildDuplicateCasePrompt(c: DuplicateEvalCase): RefactorPrompt {
     const text = sourceByPath.get(location.file) ?? "";
     return {
       location,
-      snippet: { file: location.file, ...extractRange(text, location.startLine, location.endLine) },
+      snippet: {
+        file: location.file,
+        ...extractRange(text, location.startLine, location.endLine),
+      },
       imports: text
         .split("\n")
         .map((l) => l.trim())
         .filter((l) => l.startsWith("import ") && !l.startsWith("import(")),
     };
   });
-  return buildDuplicatePrompt({ finding: { tokens: c.tokens, locations: c.locations }, locations });
+  return buildDuplicatePrompt({
+    finding: { tokens: c.tokens, locations: c.locations },
+    locations,
+  });
 }
 
 /**
@@ -255,15 +281,20 @@ export async function evaluateDuplicateProposal(
   proposal: DuplicateProposal,
 ): Promise<DuplicateCriteria> {
   const extractsSharedFunction =
-    /\bexport\s+(?:async\s+)?function\s+[A-Za-z0-9_$]+/.test(proposal.sharedFunction) &&
-    proposal.edits.length === c.locations.length;
+    /\bexport\s+(?:async\s+)?function\s+[A-Za-z0-9_$]+/.test(
+      proposal.sharedFunction,
+    ) && proposal.edits.length === c.locations.length;
 
   let spliced: { file: string; newContent: string }[];
   try {
     const originals = new Map(c.files.map((f) => [f.path, f.source]));
     spliced = await spliceDuplicate(originals, proposal);
   } catch {
-    return { extractsSharedFunction, collapsesDuplication: false, preservesCallSurface: false };
+    return {
+      extractsSharedFunction,
+      collapsesDuplication: false,
+      preservesCallSurface: false,
+    };
   }
 
   const { tokenize } = await import("../syntactic/tokens.js");
@@ -282,7 +313,9 @@ export async function evaluateDuplicateProposal(
   const collapsesDuplication = largestResidual < c.tokens * COLLAPSE_RATIO;
 
   const combined = spliced.map((s) => s.newContent).join("\n");
-  const preservesCallSurface = c.signatures.every((sig) => combined.includes(sig));
+  const preservesCallSurface = c.signatures.every((sig) =>
+    combined.includes(sig),
+  );
 
   return { extractsSharedFunction, collapsesDuplication, preservesCallSurface };
 }
@@ -305,9 +338,17 @@ export async function runDuplicateEval(
       const idx = next++;
       const c = cases[idx] as DuplicateEvalCase;
       const finding = { tokens: c.tokens, locations: c.locations };
-      const result = await client.proposeDuplicate(buildDuplicateCasePrompt(c), finding);
+      const result = await client.proposeDuplicate(
+        buildDuplicateCasePrompt(c),
+        finding,
+      );
       if (!result.ok) {
-        rows[idx] = { name: c.name, pass: false, criteria: null, failure: result.reason };
+        rows[idx] = {
+          name: c.name,
+          pass: false,
+          criteria: null,
+          failure: result.reason,
+        };
         continue;
       }
       const criteria = await evaluateDuplicateProposal(c, result.proposal);

@@ -20,7 +20,10 @@ interface SarifRegion {
   startColumn: number;
 }
 interface SarifPhysicalLocation {
-  physicalLocation: { artifactLocation: SarifArtifactLocation; region: SarifRegion };
+  physicalLocation: {
+    artifactLocation: SarifArtifactLocation;
+    region: SarifRegion;
+  };
 }
 interface SarifResult {
   ruleId: string;
@@ -39,7 +42,14 @@ export interface SarifLog {
   $schema: string;
   version: "2.1.0";
   runs: Array<{
-    tool: { driver: { name: string; informationUri: string; semanticVersion: string; rules: SarifRule[] } };
+    tool: {
+      driver: {
+        name: string;
+        informationUri: string;
+        semanticVersion: string;
+        rules: SarifRule[];
+      };
+    };
     results: SarifResult[];
     /** Free-form property bag (SARIF's `properties` extension point) — carries
      * the fail-closed entry-resolution diagnostic (§2.1) when present. */
@@ -47,23 +57,67 @@ export interface SarifLog {
   }>;
 }
 
-const SCHEMA = "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json";
+const SCHEMA =
+  "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json";
 const INFO_URI = "https://github.com/manehorizons/necro";
 
-const LEVEL: Record<Severity, SarifLevel> = { high: "error", medium: "warning", low: "note" };
+const LEVEL: Record<Severity, SarifLevel> = {
+  high: "error",
+  medium: "warning",
+  low: "note",
+};
 
 /** Every ruleId necro can emit, declared up front so results always resolve. */
 const RULES: SarifRule[] = [
-  { id: "dead-code", name: "DeadCode", shortDescription: { text: "Unreferenced (dead) code" }, helpUri: INFO_URI },
-  { id: "complexity/nesting", name: "Nesting", shortDescription: { text: "Excessive nesting depth" }, helpUri: INFO_URI },
-  { id: "complexity/cyclomatic", name: "Cyclomatic", shortDescription: { text: "High cyclomatic complexity" }, helpUri: INFO_URI },
-  { id: "complexity/cognitive", name: "Cognitive", shortDescription: { text: "High cognitive complexity" }, helpUri: INFO_URI },
-  { id: "complexity/god-function", name: "GodFunction", shortDescription: { text: "God function" }, helpUri: INFO_URI },
-  { id: "duplication", name: "Duplication", shortDescription: { text: "Duplicated code (clone)" }, helpUri: INFO_URI },
-  { id: "hotspot", name: "Hotspot", shortDescription: { text: "Risk hotspot" }, helpUri: INFO_URI },
+  {
+    id: "dead-code",
+    name: "DeadCode",
+    shortDescription: { text: "Unreferenced (dead) code" },
+    helpUri: INFO_URI,
+  },
+  {
+    id: "complexity/nesting",
+    name: "Nesting",
+    shortDescription: { text: "Excessive nesting depth" },
+    helpUri: INFO_URI,
+  },
+  {
+    id: "complexity/cyclomatic",
+    name: "Cyclomatic",
+    shortDescription: { text: "High cyclomatic complexity" },
+    helpUri: INFO_URI,
+  },
+  {
+    id: "complexity/cognitive",
+    name: "Cognitive",
+    shortDescription: { text: "High cognitive complexity" },
+    helpUri: INFO_URI,
+  },
+  {
+    id: "complexity/god-function",
+    name: "GodFunction",
+    shortDescription: { text: "God function" },
+    helpUri: INFO_URI,
+  },
+  {
+    id: "duplication",
+    name: "Duplication",
+    shortDescription: { text: "Duplicated code (clone)" },
+    helpUri: INFO_URI,
+  },
+  {
+    id: "hotspot",
+    name: "Hotspot",
+    shortDescription: { text: "Risk hotspot" },
+    helpUri: INFO_URI,
+  },
 ];
 
-function physical(file: string, line: number, srcRoot: string): SarifPhysicalLocation {
+function physical(
+  file: string,
+  line: number,
+  srcRoot: string,
+): SarifPhysicalLocation {
   return {
     physicalLocation: {
       artifactLocation: { uri: toRelativePath(file, srcRoot) },
@@ -108,10 +162,16 @@ export function toSarif(input: JsonInput, opts: { srcRoot: string }): SarifLog {
     results.push({
       ruleId: "duplication",
       level: LEVEL[duplicationSeverity()],
-      message: { text: `Duplicated code: ${d.tokens} tokens across ${d.locations.length} locations` },
+      message: {
+        text: `Duplicated code: ${d.tokens} tokens across ${d.locations.length} locations`,
+      },
       locations: [physical(primary.file, primary.startLine, srcRoot)],
       ...(rest.length > 0
-        ? { relatedLocations: rest.map((l) => physical(l.file, l.startLine, srcRoot)) }
+        ? {
+            relatedLocations: rest.map((l) =>
+              physical(l.file, l.startLine, srcRoot),
+            ),
+          }
         : {}),
     });
   }
@@ -130,9 +190,22 @@ export function toSarif(input: JsonInput, opts: { srcRoot: string }): SarifLog {
     version: "2.1.0",
     runs: [
       {
-        tool: { driver: { name: "necro", informationUri: INFO_URI, semanticVersion: VERSION, rules: RULES } },
+        tool: {
+          driver: {
+            name: "necro",
+            informationUri: INFO_URI,
+            semanticVersion: VERSION,
+            rules: RULES,
+          },
+        },
         results,
-        ...(input.diagnostics ? { properties: { entryResolution: input.diagnostics.entryResolution } } : {}),
+        ...(input.diagnostics
+          ? {
+              properties: {
+                entryResolution: input.diagnostics.entryResolution,
+              },
+            }
+          : {}),
       },
     ],
   };

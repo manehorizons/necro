@@ -1,5 +1,5 @@
-import type { SymbolNode } from "../graph/types.js";
 import { isPythonFile } from "../graph/python/language.js";
+import type { SymbolNode } from "../graph/types.js";
 import type { CoverageStatus } from "./coverage/lookup.js";
 import type { ReachabilityResult } from "./reachability.js";
 
@@ -84,8 +84,11 @@ export function classify(input: ClassifyInput): ClassifiedFinding[] {
     // Python dead-code findings are hard-capped at `likely` (AC-6, phase 45):
     // the resolver's recall/precision hasn't been corpus-validated yet
     // (Phase D), so a Python symbol never earns `certain`/auto-fix eligible.
-    const rawTier = collapse ? "maybe" : deadTier(node, result, isPublicApi, cov);
-    const tier = rawTier === "certain" && isPythonFile(node.file) ? "likely" : rawTier;
+    const rawTier = collapse
+      ? "maybe"
+      : deadTier(node, result, isPublicApi, cov);
+    const tier =
+      rawTier === "certain" && isPythonFile(node.file) ? "likely" : rawTier;
     const evidence = deadEvidence(node, result, isPublicApi, cov);
     findings.push({
       node,
@@ -144,7 +147,7 @@ function testOnlyCoverageSignal(cov: CoverageStatus): EvidenceSignal {
 }
 
 function deadEvidence(
-  node: SymbolNode,
+  _node: SymbolNode,
   result: ReachabilityResult,
   isPublicApi: boolean,
   cov: CoverageStatus,
@@ -153,10 +156,16 @@ function deadEvidence(
     { ok: true, text: "0 static references (TS compiler)" },
     deadCoverageSignal(cov),
     isPublicApi
-      ? { ok: false, text: "in package.json exports — external consumers invisible" }
+      ? {
+          ok: false,
+          text: "in package.json exports — external consumers invisible",
+        }
       : { ok: true, text: "not in package.json exports" },
     result.tainted
-      ? { ok: false, text: "dynamic-import taint in scope — target unresolvable" }
+      ? {
+          ok: false,
+          text: "dynamic-import taint in scope — target unresolvable",
+        }
       : { ok: true, text: "no dynamic-import taint in scope" },
   ];
 }
