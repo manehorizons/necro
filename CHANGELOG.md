@@ -4,6 +4,23 @@ All notable changes to `@manehorizons/necro` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] — 2026-07-19
+
+### Added
+- **Library entry point.** The package now ships an importable library
+  surface alongside the `necro` CLI. `package.json` gains `main`, `types`,
+  and an `exports` map (`"."` → `dist/index.d.ts` + `dist/index.js`, plus a
+  `./package.json` passthrough); `import { ... } from "@manehorizons/necro"`
+  now resolves. Named exports only (no default export): `scan`, `explain`,
+  `buildReachabilityModel`, `loadConfig`, and their associated types
+  (`ScanResult`, `ScanOptions`, `ScanDiagnostics`, `Finding`,
+  `ReachabilityModel`, `EntryResolution`, `EntryResolutionRecord`,
+  `ExplainResult`, `ExplainOptions`, `ExplainSymbol`, `TraceNode`,
+  `InboundRef`, `NecroConfig`, `LlmOptions`, `ClassifiedFinding`, `Tier`,
+  `Verdict`, `EvidenceSignal`, `SymbolNode`). The build now runs
+  `tsc -p tsconfig.build.json` after the existing esbuild CLI bundle to emit
+  `dist/index.js` + `dist/index.d.ts`.
+
 ## [1.3.0] — 2026-07-18
 
 ### Added
