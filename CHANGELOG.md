@@ -4,6 +4,33 @@ All notable changes to `@manehorizons/necro` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] — 2026-07-20
+
+### Added
+- **Cobertura `coverage.xml` reader.** Coverage ingestion was lcov-only, so
+  the "executed at runtime despite 0 static refs" contradiction signal could
+  never fire for Python. `scan`/`fix` now also read a Cobertura report
+  (Python's `coverage xml` output), auto-discovered at `coverage.xml` with a
+  new `pythonCoveragePath` config override, merged with any lcov report.
+- **TS/JS symbol→file edges.** A reached symbol now also marks its own file
+  reached, so module-level top-level references in non-entry imported files
+  propagate instead of going invisible. Bare side-effect imports
+  (`import "./register.js"`, no binding) now also keep the imported module's
+  executed contents alive via an explicit edge.
+
+### Changed
+- **`fix --write` verifies by default.** Each removal is now gated on
+  `verify-removal`'s empirical build-green check (typecheck by default)
+  before being applied — a removal that breaks the build is skipped, not
+  deleted. `--no-verify` restores the old unconditional-delete behavior;
+  `--checks` overrides the default typecheck-only check set.
+
+### Fixed
+- **Dirty-tree guard no longer trips on necro's own cache write.** `fix`'s
+  scan step writes `.necro-cache/` into the target; the dirty-tree guard
+  used to see that as an uncommitted change and refuse on an otherwise-clean
+  repo. It now ignores `.necro-cache/` specifically.
+
 ## [1.4.0] — 2026-07-19
 
 ### Added
