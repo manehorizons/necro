@@ -4,7 +4,7 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 60-ts-symbol-file-edges
+**Active phase:** 61-fix-python-skip-accounting
 **Active draft:** (none)
 **Tier:** (n/a)
 
