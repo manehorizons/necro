@@ -4,13 +4,13 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 59-ts-export-quarantine
+**Active phase:** 60-ts-symbol-file-edges
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
 - Token utilization: 100%
-- Subagent spawns this session: 141
+- Subagent spawns this session: 142
 - Last handoff: SESSION-2026-07-20.md
 
 ## Counts

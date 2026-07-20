@@ -83,6 +83,32 @@ export function buildSymbolGraph(
     }
   }
 
+  // A reached symbol also reaches its own file: JS/TS runs a module's whole
+  // top-level body on first import, so once anything in file F is reached,
+  // F's module-level statements (already attributed `from: file` by
+  // `enclosingFrom`'s fallback above) are reached too. Mirrors the Python
+  // plane's identical pattern (python/symbol-graph.ts). Emitted at both kinds
+  // so prod/test-only separation still holds.
+  for (const node of nodes) {
+    edges.push({ from: node.id, to: node.file, kind: "prod" });
+    edges.push({ from: node.id, to: node.file, kind: "test" });
+  }
+
+  // Bare side-effect imports (`import "./register.js"`) bind no name, so
+  // nothing ever references a symbol in the target file — without an
+  // explicit edge the whole module goes invisible even though importing it
+  // runs its top-level code.
+  for (const sf of project.getSourceFiles()) {
+    const refFile = sf.getFilePath();
+    const kind: EdgeKind = isTestFile(refFile) ? "test" : "prod";
+    for (const imp of sf.getImportDeclarations()) {
+      if (imp.getImportClause() !== undefined) continue;
+      const target = imp.getModuleSpecifierSourceFile();
+      if (!target) continue;
+      edges.push({ from: refFile, to: target.getFilePath(), kind });
+    }
+  }
+
   return { nodes, edges };
 }
 

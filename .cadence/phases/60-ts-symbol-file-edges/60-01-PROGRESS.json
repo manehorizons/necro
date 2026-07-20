@@ -1,0 +1,23 @@
+{
+  "draftId": "60-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Added symbol→file edges (both prod/test kind) for every node in buildSymbolGraph, mirroring python/symbol-graph.ts:160-163.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-20T01:19:00.865Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "Bare (import-clause-less) ImportDeclarations resolved via getModuleSpecifierSourceFile() now emit an edge from the importing file to the target file, kind by isTestFile.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-20T01:19:08.696Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "Added AC-1 and AC-2 tests to test/symbol-graph.test.ts using computeReachability directly; confirmed both red against unmodified code (dead), then green after T1/T2. Full suite (767 tests) + typecheck pass; 3 pre-existing lint errors in unrelated files confirmed present on unmodified main (not a regression). Updated a stale edge-count assertion in test/bench-symbol-graph-timing.test.ts (2→6) to reflect the new symbol→file edges.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-20T01:19:15.799Z"
+    }
+  }
+}

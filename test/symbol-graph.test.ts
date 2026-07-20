@@ -2,6 +2,7 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { computeReachability } from "../src/analyze/reachability.js";
 import { buildSymbolGraph } from "../src/graph/symbol-graph.js";
 import type { SymbolGraph, SymbolNode } from "../src/graph/types.js";
 
@@ -72,5 +73,61 @@ describe("buildSymbolGraph", () => {
 
     expect(edges.length).toBeGreaterThanOrEqual(1);
     expect(edges.every((e) => e.kind === "test")).toBe(true);
+  });
+
+  test("AC-1: module top-level reference stays reachable through a non-entry imported file", async () => {
+    const entry = await write(
+      "src/entry.ts",
+      `import { aFunc } from "./moduleA";\naFunc();\n`,
+    );
+    const moduleA = await write(
+      "src/moduleA.ts",
+      `import { bFunc } from "./moduleB";\nexport function aFunc() {}\nbFunc();\n`,
+    );
+    const moduleB = await write(
+      "src/moduleB.ts",
+      `export function bFunc() {}\n`,
+    );
+
+    const graph = buildSymbolGraph([entry, moduleA, moduleB]);
+    const aFuncId = nodeByName(graph, "aFunc").id;
+    const bFuncId = nodeByName(graph, "bFunc").id;
+
+    const reachability = computeReachability({
+      nodes: graph.nodes,
+      edges: graph.edges,
+      prodEntries: new Set([aFuncId]),
+      testEntries: new Set(),
+    });
+
+    expect(reachability.find((r) => r.id === bFuncId)?.reachability).toBe(
+      "alive",
+    );
+  });
+
+  test("AC-2: bare side-effect import keeps the imported module's executed contents alive", async () => {
+    const entry = await write("src/entry.ts", `import "./register.js";\n`);
+    const register = await write(
+      "src/register.js",
+      `import { plugin } from "./plugin.js";\nplugin();\n`,
+    );
+    const pluginFile = await write(
+      "src/plugin.js",
+      `export function plugin() {}\n`,
+    );
+
+    const graph = buildSymbolGraph([entry, register, pluginFile]);
+    const pluginId = nodeByName(graph, "plugin").id;
+
+    const reachability = computeReachability({
+      nodes: graph.nodes,
+      edges: graph.edges,
+      prodEntries: new Set([entry]),
+      testEntries: new Set(),
+    });
+
+    expect(reachability.find((r) => r.id === pluginId)?.reachability).toBe(
+      "alive",
+    );
   });
 });

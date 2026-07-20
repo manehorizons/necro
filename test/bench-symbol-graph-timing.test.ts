@@ -34,7 +34,9 @@ describe("measureSymbolGraphTiming (AC-1)", () => {
 
     expect(result.fileCount).toBe(2);
     expect(result.declCount).toBe(2); // greet, callGreet
-    expect(result.edgeCount).toBe(2); // callGreet -> greet: one for the import specifier, one for the call
+    // callGreet -> greet: one for the import specifier, one for the call;
+    // plus 4 symbol->file edges (2 nodes x prod/test kind, phase 60).
+    expect(result.edgeCount).toBe(6);
     expect(result.discoverMs).toBeGreaterThanOrEqual(0);
     expect(result.buildMs).toBeGreaterThanOrEqual(0);
   });
