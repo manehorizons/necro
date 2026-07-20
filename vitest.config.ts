@@ -4,6 +4,11 @@ export default defineConfig({
   test: {
     globals: true,
     include: ["test/**/*.test.ts"],
+    // vitest's 5s default races cold ts-morph/tree-sitter startup under
+    // coverage instrumentation on a loaded CI runner — already bypassed
+    // per-test once (test/cli-baseline.test.ts, 05ef48f). Raising the
+    // default here instead of patching each newly-affected test file.
+    testTimeout: 10_000,
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
