@@ -6,9 +6,13 @@ export default defineConfig({
     include: ["test/**/*.test.ts"],
     // vitest's 5s default races cold ts-morph/tree-sitter startup under
     // coverage instrumentation on a loaded CI runner — already bypassed
-    // per-test once (test/cli-baseline.test.ts, 05ef48f). Raising the
-    // default here instead of patching each newly-affected test file.
-    testTimeout: 10_000,
+    // per-test once (test/cli-baseline.test.ts, 05ef48f). A first bump to
+    // 10s here still wasn't enough on one ubuntu-latest/node-22+24 run:
+    // test/fix.test.ts's whole suite ran 10-18x slower than local that run
+    // (individual tests that finish in ~0.5s locally took 7-9s and passed;
+    // three took 11-15s and breached 10s) — genuine runner-load variance,
+    // not a hang. 20s clears the observed worst case (14.9s) with margin.
+    testTimeout: 20_000,
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
