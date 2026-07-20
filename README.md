@@ -113,7 +113,7 @@ copy-paste clones) — each section omitted when empty.
 
 ```bash
 necro fix src/                 # preview removal of certain-dead code (diff only)
-necro fix src/ --write         # apply it (refuses on a dirty git tree; --force to override)
+necro fix src/ --write         # apply it (verifies each removal with typecheck first, by default; refuses on a dirty git tree; --force to override; --no-verify to skip verification)
 necro triage src/              # LLM-resolve the quarantined `maybe` findings (opt-in, Anthropic API)
 necro refactor src/ --type god-function        # propose an LLM refactor, verified in a scratch worktree
 necro refactor src/ --type extract-duplicate   # lift a shared function out of a clone
@@ -353,7 +353,7 @@ tests and clear acceptance criteria match how the codebase is built.
   git churn, ranked worst-first.
 - **Duplication**: Type-2 (renamed) clone detection, clamped to function
   boundaries — no jscpd.
-- **`fix`**: safe removal of `certain`-dead code (preview by default, dirty-tree guard).
+- **`fix`**: safe removal of `certain`-dead code (preview by default, dirty-tree guard, verify-by-default typecheck gate before writing — `--no-verify` to skip).
 - **`triage`**: LLM resolution of `maybe` findings (opt-in, Anthropic API).
 - **`refactor`**: LLM god-function splits and extract-duplicate, verified in a
   scratch worktree.

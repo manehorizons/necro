@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -66,12 +66,12 @@ afterEach(async () => {
   await rm(dir, { recursive: true, force: true });
 });
 
-describe("necro fix --verify --checks", () => {
+describe("necro fix --checks (verify runs by default, phase 63)", () => {
   test("AC-4: repeated --checks flags each run as a separate check command", async () => {
     const { code, stdout } = await run(
       // last-flag-wins (the pre-fix behavior) would use only "true" and pass;
       // accumulating both means the earlier "false" still fails the verdict.
-      ["fix", ".", "--verify", "--checks", "false", "--checks", "true"],
+      ["fix", ".", "--checks", "false", "--checks", "true"],
       dir,
     );
     expect(code).toBe(0);
@@ -81,11 +81,39 @@ describe("necro fix --verify --checks", () => {
 
   test("AC-4: a repeated --checks flag that all pass produces a green preview", async () => {
     const { code, stdout } = await run(
-      ["fix", ".", "--verify", "--checks", "true", "--checks", "true"],
+      ["fix", ".", "--checks", "true", "--checks", "true"],
       dir,
     );
     expect(code).toBe(0);
     expect(stdout).toMatch(/safe to remove|green/i);
     expect(stdout).toContain("1 symbol(s) would be removed");
+  });
+});
+
+describe("necro fix verify-by-default (AC-1, AC-2, phase 63)", () => {
+  test("AC-1: --write with no flags verifies first and skips a build-breaking removal", async () => {
+    // No tsconfig/typecheck script in the fixture — the default `npm run
+    // typecheck` check fails immediately, so the gate refuses every
+    // candidate instead of deleting unconditionally (the pre-phase-63 default).
+    const { code, stdout } = await run(["fix", ".", "--write"], dir);
+    expect(code).toBe(0);
+    expect(stdout).toContain("Removed 0 symbol(s)");
+    expect(stdout).toMatch(/skipped/i);
+    const util = await readFile(join(dir, "src/util.ts"), "utf8");
+    expect(util).toContain("deadFn"); // untouched — the default gate refused it
+  });
+
+  test("AC-2: --write --no-verify restores unconditional deletion", async () => {
+    // --force: the scan step's symbol-graph cache (phase 58) writes
+    // .necro-cache/ into the target, which the dirty-tree guard on the
+    // unverified path would otherwise see as an uncommitted change — a
+    // pre-existing gap unrelated to this phase (see rec-20260720-001).
+    const { code } = await run(
+      ["fix", ".", "--write", "--no-verify", "--force"],
+      dir,
+    );
+    expect(code).toBe(0);
+    const util = await readFile(join(dir, "src/util.ts"), "utf8");
+    expect(util).not.toContain("deadFn");
   });
 });

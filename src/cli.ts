@@ -289,12 +289,12 @@ program
     "path to an lcov report (default: coverage/lcov.info)",
   )
   .option(
-    "--verify",
-    "gate each removal on verify-removal's empirical build-green check (isolated worktree per symbol; slower)",
+    "--no-verify",
+    "skip the empirical build-green gate before deleting (on by default, typecheck only; isolated worktree per symbol)",
   )
   .option(
     "--checks <cmd>",
-    "check command for --verify (repeatable; default: typecheck + tests)",
+    "check command for the verify gate (repeatable; default: typecheck)",
     collectChecks,
     [],
   )

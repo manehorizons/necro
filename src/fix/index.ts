@@ -18,16 +18,24 @@ export interface FixOptions {
   force?: boolean;
   /**
    * Gate each removal on `verify-removal`'s empirical build-green check
-   * (isolated worktree per symbol) before deleting it. Opt-in: verification
-   * spins up a throwaway worktree and runs the full check suite per symbol,
-   * so it is strictly more expensive than the unverified default.
+   * (isolated worktree per symbol) before deleting it. Defaults to `false`
+   * for direct library callers of {@link runFix}; the CLI's `fix` command
+   * defaults its own `--no-verify` flag to verify-on (rec-20260719-002).
    */
   verify?: boolean;
-  /** Checks run in each throwaway worktree when `verify` is set (default: typecheck + tests). */
+  /** Checks run in each throwaway worktree when `verify` is set (default: {@link FIX_VERIFY_DEFAULT_CHECKS}, typecheck-only). */
   checks?: string[];
   /** Build the worktree runner for a repo root (injected for tests). */
   runnerFactory?: (repoRoot: string) => VerifyRunner;
 }
+
+/**
+ * Default check set for `fix`'s verify gate — typecheck-only, distinct from
+ * `verify-removal`'s own `DEFAULT_CHECKS` (typecheck+tests): the gate now
+ * runs on every `--write` by default (§ rec-20260719-002), so it favors speed
+ * over `verify-removal`'s explicit, opt-in thoroughness. Overridable via `--checks`.
+ */
+export const FIX_VERIFY_DEFAULT_CHECKS = ["npm run typecheck"];
 
 /** A `certain`-dead symbol that `--verify` refused to delete. */
 export interface SkippedSymbol {
@@ -119,7 +127,7 @@ async function runVerifiedFix(
 
   const verdicts = await verifyFindings(targetPath, config, eligible, {
     repoRoot: targetPath,
-    checks: opts.checks,
+    checks: opts.checks ?? FIX_VERIFY_DEFAULT_CHECKS,
     runnerFactory: opts.runnerFactory,
   });
 

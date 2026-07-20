@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { DEFAULT_CONFIG } from "../src/config.js";
-import { fixExitCode, runFix } from "../src/fix/index.js";
+import { FIX_VERIFY_DEFAULT_CHECKS, fixExitCode, runFix } from "../src/fix/index.js";
 import type { FileEdit, VerifyRunner } from "../src/refactor/verify.js";
 
 const exec = promisify(execFile);
@@ -207,6 +207,31 @@ describe("runFix --verify (phase 29)", () => {
     expect(result.status).toBe("written");
     expect(await readFile(join(dir, "src/util.ts"), "utf8")).not.toContain("safeDead");
     expect(await readFile(join(dir, "src/dep.ts"), "utf8")).not.toContain("breakerDead");
+  });
+
+  test("verify: true with no --checks runs the typecheck-only default, not verify-removal's typecheck+tests (AC-3, phase 63)", async () => {
+    await writeVerifyFixture();
+    const commands: string[] = [];
+    const recordingRunnerFactory = (_root: string): VerifyRunner => ({
+      createWorktree: async () => "/wt",
+      writeEdit: async () => {},
+      runCheck: async (_wt, command) => {
+        commands.push(command);
+        return { ok: true, output: "" };
+      },
+      removeWorktree: async () => {},
+    });
+
+    await runFix(dir, DEFAULT_CONFIG, {
+      write: false,
+      verify: true,
+      runnerFactory: recordingRunnerFactory,
+    });
+
+    expect(commands).toEqual(
+      Array(commands.length).fill(FIX_VERIFY_DEFAULT_CHECKS[0]),
+    );
+    expect(commands.length).toBeGreaterThan(0);
   });
 });
 

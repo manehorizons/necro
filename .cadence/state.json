@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "revision": 954,
+  "revision": 961,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
-  "activePhase": "62-cobertura-coverage",
+  "activePhase": "63-fix-verify-by-default",
   "activeDraft": null,
   "activeSpec": null,
   "loopPosition": "IDLE",
   "tier": null,
-  "draftReadAt": "2026-07-20T01:33:40.223Z",
+  "draftReadAt": "2026-07-20T01:45:51.938Z",
   "openDrafts": [],
   "decisions": [],
   "deferred": [],
