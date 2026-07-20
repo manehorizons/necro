@@ -1,0 +1,35 @@
+{
+  "draftId": "59-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Added packageJsonPrivate() to RepoContext (types.ts) + createRepoContext impl (registry.ts, pkg.private === true). Extracted symbolNodeId(file, line, name) in symbol-graph.ts, replaced both inline id-format call sites. Pure refactor. Typecheck clean, full suite 757/757 unchanged.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-20T00:21:40.807Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "Added src/graph/symbol-graph-public-api.ts (resolvePublicApiIds via ts-morph getExportedDeclarations, ids computed from each declaration's own name not the export alias) + test/graph-symbol-graph-public-api.test.ts (5 tests: direct export, export * barrel, aliased export {x as y}, non-reachable symbol absent, no-exports entry). All pass, typecheck clean.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/graph/symbol-graph-public-api.ts",
+        "/home/thomas/projects/necro/test/graph-symbol-graph-public-api.test.ts"
+      ],
+      "updatedAt": "2026-07-20T00:22:46.280Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "src/engine/model.ts: added isTsLibrary(ctx), filtered prodEntryRecords to manifest/mapped sources, call resolvePublicApiIds and union with the existing Python publicApiIds branch. test/engine-model-public-api.test.ts (3 tests, integration-level via scan()): AC-1/AC-3 library case demotes to maybe with truthful evidence; AC-2 regression guard (private:true, and no package.json) both classify exactly as before this phase (likely, \"not in package.json exports\"). Full suite: 765 passed, typecheck clean.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/src/engine/model.ts",
+        "/home/thomas/projects/necro/test/engine-model-public-api.test.ts"
+      ],
+      "updatedAt": "2026-07-20T00:24:50.143Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "Verified against necro's own repo (name: @manehorizons/necro, private: false, main: ./dist/index.js mapped to src/index.ts via the dist-heuristic since dist/ isn't built in dev). Direct model check: buildReachabilityModel(necro root) resolves publicApiIds.size=24, correctly walking src/index.ts's re-export barrel through to the originating declaration files (classify.ts, config.ts, explain.ts, engine/index.ts, model.ts, graph/types.ts) via getExportedDeclarations — confirms the mechanism activates correctly and resolves barrel chains on a real, non-trivial codebase, not just small test fixtures. `necro scan src --json`: 6 findings, all from src/bench/symbol-graph-timing.ts (a repo-internal bench tool NOT part of the public barrel) — correctly still show \"not in package.json exports\", confirming non-public symbols aren't over-quarantined. No symbol currently exported through necro's own public barrel is dead today, so there's no live before/after evidence-text flip to show on this repo right now, but the mechanism's correct activation (24 ids, right files) and correct non-interference (bench tool findings unaffected) are both directly confirmed. No regressions, no stray files.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-20T00:28:09.454Z"
+    }
+  }
+}

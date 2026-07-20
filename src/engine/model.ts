@@ -15,6 +15,7 @@ import {
 } from "../graph/python/module-resolver.js";
 import { buildPythonSymbolGraph } from "../graph/python/symbol-graph.js";
 import { buildSymbolGraphCached } from "../graph/symbol-graph-cache.js";
+import { resolvePublicApiIds } from "../graph/symbol-graph-public-api.js";
 import type { SymbolEdge, SymbolGraph } from "../graph/types.js";
 import { resolveEntries } from "../plugins/entry-resolver.js";
 import { createNextjsPlugin } from "../plugins/nextjs/index.js";
@@ -230,9 +231,25 @@ export async function buildReachabilityModel(
   // `[build-system]` is meant to be built/installed and consumed externally —
   // every exported Python symbol is public API, quarantined to `maybe` via
   // `classify()`'s existing (previously unwired) `publicApiIds` parameter.
-  const publicApiIds = isPythonLibrary(ctx)
+  const pythonPublicApiIds = isPythonLibrary(ctx)
     ? new Set(pyGraph.nodes.filter((n) => n.exported).map((n) => n.id))
     : new Set<string>();
+
+  // TS/JS mirror of the Python library quarantine above: a package.json with
+  // a `name` that isn't `private` is meant to be published, so symbols
+  // reachable from its resolved manifest/mapped entry surface (main/module/
+  // bin/exports, barrel re-export chains included) are public API — external
+  // consumers are invisible to static analysis, so quarantine to `maybe`
+  // rather than certain-dead (phase 59).
+  const manifestEntryFiles = prodEntryRecords
+    .filter((r) => r.source === "manifest" || r.source === "mapped")
+    .map((r) => r.file);
+  const tsPublicApiIds =
+    isTsLibrary(ctx) && manifestEntryFiles.length > 0
+      ? resolvePublicApiIds(manifestEntryFiles, tsFiles)
+      : new Set<string>();
+
+  const publicApiIds = new Set([...pythonPublicApiIds, ...tsPublicApiIds]);
 
   return {
     files,
@@ -251,6 +268,11 @@ export async function buildReachabilityModel(
 /** A `pyproject.toml` declaring both `[project]` and `[build-system]` is a distributable library (§2.3) — its exported symbols are externally consumable. */
 function isPythonLibrary(ctx: RepoContext): boolean {
   return ctx.pyprojectHas("project") && ctx.pyprojectHas("build-system");
+}
+
+/** A `package.json` with a `name` that isn't `private` is a distributable library (phase 59) — its exported symbols are externally consumable. */
+function isTsLibrary(ctx: RepoContext): boolean {
+  return ctx.packageJsonHas("name") && !ctx.packageJsonPrivate();
 }
 
 /**

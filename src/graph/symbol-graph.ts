@@ -21,6 +21,11 @@ export interface Declaration {
   exported: boolean;
 }
 
+/** The stable node-id format used throughout the symbol graph: `${file}:${line}:${name}`. */
+export function symbolNodeId(file: string, line: number, name: string): string {
+  return `${file}:${line}:${name}`;
+}
+
 /**
  * Build a symbol graph from the given TypeScript files using the compiler API
  * (via ts-morph). Nodes are top-level declarations; edges are references,
@@ -50,7 +55,7 @@ export function buildSymbolGraph(
     const file = sf.getFilePath();
     for (const decl of collectDeclarations(sf)) {
       const line = decl.nameNode.getStartLineNumber();
-      const id = `${file}:${line}:${decl.name}`;
+      const id = symbolNodeId(file, line, decl.name);
       nodes.push({ id, name: decl.name, file, line, exported: decl.exported });
       idByDeclKey.set(declKey(decl.declNode), id);
     }
@@ -58,7 +63,11 @@ export function buildSymbolGraph(
 
   for (const sf of project.getSourceFiles()) {
     for (const decl of collectDeclarations(sf)) {
-      const toId = `${sf.getFilePath()}:${decl.nameNode.getStartLineNumber()}:${decl.name}`;
+      const toId = symbolNodeId(
+        sf.getFilePath(),
+        decl.nameNode.getStartLineNumber(),
+        decl.name,
+      );
       if (!Node.isIdentifier(decl.nameNode)) continue;
       for (const ref of decl.nameNode.findReferencesAsNodes()) {
         if (isSelfReference(ref, decl.nameNode)) continue;

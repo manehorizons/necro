@@ -11,6 +11,7 @@ interface PackageJson {
   devDependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
   optionalDependencies?: Record<string, string>;
+  private?: boolean;
   [key: string]: unknown;
 }
 
@@ -35,6 +36,7 @@ export async function createRepoContext(root: string): Promise<RepoContext> {
       return rootEntries.some((entry) => matchers.some((re) => re.test(entry)));
     },
     packageJsonHas: (key) => Object.hasOwn(pkg, key),
+    packageJsonPrivate: () => pkg.private === true,
     pyprojectHas: (header) => pyprojectHasSection(root, header),
   };
 }

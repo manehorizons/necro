@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "draftId": "59-01",
+  "completedAt": "2026-07-20T00:28:13.297Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-2",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-3",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-4",
+      "pass": true,
+      "evidence": "assertion"
+    }
+  ],
+  "gates": [
+    {
+      "gate": "draft-read",
+      "status": "ran"
+    },
+    {
+      "gate": "structural-verifier",
+      "status": "ran"
+    },
+    {
+      "gate": "boundary-scan",
+      "status": "skipped",
+      "skipReason": "boundaryEnforcement is not \"block\""
+    },
+    {
+      "gate": "build-test-must-pass",
+      "status": "skipped",
+      "skipReason": "no test command configured — build-test-must-pass cannot verify your tests ran; this settle will NOT confirm the suite passes. Set verification.testCommand in .cadence/config.json to enable real enforcement."
+    },
+    {
+      "gate": "test-coverage",
+      "status": "ran"
+    },
+    {
+      "gate": "interactive-verdict",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "deep-verify",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "code-review",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    },
+    {
+      "gate": "security-audit",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "Added packageJsonPrivate() to RepoContext (types.ts) + createRepoContext impl (registry.ts, pkg.private === true). Extracted symbolNodeId(file, line, name) in symbol-graph.ts, replaced both inline id-format call sites. Pure refactor. Typecheck clean, full suite 757/757 unchanged."
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "Added src/graph/symbol-graph-public-api.ts (resolvePublicApiIds via ts-morph getExportedDeclarations, ids computed from each declaration's own name not the export alias) + test/graph-symbol-graph-public-api.test.ts (5 tests: direct export, export * barrel, aliased export {x as y}, non-reachable symbol absent, no-exports entry). All pass, typecheck clean."
+    },
+    {
+      "id": "T3",
+      "status": "DONE",
+      "notes": "src/engine/model.ts: added isTsLibrary(ctx), filtered prodEntryRecords to manifest/mapped sources, call resolvePublicApiIds and union with the existing Python publicApiIds branch. test/engine-model-public-api.test.ts (3 tests, integration-level via scan()): AC-1/AC-3 library case demotes to maybe with truthful evidence; AC-2 regression guard (private:true, and no package.json) both classify exactly as before this phase (likely, \"not in package.json exports\"). Full suite: 765 passed, typecheck clean."
+    },
+    {
+      "id": "T4",
+      "status": "DONE",
+      "notes": "Verified against necro's own repo (name: @manehorizons/necro, private: false, main: ./dist/index.js mapped to src/index.ts via the dist-heuristic since dist/ isn't built in dev). Direct model check: buildReachabilityModel(necro root) resolves publicApiIds.size=24, correctly walking src/index.ts's re-export barrel through to the originating declaration files (classify.ts, config.ts, explain.ts, engine/index.ts, model.ts, graph/types.ts) via getExportedDeclarations — confirms the mechanism activates correctly and resolves barrel chains on a real, non-trivial codebase, not just small test fixtures. `necro scan src --json`: 6 findings, all from src/bench/symbol-graph-timing.ts (a repo-internal bench tool NOT part of the public barrel) — correctly still show \"not in package.json exports\", confirming non-public symbols aren't over-quarantined. No symbol currently exported through necro's own public barrel is dead today, so there's no live before/after evidence-text flip to show on this repo right now, but the mechanism's correct activation (24 ids, right files) and correct non-interference (bench tool findings unaffected) are both directly confirmed. No regressions, no stray files."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": [
+      "superpowers:test-driven-development",
+      "handoff",
+      "superpowers:brainstorming",
+      "superpowers:writing-plans",
+      "cadence-scout"
+    ]
+  }
+}

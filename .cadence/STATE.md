@@ -4,13 +4,13 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 58-symbol-graph-cache-v1
+**Active phase:** 59-ts-export-quarantine
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
 - Token utilization: 100%
-- Subagent spawns this session: 137
+- Subagent spawns this session: 141
 - Last handoff: SESSION-2026-07-19-v1.4.0-published.md
 
 ## Counts
@@ -20,4 +20,4 @@
 
 ## Skill audit
 - Required: (none)
-- Invoked: superpowers:test-driven-development, handoff, superpowers:brainstorming, superpowers:writing-plans
+- Invoked: superpowers:test-driven-development, handoff, superpowers:brainstorming, superpowers:writing-plans, cadence-scout
