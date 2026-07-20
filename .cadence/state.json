@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "revision": 948,
+  "revision": 954,
   "project": {
     "name": "necro",
     "createdAt": "2026-06-08T00:09:04.004Z"
   },
-  "activePhase": "61-fix-python-skip-accounting",
+  "activePhase": "62-cobertura-coverage",
   "activeDraft": null,
   "activeSpec": null,
   "loopPosition": "IDLE",
   "tier": null,
-  "draftReadAt": "2026-07-20T01:27:36.530Z",
+  "draftReadAt": "2026-07-20T01:33:40.223Z",
   "openDrafts": [],
   "decisions": [],
   "deferred": [],

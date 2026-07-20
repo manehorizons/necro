@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "draftId": "62-01",
+  "completedAt": "2026-07-20T01:39:59.714Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-2",
+      "pass": true,
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-3",
+      "pass": true,
+      "evidence": "assertion"
+    }
+  ],
+  "gates": [
+    {
+      "gate": "draft-read",
+      "status": "ran"
+    },
+    {
+      "gate": "structural-verifier",
+      "status": "ran"
+    },
+    {
+      "gate": "boundary-scan",
+      "status": "skipped",
+      "skipReason": "boundaryEnforcement is not \"block\""
+    },
+    {
+      "gate": "build-test-must-pass",
+      "status": "skipped",
+      "skipReason": "no test command configured — build-test-must-pass cannot verify your tests ran; this settle will NOT confirm the suite passes. Set verification.testCommand in .cadence/config.json to enable real enforcement."
+    },
+    {
+      "gate": "test-coverage",
+      "status": "ran"
+    },
+    {
+      "gate": "interactive-verdict",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "deep-verify",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "code-review",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    },
+    {
+      "gate": "security-audit",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "src/analyze/coverage/cobertura.ts — hand-rolled regex parser producing the LcovReport shape (fns:[], lines: Map). No new dependency."
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "loadCoverage now attempts lcov and Cobertura independently (each ENOENT-silent) and merges into one LcovReport. Added pythonCoveragePath to NecroConfig/RawConfig, DEFAULT_COBERTURA_PATH=\"coverage.xml\". Also fixed .gitignore's unanchored `coverage/` rule (→ `/coverage/`) — it was silently swallowing new files under src/analyze/coverage/ including this phase's own cobertura.ts."
+    },
+    {
+      "id": "T3",
+      "status": "DONE",
+      "notes": "test/coverage-cobertura.test.ts (new) + additions to test/coverage-load.test.ts cover AC-1 (merge drives coverageFor), AC-2 (pythonCoveragePath override), AC-3 (missing coverage.xml is silent). Full suite (774 tests) + typecheck pass; lint clean on all touched/new files (2 pre-existing latent format issues in untouched lcov.ts/lookup.ts confirmed via empty git diff — not from this phase)."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": [
+      "superpowers:test-driven-development",
+      "handoff",
+      "superpowers:brainstorming",
+      "superpowers:writing-plans",
+      "cadence-scout"
+    ]
+  }
+}

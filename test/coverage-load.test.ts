@@ -46,3 +46,40 @@ describe("loadCoverage (AC-1, AC-4)", () => {
     expect(warn).toHaveBeenCalledOnce();
   });
 });
+
+const COBERTURA = [
+  "<coverage>",
+  '  <class filename="pkg/core.py"><lines><line number="1" hits="1"/></lines></class>',
+  "</coverage>",
+].join("\n");
+
+describe("loadCoverage — Cobertura (AC-1, AC-2, AC-3)", () => {
+  test("default coverage.xml is auto-discovered and merged with lcov (AC-1)", async () => {
+    await mkdir(join(dir, "coverage"), { recursive: true });
+    await writeFile(join(dir, "coverage/lcov.info"), LCOV);
+    await writeFile(join(dir, "coverage.xml"), COBERTURA);
+
+    const report = await loadCoverage(dir, {});
+    expect(report?.files.has("/x.ts")).toBe(true); // lcov side survives the merge
+    expect(report?.files.get("pkg/core.py")?.lines.get(1)).toBe(1);
+  });
+
+  test("Cobertura alone (no lcov report) still resolves", async () => {
+    await writeFile(join(dir, "coverage.xml"), COBERTURA);
+    const report = await loadCoverage(dir, {});
+    expect(report?.files.get("pkg/core.py")?.lines.get(1)).toBe(1);
+  });
+
+  test("pythonCoveragePath overrides the coverage.xml default (AC-2)", async () => {
+    await writeFile(join(dir, "custom-cobertura.xml"), COBERTURA);
+    const report = await loadCoverage(dir, { pythonCoveragePath: "custom-cobertura.xml" });
+    expect(report?.files.has("pkg/core.py")).toBe(true);
+  });
+
+  test("no coverage.xml and no override → no Cobertura data, no warning (AC-3)", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const report = await loadCoverage(dir, {});
+    expect(report).toBeNull();
+    expect(warn).not.toHaveBeenCalled();
+  });
+});

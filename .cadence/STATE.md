@@ -4,7 +4,7 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 61-fix-python-skip-accounting
+**Active phase:** 62-cobertura-coverage
 **Active draft:** (none)
 **Tier:** (n/a)
 
