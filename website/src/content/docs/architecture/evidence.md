@@ -26,8 +26,9 @@ interface EvidenceSignal {
 }
 ```
 
-A `null` (`•`) marks a signal that wasn't checked — currently coverage, whose
-ingestion is [planned](/necro/guide/roadmap/).
+A `null` (`•`) marks a signal that wasn't checked — coverage renders this way
+whenever no lcov/Cobertura report is found for that symbol's file or line (see
+[Coverage](/necro/reference/cli/#coverage)); it's additive and never blocks a verdict.
 
 ## Why split assemble from format
 

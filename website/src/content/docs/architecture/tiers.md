@@ -53,7 +53,9 @@ interface ClassifiedFinding {
 
 ## Coverage
 
-The `certain` tier is meant to be strengthened by a coverage-miss signal when a
-report is available. Coverage ingestion is [planned](/necro/guide/roadmap/), so
-today every chain shows `• coverage: not available` and tiers rest on static
-signals.
+The `certain` tier is strengthened by a coverage-miss signal when a report is
+available — lcov for TS/JS, [Cobertura](https://cobertura.github.io/cobertura/)
+`coverage.xml` for Python (see [Coverage](/necro/reference/cli/#coverage)).
+A runtime hit on a 0-static-ref symbol contradicts the dead verdict and
+demotes it to `maybe`. With no report, every chain shows
+`• coverage: not available` and tiers rest on static signals alone.

@@ -9,8 +9,8 @@ sidebar:
 necro [options] [command]
 ```
 
-Until the [npm package](/necro/guide/roadmap/) ships, invoke the built CLI as
-`node dist/cli.js …`. Examples below use `necro` for brevity.
+Install with `npm install -g @manehorizons/necro`, or invoke via `npx necro …`.
+Examples below use `necro` for brevity.
 
 ## Global options
 
@@ -46,12 +46,16 @@ necro scan [path] [options]
 
 ### Coverage
 
-When an [lcov](https://github.com/linux-test-project/lcov) report is present,
-`scan` folds runtime coverage into each finding's evidence chain. necro **reads
-an existing report only** — it never runs your test suite. Discovery order:
-`--coverage <path>` → the `coveragePath` config key → the default
-`coverage/lcov.info`. A missing report is silently ignored; an unreadable one
-prints a warning and the scan proceeds without coverage.
+When an [lcov](https://github.com/linux-test-project/lcov) report and/or a
+[Cobertura](https://cobertura.github.io/cobertura/) `coverage.xml` report
+(Python's `coverage xml` output) is present, `scan` folds runtime coverage
+into each finding's evidence chain. necro **reads existing reports only** — it
+never runs your test suite. The two formats are independent and merge when
+both are found: lcov via `--coverage <path>` → the `coveragePath` config key →
+the default `coverage/lcov.info`; Cobertura via the `pythonCoveragePath`
+config key → the default `coverage.xml`. A missing report is silently ignored
+per format; an unreadable one prints a warning and the scan proceeds without
+that format's coverage.
 
 Each finding then shows one of three coverage states:
 
@@ -131,7 +135,7 @@ query is ambiguous or can't be resolved.
 Verify whether deleting each named symbol keeps the build green. For every
 symbol, `verify-removal` plans its removal and checks it independently in its
 own throwaway git worktree (your working tree is never touched) — the
-empirical backbone behind `fix --write --verify`.
+empirical backbone behind `fix --write`'s default verify gate.
 
 ```
 necro verify-removal <symbols...> [options]
@@ -180,12 +184,15 @@ necro fix [path] [options]
 |---|---|
 | `--write` | Apply the removals to disk. **Without it, `fix` only previews** a unified diff and changes nothing. |
 | `--force` | Bypass the dirty git-tree guard. |
+| `--no-verify` | Skip the empirical build-green gate before deleting (on by default — see **Safety model** below). |
+| `--checks <cmd>` | Check command for the verify gate (repeatable; default: `npm run typecheck`). A command containing a comma runs verbatim, not split. |
 | `--coverage <path>` | Path to an lcov report, same as `scan` — keeps tiers consistent between the two. |
 | `-h`, `--help` | Show help for `fix`. |
 
 ### Safety model
 
 - **Preview by default.** `necro fix` prints the diff of what *would* be removed and writes nothing until you add `--write`.
+- **Verify by default.** With `--write`, each removal is gated on [`verify-removal`](#necro-verify-removal)'s empirical build-green check (an isolated worktree per symbol, typecheck by default) before it's applied — a symbol whose removal breaks the build is skipped, not deleted. Pass `--no-verify` to restore unconditional deletion (faster, less safe); `--checks` overrides the default typecheck-only check set.
 - **Dirty-tree guard.** With `--write`, `fix` refuses if the git working tree has uncommitted changes (git is your undo) — commit/stash first, or pass `--force`. If the target isn't a git repo, it warns that there's no undo and proceeds.
 - **Single pass.** `fix` removes what's `certain`-dead in one scan; it does not re-analyze to chase code that becomes dead *after* a removal. Re-run `fix` to catch the next layer. Cascading re-analysis is [planned](/necro/guide/roadmap/).
 

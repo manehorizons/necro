@@ -32,8 +32,8 @@ For a dead-code finding, Necro reports:
 
 - **Static references** — how many real references the compiler found. Barrel
   re-exports are *not* counted as terminal references.
-- **Coverage** — runtime hits, when a coverage report is available. Currently
-  always `• not available` (ingestion is [planned](/necro/guide/roadmap/)).
+- **Coverage** — runtime hits, when a [lcov or Cobertura report](/necro/reference/cli/#coverage)
+  is available; `• not available` otherwise.
 - **package.json exports** — whether the symbol is part of your published
   public API. If so, external consumers are invisible and the finding is
   downgraded to `maybe`.

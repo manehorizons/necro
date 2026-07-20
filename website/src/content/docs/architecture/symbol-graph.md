@@ -5,10 +5,13 @@ sidebar:
   order: 2
 ---
 
-The symbol graph is Necro's accuracy moat. It's built with the **TypeScript
-compiler API** (via [ts-morph](https://ts-morph.com)) — not text matching — so
-it resolves references the way the compiler does: across re-exports, type-only
-imports, and barrel files.
+The symbol graph is Necro's accuracy moat. This page covers the TS/JS plane,
+built with the **TypeScript compiler API** (via [ts-morph](https://ts-morph.com))
+— not text matching — so it resolves references the way the compiler does:
+across re-exports, type-only imports, and barrel files. Python has its own
+adapter (`src/graph/python/symbol-graph.ts`, hand-rolled — no ts-morph
+equivalent exists) feeding the same downstream reachability/classification
+pipeline; see [The core invariant](/necro/architecture/#the-core-invariant).
 
 Module: `src/graph/symbol-graph.ts`. Types: `src/graph/types.ts`.
 
@@ -50,11 +53,20 @@ rules matter for accuracy:
   derives from your resolved [test-runner config](/necro/guide/framework-awareness/).
   This `prod`/`test` tagging is what powers the
   [`test-only`](/necro/guide/test-only/) verdict.
+- **Symbol→file edges**: every node also emits an edge to its own file (both
+  kinds). A module runs its whole top-level body on first import, so once
+  anything in a file is reached, that file's own module-level statements —
+  already attributed `from: file` when they aren't inside any declaration —
+  become reachable too. This is also what makes a **bare side-effect import**
+  (`import "./register.js"`, no binding) keep the imported module's executed
+  contents alive: an explicit edge from the importing file to the target file
+  is emitted for exactly this case.
 
 ## Why ts-morph, not tree-sitter
 
 tree-sitter can't resolve symbols across files — it can't follow re-exports,
 type-only imports, or barrel files. Dead code needs real semantic resolution,
 and the TS compiler API is the canonical, Microsoft-maintained engine for it.
-(tree-sitter is [planned](/necro/guide/roadmap/) for the language-agnostic
-syntactic detectors, which don't need cross-file resolution.)
+tree-sitter is used instead for the language-agnostic syntactic detectors
+(complexity, duplication), which don't need cross-file resolution — see
+[Syntactic IR](/necro/architecture/#two-irs-by-design).

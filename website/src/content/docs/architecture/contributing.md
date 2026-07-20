@@ -35,7 +35,7 @@ mocks; if something is hard to test, treat that as a design signal.
 When adding a detector or feature, keep language-specific code in the
 [symbol-graph adapter](/necro/architecture/symbol-graph/) only. Reachability,
 classification, and reporting must stay language-agnostic — that's what lets the
-same engine serve TypeScript today and Python later.
+same engine serve both TypeScript/JavaScript and Python today, and PHP next.
 
 ## How this project is planned
 

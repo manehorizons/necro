@@ -37,7 +37,9 @@ by file and line. Use `--top N` to see only the worst N.
 
 ## A note on coverage
 
-You'll see `• coverage: not available` in evidence chains. Coverage ingestion
-(lcov/c8) — which would let Necro confirm a symbol is never executed at runtime
-— is [planned](/necro/guide/roadmap/). Until then, tiers are computed from
-static signals alone.
+If you see `• coverage: not available` in an evidence chain, no
+[lcov or Cobertura report](/necro/reference/cli/#coverage) was found for that
+symbol's file/line — tiers fall back to static signals alone. Point `scan` at
+a report (`coveragePath`/`pythonCoveragePath`, or the default
+`coverage/lcov.info` / `coverage.xml`) to let Necro confirm a symbol is never
+executed at runtime, which strengthens or contradicts the static verdict.

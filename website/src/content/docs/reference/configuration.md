@@ -15,7 +15,7 @@ verbatim.
 ### `include`
 
 - **Type:** `string[]`
-- **Default:** `["**/*.ts", "**/*.tsx"]`
+- **Default:** `["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.mts", "**/*.cts"]`
 
 Globs of files to analyze.
 
@@ -25,6 +25,15 @@ Globs of files to analyze.
 - **Default:** `["**/node_modules/**", "**/dist/**"]`
 
 Globs to exclude from analysis.
+
+### `entries`
+
+- **Type:** `string[]`
+- **Default:** none
+
+Globs (relative to the scan target) declaring production entry points — the
+escape hatch for the [fail-closed entry-resolution warning](/necro/reference/cli/#necro-fix).
+Additive to the conventional/manifest-based entry resolution `scan` already does.
 
 ### `coveragePath`
 
@@ -36,6 +45,16 @@ to the scan target, or absolute). When the report exists, necro folds runtime
 coverage into each finding — see [`scan` → Coverage](/necro/reference/cli/#coverage).
 necro reads the report only; it never runs your tests. The `--coverage` flag
 overrides this key.
+
+### `pythonCoveragePath`
+
+- **Type:** `string`
+- **Default:** `"coverage.xml"`
+
+Path to a [Cobertura](https://cobertura.github.io/cobertura/) report (Python's
+`coverage xml` output; relative to the scan target, or absolute) — the Python
+counterpart to `coveragePath`. When both an lcov and a Cobertura report exist,
+they merge; each is independently optional.
 
 ### `complexity`
 
@@ -86,7 +105,9 @@ output envelope includes it.
 {
   "include": ["**/*.ts", "**/*.tsx"],
   "ignore": ["**/node_modules/**", "**/dist/**", "**/*.generated.ts"],
+  "entries": ["src/index.ts"],
   "coveragePath": "coverage/lcov.info",
+  "pythonCoveragePath": "coverage.xml",
   "complexity": { "cyclomatic": 15, "godFunctionLoc": 80 },
   "hotspots": { "top": 20 },
   "duplication": { "minTokens": 80 }
@@ -99,7 +120,7 @@ Independent of `ignore`, declaration files (`*.d.ts`) and the directories
 `node_modules`, `.git`, `dist`, `build`, and `coverage` are never analyzed.
 
 :::note[This is the full key set]
-`include`, `ignore`, `coveragePath`, `complexity`, `hotspots`, `duplication`,
-and `llm` are the configuration keys today. Entry-point override syntax is
-[planned](/necro/guide/roadmap/).
+`include`, `ignore`, `entries`, `coveragePath`, `pythonCoveragePath`,
+`complexity`, `hotspots`, `duplication`, and `llm` are the configuration keys
+today.
 :::
