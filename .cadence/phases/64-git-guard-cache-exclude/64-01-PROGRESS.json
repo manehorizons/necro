@@ -1,0 +1,23 @@
+{
+  "draftId": "64-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Exported CACHE_DIR from symbol-graph-cache.ts; workingTreeState now excludes it via `:(exclude,glob)**/.necro-cache/**` pathspec magic (handles nested cache dirs too, verified against real git manually before implementing).",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-20T02:01:44.048Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "cli-fix.test.ts: fresh git-init+commit fixture, `fix --write --no-verify` with no --force now succeeds (previously refused-dirty, confirmed red via stash before the T1 fix landed).",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-20T02:01:50.610Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "fix-git-guard.test.ts: untracked-.necro-cache-only -> clean (AC-1); .necro-cache + a genuine untracked file -> dirty (AC-2). Full suite (780 tests) + typecheck clean; lint back to the 5-error pre-existing baseline after biome auto-formatted git-guard.ts.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-20T02:01:57.228Z"
+    }
+  }
+}

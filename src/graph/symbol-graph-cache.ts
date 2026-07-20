@@ -5,7 +5,8 @@ import { VERSION } from "../version.js";
 import { buildSymbolGraph, type BuildOptions } from "./symbol-graph.js";
 import type { SymbolGraph } from "./types.js";
 
-const CACHE_DIR = ".necro-cache";
+/** The cache directory's name, written under the scan target (`defaultCachePath` below) — exported so the dirty-tree guard can exclude it as necro's own artifact, not the user's. */
+export const CACHE_DIR = ".necro-cache";
 const CACHE_FILE = "symbol-graph.json";
 
 /**

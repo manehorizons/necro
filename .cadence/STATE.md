@@ -4,7 +4,7 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 63-fix-verify-by-default
+**Active phase:** 64-git-guard-cache-exclude
 **Active draft:** (none)
 **Tier:** (n/a)
 

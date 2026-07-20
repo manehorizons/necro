@@ -90,6 +90,19 @@ describe("necro fix --checks (verify runs by default, phase 63)", () => {
   });
 });
 
+describe("necro fix --no-verify on a freshly committed repo (AC-3, phase 64)", () => {
+  test("AC-3: --write --no-verify no longer needs --force just because the scan wrote .necro-cache/", async () => {
+    // No prior scan has run in this fixture — the first thing `fix` does is
+    // scan, writing .necro-cache/ (phase 58). Before phase 64, the
+    // dirty-tree guard saw that as an uncommitted change and refused; now it
+    // ignores necro's own cache artifact.
+    const { code } = await run(["fix", ".", "--write", "--no-verify"], dir);
+    expect(code).toBe(0);
+    const util = await readFile(join(dir, "src/util.ts"), "utf8");
+    expect(util).not.toContain("deadFn");
+  });
+});
+
 describe("necro fix verify-by-default (AC-1, AC-2, phase 63)", () => {
   test("AC-1: --write with no flags verifies first and skips a build-breaking removal", async () => {
     // No tsconfig/typecheck script in the fixture — the default `npm run
