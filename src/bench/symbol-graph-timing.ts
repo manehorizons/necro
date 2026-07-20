@@ -1,8 +1,8 @@
 import { pathToFileURL } from "node:url";
 import { DEFAULT_CONFIG, type NecroConfig } from "../config.js";
 import { discoverFiles } from "../discover.js";
-import { buildSymbolGraphCached } from "../graph/symbol-graph-cache.js";
 import { buildSymbolGraph } from "../graph/symbol-graph.js";
+import { buildSymbolGraphCached } from "../graph/symbol-graph-cache.js";
 
 /**
  * Repo-internal measurement tool (Phase 57, evidence for rec-20260701-016),
@@ -81,12 +81,16 @@ async function main(): Promise<void> {
     : DEFAULT_CONFIG;
 
   if (args.twice) {
-    const run1 = await measureSymbolGraphTiming(args.repo, config, { cached: true });
+    const run1 = await measureSymbolGraphTiming(args.repo, config, {
+      cached: true,
+    });
     console.log(
       `${args.repo} [run 1, cache miss expected]: ${run1.fileCount} files, ${run1.declCount} decls, ${run1.edgeCount} edges — ` +
         `discover ${run1.discoverMs.toFixed(0)}ms, build ${run1.buildMs.toFixed(0)}ms`,
     );
-    const run2 = await measureSymbolGraphTiming(args.repo, config, { cached: true });
+    const run2 = await measureSymbolGraphTiming(args.repo, config, {
+      cached: true,
+    });
     console.log(
       `${args.repo} [run 2, cache hit expected]: ${run2.fileCount} files, ${run2.declCount} decls, ${run2.edgeCount} edges — ` +
         `discover ${run2.discoverMs.toFixed(0)}ms, build ${run2.buildMs.toFixed(0)}ms`,

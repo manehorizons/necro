@@ -14,7 +14,10 @@ export type CoverageStatus =
  * falling back to the `DA` hit count at the declaration line. A file or symbol
  * with no record is `unavailable` — it never blocks a verdict (AC-4).
  */
-export function coverageFor(report: LcovReport, node: SymbolNode): CoverageStatus {
+export function coverageFor(
+  report: LcovReport,
+  node: SymbolNode,
+): CoverageStatus {
   const cov = findFileCoverage(report, node.file);
   if (!cov) return { kind: "unavailable" };
 
@@ -26,7 +29,10 @@ export function coverageFor(report: LcovReport, node: SymbolNode): CoverageStatu
 }
 
 /** Find a file's coverage in a report, tolerant of absolute vs. relative `SF:` paths. */
-export function findFileCoverage(report: LcovReport, file: string): LcovFileCoverage | undefined {
+export function findFileCoverage(
+  report: LcovReport,
+  file: string,
+): LcovFileCoverage | undefined {
   const direct = report.files.get(file);
   if (direct) return direct;
   const target = norm(file);

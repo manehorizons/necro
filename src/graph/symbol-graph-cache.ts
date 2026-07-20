@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 import { VERSION } from "../version.js";
-import { buildSymbolGraph, type BuildOptions } from "./symbol-graph.js";
+import { type BuildOptions, buildSymbolGraph } from "./symbol-graph.js";
 import type { SymbolGraph } from "./types.js";
 
 /** The cache directory's name, written under the scan target (`defaultCachePath` below) — exported so the dirty-tree guard can exclude it as necro's own artifact, not the user's. */

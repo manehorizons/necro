@@ -41,7 +41,7 @@ export function parseLcov(raw: string): LcovReport {
 
   for (const line of raw.split("\n")) {
     const trimmed = line.trim();
-    if (trimmed === "" ) continue;
+    if (trimmed === "") continue;
     const sep = trimmed.indexOf(":");
     if (sep === -1) {
       if (trimmed === "end_of_record") flush();
