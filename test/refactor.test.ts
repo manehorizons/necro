@@ -150,4 +150,55 @@ describe("runRefactor (AC-1, AC-4)", () => {
     expect(res.outcomes[0]?.failure).toMatch(/unparseable/);
     expect(res.outcomes[0]?.badge).toBeNull();
   });
+
+  describe("Python + default checks (rec-20260719-006)", () => {
+    let pyFile: string;
+    let checksSeen: string[];
+    const recordingRunner = (): VerifyRunner => ({
+      createWorktree: async () => "/wt",
+      writeEdit: async () => {},
+      runCheck: async (_wt, command) => {
+        checksSeen.push(command);
+        return { ok: true, output: "" };
+      },
+      removeWorktree: async () => {},
+    });
+
+    beforeEach(async () => {
+      pyFile = join(dir, "svc.py");
+      await writeFile(pyFile, "def big():\n    return 1\n");
+      checksSeen = [];
+    });
+
+    test("a Python finding under default checks is skipped, never runs npm checks (AC-1)", async () => {
+      const res = await runRefactor([finding(pyFile, "big")], DEFAULT_LLM, okClient(), {
+        verifyRunner: recordingRunner(),
+        repoRoot: dir,
+      });
+      expect(res.outcomes[0]?.badge).toEqual({
+        status: "skipped",
+        reason: expect.stringContaining("Python"),
+      });
+      expect(checksSeen).toEqual([]);
+    });
+
+    test("a TypeScript finding under default checks is unaffected (AC-2)", async () => {
+      const res = await runRefactor([finding(file, "big")], DEFAULT_LLM, okClient(), {
+        verifyRunner: recordingRunner(),
+        repoRoot: dir,
+      });
+      expect(res.outcomes[0]?.badge?.status).toBe("green");
+      expect(checksSeen.length).toBeGreaterThan(0);
+    });
+
+    test("an explicit --checks override against Python still runs (AC-4)", async () => {
+      const res = await runRefactor([finding(pyFile, "big")], DEFAULT_LLM, okClient(), {
+        verifyRunner: recordingRunner(),
+        repoRoot: dir,
+        checks: ["pytest"],
+      });
+      expect(res.outcomes[0]?.badge?.status).toBe("green");
+      expect(checksSeen).toEqual(["pytest"]);
+    });
+  });
 });

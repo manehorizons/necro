@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { relative } from "node:path";
 import type { LlmOptions } from "../config.js";
+import { isPythonFile } from "../graph/python/language.js";
 import type {
   ComplexityFinding,
   DuplicationFinding,
@@ -28,6 +29,13 @@ import {
 
 /** The default checks run against a proposal in the scratch worktree. */
 export const DEFAULT_CHECKS = ["npm run typecheck", "npx vitest run"];
+
+/** `DEFAULT_CHECKS` are npm-based and don't apply to Python — verifying a
+ * Python edit against them is guaranteed to fail for reasons unrelated to the
+ * proposal. Skipped (not run) whenever the caller left `checks` unset; an
+ * explicit `--checks` override is trusted as-is, even against Python. */
+const PYTHON_DEFAULT_CHECKS_SKIP_REASON =
+  "default checks are npm-based (typecheck+tests) and don't apply to Python — pass --checks explicitly (e.g. pytest) to verify";
 
 /** One god-function finding and the model's suggested split. The original
  * `finding` is carried unchanged — refactor never mutates it. */
@@ -84,6 +92,7 @@ export async function runRefactor(
   }
 
   const checks = opts.checks ?? DEFAULT_CHECKS;
+  const usingDefaultChecks = opts.checks === undefined;
   const repoRoot = opts.repoRoot ?? process.cwd();
   const outcomes: RefactorOutcome[] = [];
   for (const finding of selected) {
@@ -110,13 +119,18 @@ export async function runRefactor(
     );
     const diff = await computeUnifiedDiff(original, newContent);
 
-    const badge = opts.verifyRunner
-      ? await verifyProposal(
-          { file: relative(repoRoot, finding.file), content: newContent },
-          checks,
-          opts.verifyRunner,
-        )
-      : null;
+    const badge = !opts.verifyRunner
+      ? null
+      : usingDefaultChecks && isPythonFile(finding.file)
+        ? {
+            status: "skipped" as const,
+            reason: PYTHON_DEFAULT_CHECKS_SKIP_REASON,
+          }
+        : await verifyProposal(
+            { file: relative(repoRoot, finding.file), content: newContent },
+            checks,
+            opts.verifyRunner,
+          );
 
     outcomes.push({
       finding,
@@ -186,6 +200,7 @@ export async function runExtractDuplicate(
   }
 
   const checks = opts.checks ?? DEFAULT_CHECKS;
+  const usingDefaultChecks = opts.checks === undefined;
   const repoRoot = opts.repoRoot ?? process.cwd();
   const outcomes: ExtractDuplicateOutcome[] = [];
 
@@ -227,16 +242,22 @@ export async function runExtractDuplicate(
       continue;
     }
 
-    const badge = opts.verifyRunner
-      ? await verifyEdits(
-          files.map((f) => ({
-            file: relative(repoRoot, f.file),
-            content: f.newContent,
-          })),
-          checks,
-          opts.verifyRunner,
-        )
-      : null;
+    const badge = !opts.verifyRunner
+      ? null
+      : usingDefaultChecks &&
+          finding.locations.some((l) => isPythonFile(l.file))
+        ? {
+            status: "skipped" as const,
+            reason: PYTHON_DEFAULT_CHECKS_SKIP_REASON,
+          }
+        : await verifyEdits(
+            files.map((f) => ({
+              file: relative(repoRoot, f.file),
+              content: f.newContent,
+            })),
+            checks,
+            opts.verifyRunner,
+          );
 
     outcomes.push({
       finding,

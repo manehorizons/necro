@@ -14,6 +14,8 @@ function badgeLabel(badge: VerifyBadge | null): string {
       return "✓ verified — typecheck + tests pass";
     case "red":
       return "✗ verification failed — review before applying";
+    case "skipped":
+      return `⚠ verification skipped — ${badge.reason}`;
   }
 }
 

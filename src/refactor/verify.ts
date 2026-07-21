@@ -14,10 +14,18 @@ export interface FileEdit {
   content: string;
 }
 
-/** The outcome of verifying an edit in a throwaway worktree. */
+/** The outcome of verifying an edit in a throwaway worktree. `skipped` is
+ * never produced here — it's constructed by the caller when it deliberately
+ * withholds verification (e.g. default checks don't apply to the language). */
 export type VerifyBadge =
   | { status: "green" }
-  | { status: "red"; output: string };
+  | { status: "red"; output: string }
+  | { status: "skipped"; reason: string };
+
+/** What {@link verifyProposal}/{@link verifyEdits} actually return — they always
+ * run the checks, so never produce `skipped` (only a caller that withholds
+ * verification entirely constructs that variant). */
+export type RanVerifyBadge = Exclude<VerifyBadge, { status: "skipped" }>;
 
 /** The side-effecting steps of verification — injected so the orchestration is
  * testable with no real git or test run. */
@@ -46,7 +54,7 @@ export async function verifyProposal(
   edit: FileEdit,
   checks: string[],
   runner: VerifyRunner,
-): Promise<VerifyBadge> {
+): Promise<RanVerifyBadge> {
   return verifyEdits([edit], checks, runner);
 }
 
@@ -62,7 +70,7 @@ export async function verifyEdits(
   edits: FileEdit[],
   checks: string[],
   runner: VerifyRunner,
-): Promise<VerifyBadge> {
+): Promise<RanVerifyBadge> {
   const worktree = await runner.createWorktree();
   try {
     for (const edit of edits) await runner.writeEdit(worktree, edit);

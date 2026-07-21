@@ -4,7 +4,7 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 65-dynamic-dispatch-taint-floor
+**Active phase:** 66-refactor-verify-python-refusal
 **Active draft:** (none)
 **Tier:** (n/a)
 

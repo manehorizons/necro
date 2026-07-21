@@ -149,4 +149,73 @@ describe("runExtractDuplicate (AC-1, AC-4)", () => {
     expect(res.outcomes[0]?.failure).toMatch(/overlapping/);
     expect(res.outcomes[0]?.proposal).not.toBeNull(); // we got a proposal, splice failed
   });
+
+  describe("Python + default checks (rec-20260719-006)", () => {
+    let c: string;
+    let checksSeen: string[];
+    const recordingRunner = (): VerifyRunner => ({
+      createWorktree: async () => "/wt",
+      writeEdit: async () => {},
+      runCheck: async (_wt, command) => {
+        checksSeen.push(command);
+        return { ok: true, output: "" };
+      },
+      removeWorktree: async () => {},
+    });
+
+    const proposalWithPython = (): DuplicateProposal => ({
+      summary: "extract loadId",
+      sharedFunction: "export function loadId(key) {\n  const r = db.query(key);\n  return r.id;\n}",
+      sharedFunctionFile: a,
+      edits: [
+        { file: a, startLine: 3, endLine: 4, replacement: "  return loadId('a');" },
+        { file: c, startLine: 2, endLine: 2, replacement: "    return loadId('c')" },
+      ],
+      rationale: "shared the query",
+    });
+
+    const findingWithPython = (): DuplicationFinding => ({
+      tokens: 30,
+      locations: [
+        { file: a, startLine: 3, endLine: 4 },
+        { file: c, startLine: 2, endLine: 2 },
+      ],
+    });
+
+    beforeEach(async () => {
+      c = join(dir, "c.py");
+      await writeFile(c, "def load_c():\n    return db.query('c').id\n");
+      checksSeen = [];
+    });
+
+    test("a clone group touching a Python location under default checks is skipped (AC-3)", async () => {
+      const client: RefactorClient = {
+        propose: vi.fn(async () => ({ ok: false as const, reason: "n/a" })),
+        proposeDuplicate: vi.fn(async () => ({ ok: true as const, proposal: proposalWithPython() })),
+      };
+      const res = await runExtractDuplicate([findingWithPython()], DEFAULT_LLM, client, {
+        verifyRunner: recordingRunner(),
+        repoRoot: dir,
+      });
+      expect(res.outcomes[0]?.badge).toEqual({
+        status: "skipped",
+        reason: expect.stringContaining("Python"),
+      });
+      expect(checksSeen).toEqual([]);
+    });
+
+    test("an explicit --checks override with a Python location still runs (AC-4)", async () => {
+      const client: RefactorClient = {
+        propose: vi.fn(async () => ({ ok: false as const, reason: "n/a" })),
+        proposeDuplicate: vi.fn(async () => ({ ok: true as const, proposal: proposalWithPython() })),
+      };
+      const res = await runExtractDuplicate([findingWithPython()], DEFAULT_LLM, client, {
+        verifyRunner: recordingRunner(),
+        repoRoot: dir,
+        checks: ["pytest"],
+      });
+      expect(res.outcomes[0]?.badge?.status).toBe("green");
+      expect(checksSeen).toEqual(["pytest"]);
+    });
+  });
 });

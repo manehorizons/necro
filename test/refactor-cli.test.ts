@@ -63,6 +63,19 @@ describe("renderRefactor (AC-4)", () => {
     expect(out).not.toMatch(/✓ verified/);
   });
 
+  test("shows the skip reason for a skipped verification, not blank (AC-5)", () => {
+    const out = renderRefactor(
+      result([
+        outcome({
+          badge: { status: "skipped", reason: "default checks don't apply to Python" },
+        }),
+      ]),
+    );
+    expect(out).toMatch(/skipped/i);
+    expect(out).toContain("default checks don't apply to Python");
+    expect(out).not.toMatch(/✓ verified/);
+  });
+
   test("surfaces the failure reason when the model response couldn't be parsed (AC-4)", () => {
     const out = renderRefactor(
       result([outcome({ proposal: null, diff: null, badge: null, failure: "unparseable response" })]),

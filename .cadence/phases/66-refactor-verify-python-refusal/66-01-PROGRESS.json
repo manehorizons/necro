@@ -1,0 +1,23 @@
+{
+  "draftId": "66-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "Added VerifyBadge's third `skipped` status + RanVerifyBadge (Exclude<VerifyBadge,{status:\"skipped\"}>) so verifyProposal/verifyEdits' return type stays accurately green|red only.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-21T03:08:17.689Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "runRefactor + runExtractDuplicate now skip verification (badge={status:\"skipped\",reason}) when checks fall back to DEFAULT_CHECKS and the finding/any location touches a .py file; explicit --checks override still runs as given. AC-1..AC-4 tests added and passing.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-21T03:08:22.478Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "badgeLabel renders \"⚠ verification skipped — <reason>\" for the new status. AC-5 test added in refactor-cli.test.ts and passing.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-21T03:08:26.924Z"
+    }
+  }
+}
