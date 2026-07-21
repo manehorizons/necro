@@ -1,0 +1,230 @@
+[
+  {
+    "file": "benchmarks/fetch/summarize.mts",
+    "line": 10,
+    "name": "lines",
+    "source": "const lines: Line[] = readFileSync(file, 'utf8')\n  .trim()\n  .split('\\n')\n  .map((l) => JSON.parse(l))",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "genuinely-risky",
+    "reasoning": "reads a file whose absence would throw; removal changes error behavior (I/O with an externally observable effect)"
+  },
+  {
+    "file": "benchmarks/fetch/summarize.mts",
+    "line": 16,
+    "name": "byCase",
+    "source": "const byCase = new Map<string, Map<string, number[]>>()",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "Map allocation only, no external effect"
+  },
+  {
+    "file": "benchmarks/http-server/benchmark.ts",
+    "line": 25,
+    "name": "runs",
+    "source": "const runs = parseInt(process.argv.find((arg) => arg.startsWith('--runs='))?.split('=')[1] || '1')",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "pure parseInt over process.argv, no mutation"
+  },
+  {
+    "file": "benchmarks/http-server/benchmark.ts",
+    "line": 30,
+    "name": "skipTests",
+    "source": "const skipTests = process.argv.includes('--skip-tests')",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "pure Array.includes check, no mutation"
+  },
+  {
+    "file": "benchmarks/http-server/benchmark.ts",
+    "line": 33,
+    "name": "TEMP_DIR",
+    "source": "const TEMP_DIR = join(SCRIPT_DIR, '.benchmark-temp')",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "pure path.join string computation"
+  },
+  {
+    "file": "benchmarks/jsx/src/benchmark.ts",
+    "line": 9,
+    "name": "suite",
+    "source": "const suite = new Suite()\n\n;",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "benchmark Suite() constructor allocates only, no global registration until .add()/.run() are called on it"
+  },
+  {
+    "file": "benchmarks/routers-deno/src/find-my-way.mts",
+    "line": 7,
+    "name": "router",
+    "source": "const router = findMyWay()",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "find-my-way factory allocates a router instance; nothing registers it anywhere else"
+  },
+  {
+    "file": "benchmarks/routers-deno/src/koa-router.mts",
+    "line": 6,
+    "name": "router",
+    "source": "const router = new KoaRouter()",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "router instance construction only, no side effect until mounted"
+  },
+  {
+    "file": "benchmarks/routers/src/express.mts",
+    "line": 5,
+    "name": "router",
+    "source": "const router = express.Router()",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "express.Router() factory call allocates a router object only"
+  },
+  {
+    "file": "benchmarks/routers/src/bench-includes-init.mts",
+    "line": 17,
+    "name": "preparedParams",
+    "source": "const preparedParams = buildInitParams({\n  paths: routes.map((r) => r.path),\n})",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "pure data-prep call building an array of params, no external effect"
+  },
+  {
+    "file": "benchmarks/fetch/summarize.mts",
+    "line": 27,
+    "name": "median",
+    "source": "const median = (xs: number[]): number => {\n  const s = [...xs].sort((a, b) => a - b)\n  const mid = Math.floor(s.length / 2)\n  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2\n}",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "arrow function definition, never invoked if unreferenced"
+  },
+  {
+    "file": "benchmarks/http-server/benchmark.ts",
+    "line": 29,
+    "name": "concurrency",
+    "source": "const concurrency = 500",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "numeric literal, no initializer call at all"
+  },
+  {
+    "file": "benchmarks/http-server/benchmark.ts",
+    "line": 54,
+    "name": "sleep",
+    "source": "const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))",
+    "provenance": {
+      "repo": "honojs/hono",
+      "sha": "cadff88bba34153646c9b35f24d7cc0cb61be913"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "arrow function definition (Promise/setTimeout only run if the function is later called)"
+  },
+  {
+    "file": "examples/.test/diagnostics-big-router/scripts/codegen.ts",
+    "line": 15,
+    "name": "codegenBase",
+    "source": "const codegenBase = fs.readFileSync(__dirname + '/codegen-base.ts', 'utf-8');",
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b"
+    },
+    "truth": "genuinely-risky",
+    "reasoning": "fs.readFileSync at module init; absence of the file changes error behavior on removal"
+  },
+  {
+    "file": "packages/tests/server/adapters/standalone.http2.test.ts",
+    "line": 22,
+    "name": "cert",
+    "source": "const cert = run(() => {\n  const nonce = () => Math.random().toString(36).substring(2, 15);\n  const name = `${__dirname}/localhost-${nonce()}`;\n\n  // cross platform\n  const args = [\n    'req',\n    '-x509',\n    '-newkey',\n    'rsa:4096',\n    '-keyout',\n    `${name}.key`,\n    '-out',\n    `${name}.crt`,\n    '-days',\n    '365',\n    '-nodes',\n    '-subj',\n    '/CN=localhost',\n    '-addext',\n    'subjectAltName=DNS:localhost,IP:127.0.0.1',\n  ];\n\n  // Execute with proper argument handling\n  childProcess.execFileSync('openssl', args, {\n    stdio: 'ignore',\n    windowsHide: true,\n  });\n\n  const key = fs.readFileSync(`${name}.key`);\n  const cert = fs.readFileSync(`${name}.crt`);\n\n  fs.unlinkSync(`${name}.key`);\n  fs.unlinkSync(`${name}.crt`);\n\n  return {\n    key,\n    cert,\n  };\n});",
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b"
+    },
+    "truth": "genuinely-risky",
+    "reasoning": "spawns openssl and writes real .key/.crt files to disk \u2014 durable filesystem side effect"
+  },
+  {
+    "file": "examples/next-prisma-starter/prisma/seed.ts",
+    "line": 8,
+    "name": "prisma",
+    "source": "const prisma = new PrismaClient();",
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "PrismaClient() construction is lazy \u2014 no connection or query happens until a method is called on it"
+  },
+  {
+    "file": "examples/nuxt/server/trpc/init.ts",
+    "line": 12,
+    "name": "t",
+    "source": "const t = initTRPC.create();",
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "initTRPC.create() builds a builder object; no side effect until procedures are defined and mounted"
+  },
+  {
+    "file": "packages/tests/server/abortQuery.test.ts",
+    "line": 6,
+    "name": "router",
+    "source": "const router = t.router({\n  testQuery: t.procedure.query(async () => {\n    return 'hello';\n  }),\n  testMutation: t.procedure.mutation(async () => {\n    return 'hello';\n  }),\n});",
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "t.router() builds a router definition object; no global registration happens at construction"
+  },
+  {
+    "file": "packages/tests/server/inferenceHelpers.test.ts",
+    "line": 19,
+    "name": "appRouter",
+    "source": "const appRouter = t.router({\n  getRoom: roomProcedure.query(({ input }) => {\n    return {\n      id: input.roomId,\n      name: 'This is my room',\n      type: 'Best Room',\n    };\n  }),\n  sendMessage: roomProcedure\n    .input(\n      z.object({\n        text: z.string(),\n        optionalKey: z.string().min(1).optional(),\n      }),\n    )\n    .mutation(({ input }) => {\n      if (input.optionalKey) {\n        return { ...input, testField: 'heyo' };\n      }\n      return input;\n    }),\n  sendMessage2: roomProcedure\n    .input(\n      z.object({\n        text: z.string(),\n      }),\n    )\n    .mutation(({ input }) => {\n      //         ^?\n      input.roomId;\n      input.text;\n      return input;\n    }),\n  subscriptionWithObservable: roomProcedure.subscription(({ input }) => {\n    return observable<{ roomId: string }>((emit) => {\n      emit.next({\n        roomId: input.roomId,\n      });\n      emit.complete();\n    });\n  }),\n  subscriptionWithIterable: roomProcedure.subscription(async function* ({\n    input,\n  }) {\n    yield {\n      roomId: input.roomId,\n      text: 'hello',\n    };\n  }),\n});",
+    "provenance": {
+      "repo": "trpc/trpc",
+      "sha": "c7360d4eb3c89c336468809a293e5cda4b302d4b"
+    },
+    "truth": "safe-to-remove",
+    "reasoning": "t.router() builds a router definition object; no global registration happens at construction"
+  }
+]

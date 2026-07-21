@@ -4,13 +4,13 @@
 
 **Project:** necro
 **Loop position:** IDLE
-**Active phase:** 66-refactor-verify-python-refusal
+**Active phase:** 67-side-effect-initializer-evidence
 **Active draft:** (none)
 **Tier:** (n/a)
 
 ## Telemetry
 - Token utilization: 100%
-- Subagent spawns this session: 148
+- Subagent spawns this session: 151
 - Last handoff: SESSION-2026-07-21.md
 
 ## Counts
