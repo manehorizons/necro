@@ -1,0 +1,31 @@
+{
+  "draftId": "68-01",
+  "tasks": {
+    "T1": {
+      "status": "DONE",
+      "notes": "src/analyze/initializer-effect.ts implemented; test/initializer-effect.test.ts: 9 synthetic edge cases + full phase-67 corpus rescored at TP=3 FP=0 TN=16 FN=0 (precision 1.0, recall 3/3).",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-21T23:04:57.522Z"
+    },
+    "T2": {
+      "status": "DONE",
+      "notes": "classify.ts: initializerEffect resolver threaded into ClassifyInput/deadTier/deadEvidence, demotes certain→likely on 'effectful', evidence line added. engine/index.ts wires createInitializerEffectResolver() alongside coverage. 5 new classify.test.ts cases cover demotion, no-demotion, absent-resolver back-compat, taint/export precedence.",
+      "touchedFiles": [
+        "/home/thomas/projects/necro/test/classify.test.ts"
+      ],
+      "updatedAt": "2026-07-21T23:05:24.501Z"
+    },
+    "T3": {
+      "status": "DONE",
+      "notes": "Re-scored against the full phase-67 corpus (19 cases, reused as-is) via test/initializer-effect.test.ts: TP=3 FP=0 TN=16 FN=0 — precision 1.0 vs. the naive screen's 0.19 baseline (TP=3 FP=13 TN=3 FN=0). Recorded as new evidence on rec-20260719-008.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-21T23:05:29.377Z"
+    },
+    "T4": {
+      "status": "DONE",
+      "notes": "npm test: 804 passed, 6 skipped, 0 failed. npm run typecheck: clean. npm run lint: clean (biome auto-fixed import order + 2 formatting lines in initializer-effect.ts). All 4 ACs verified.",
+      "touchedFiles": [],
+      "updatedAt": "2026-07-21T23:06:52.922Z"
+    }
+  }
+}

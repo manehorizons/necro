@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "draftId": "68-01",
+  "completedAt": "2026-07-21T23:06:55.881Z",
+  "acResults": [],
+  "gates": [
+    {
+      "gate": "draft-read",
+      "status": "ran"
+    },
+    {
+      "gate": "structural-verifier",
+      "status": "ran"
+    },
+    {
+      "gate": "boundary-scan",
+      "status": "skipped",
+      "skipReason": "boundaryEnforcement is not \"block\""
+    },
+    {
+      "gate": "build-test-must-pass",
+      "status": "skipped",
+      "skipReason": "no test command configured — build-test-must-pass cannot verify your tests ran; this settle will NOT confirm the suite passes. Set verification.testCommand in .cadence/config.json to enable real enforcement."
+    },
+    {
+      "gate": "test-coverage",
+      "status": "ran"
+    },
+    {
+      "gate": "interactive-verdict",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "deep-verify",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "code-review",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    },
+    {
+      "gate": "security-audit",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "DONE",
+      "notes": "src/analyze/initializer-effect.ts implemented; test/initializer-effect.test.ts: 9 synthetic edge cases + full phase-67 corpus rescored at TP=3 FP=0 TN=16 FN=0 (precision 1.0, recall 3/3)."
+    },
+    {
+      "id": "T2",
+      "status": "DONE",
+      "notes": "classify.ts: initializerEffect resolver threaded into ClassifyInput/deadTier/deadEvidence, demotes certain→likely on 'effectful', evidence line added. engine/index.ts wires createInitializerEffectResolver() alongside coverage. 5 new classify.test.ts cases cover demotion, no-demotion, absent-resolver back-compat, taint/export precedence."
+    },
+    {
+      "id": "T3",
+      "status": "DONE",
+      "notes": "Re-scored against the full phase-67 corpus (19 cases, reused as-is) via test/initializer-effect.test.ts: TP=3 FP=0 TN=16 FN=0 — precision 1.0 vs. the naive screen's 0.19 baseline (TP=3 FP=13 TN=3 FN=0). Recorded as new evidence on rec-20260719-008."
+    },
+    {
+      "id": "T4",
+      "status": "DONE",
+      "notes": "npm test: 804 passed, 6 skipped, 0 failed. npm run typecheck: clean. npm run lint: clean (biome auto-fixed import order + 2 formatting lines in initializer-effect.ts). All 4 ACs verified."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": [
+      "superpowers:test-driven-development",
+      "handoff",
+      "superpowers:brainstorming",
+      "superpowers:writing-plans",
+      "cadence-scout"
+    ]
+  }
+}

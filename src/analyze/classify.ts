@@ -1,6 +1,7 @@
 import { isPythonFile } from "../graph/python/language.js";
 import type { SymbolNode } from "../graph/types.js";
 import type { CoverageStatus } from "./coverage/lookup.js";
+import type { InitializerEffect } from "./initializer-effect.js";
 import type { ReachabilityResult } from "./reachability.js";
 
 /** Confidence tier for a dead-code finding (§5). */
@@ -39,6 +40,12 @@ export interface ClassifyInput {
    */
   coverage?: (node: SymbolNode) => CoverageStatus;
   /**
+   * Optional per-symbol initializer-effect resolver (phase 68). When absent,
+   * every finding is treated as `unknown` and tiers are unaffected — identical
+   * to before this resolver existed.
+   */
+  initializerEffect?: (node: SymbolNode) => InitializerEffect;
+  /**
    * Zero production entry points resolved on a non-empty graph (§2.1) —
    * reachability is unseeded, so every `dead` finding is demoted to `maybe`,
    * never auto-fix eligible, with a truthful evidence signal prepended.
@@ -60,6 +67,8 @@ export function classify(input: ClassifyInput): ClassifiedFinding[] {
   const publicApiIds = input.publicApiIds ?? new Set<string>();
   const coverageOf = (node: SymbolNode): CoverageStatus =>
     input.coverage ? input.coverage(node) : { kind: "unavailable" };
+  const initializerEffectOf = (node: SymbolNode): InitializerEffect =>
+    input.initializerEffect ? input.initializerEffect(node) : "unknown";
   const nodeById = new Map(input.nodes.map((n) => [n.id, n]));
   const findings: ClassifiedFinding[] = [];
 
@@ -79,6 +88,7 @@ export function classify(input: ClassifyInput): ClassifiedFinding[] {
     }
 
     const cov = coverageOf(node);
+    const effect = initializerEffectOf(node);
     const isPublicApi = publicApiIds.has(node.id);
     const collapse = input.entryCollapse ?? false;
     // Python dead-code findings are hard-capped at `likely` (AC-6, phase 45):
@@ -86,10 +96,10 @@ export function classify(input: ClassifyInput): ClassifiedFinding[] {
     // (Phase D), so a Python symbol never earns `certain`/auto-fix eligible.
     const rawTier = collapse
       ? "maybe"
-      : deadTier(node, result, isPublicApi, cov);
+      : deadTier(node, result, isPublicApi, cov, effect);
     const tier =
       rawTier === "certain" && isPythonFile(node.file) ? "likely" : rawTier;
-    const evidence = deadEvidence(node, result, isPublicApi, cov);
+    const evidence = deadEvidence(node, result, isPublicApi, cov, effect);
     findings.push({
       node,
       verdict: "dead",
@@ -151,6 +161,7 @@ function deadEvidence(
   result: ReachabilityResult,
   isPublicApi: boolean,
   cov: CoverageStatus,
+  effect: InitializerEffect,
 ): EvidenceSignal[] {
   return [
     { ok: true, text: "0 static references (TS compiler)" },
@@ -167,7 +178,22 @@ function deadEvidence(
           text: "dynamic-import taint in scope — target unresolvable",
         }
       : { ok: true, text: "no dynamic-import taint in scope" },
+    initializerEffectSignal(effect),
   ];
+}
+
+function initializerEffectSignal(effect: InitializerEffect): EvidenceSignal {
+  switch (effect) {
+    case "effectful":
+      return {
+        ok: false,
+        text: "initializer calls a known I/O API (fs/child_process) — may have side effects",
+      };
+    case "pure":
+      return { ok: true, text: "initializer has no known side effects" };
+    case "unknown":
+      return { ok: null, text: "initializer side effects: not checked" };
+  }
 }
 
 function testOnlyEvidence(cov: CoverageStatus): EvidenceSignal[] {
@@ -183,10 +209,14 @@ function deadTier(
   result: ReachabilityResult,
   isPublicApi: boolean,
   cov: CoverageStatus,
+  effect: InitializerEffect,
 ): Tier {
   // Runtime execution despite 0 static refs = dynamic reach → never `certain`.
   if (cov.kind === "hit") return "maybe";
   if (result.tainted || isPublicApi) return "maybe";
   if (node.exported) return "likely";
+  // An initializer with observable I/O changes program behavior on removal —
+  // demote from `certain` (auto-fix eligible) to `likely` (phase 68).
+  if (effect === "effectful") return "likely";
   return "certain";
 }

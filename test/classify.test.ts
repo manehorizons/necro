@@ -210,3 +210,60 @@ describe("classify — Python tier cap (AC-6, phase 45)", () => {
     expect(f?.autoFixEligible).toBe(false);
   });
 });
+
+describe("classify — initializerEffect demotion (phase 68)", () => {
+  test("effectful initializer demotes a private dead symbol from certain to likely", () => {
+    const [f] = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead")],
+      initializerEffect: () => "effectful",
+    });
+    expect(f?.tier).toBe("likely");
+    expect(f?.autoFixEligible).toBe(false);
+    expect(f?.evidence.some((e) => e.text.includes("known I/O API"))).toBe(
+      true,
+    );
+  });
+
+  test("pure initializer leaves a private dead symbol at certain", () => {
+    const [f] = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead")],
+      initializerEffect: () => "pure",
+    });
+    expect(f?.tier).toBe("certain");
+    expect(f?.autoFixEligible).toBe(true);
+  });
+
+  test("absent resolver behaves exactly as before (unknown, tier unaffected)", () => {
+    const [f] = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead")],
+    });
+    expect(f?.tier).toBe("certain");
+    expect(f?.autoFixEligible).toBe(true);
+    expect(
+      f?.evidence.some((e) => e.text === "initializer side effects: not checked"),
+    ).toBe(true);
+  });
+
+  test("an already-tainted symbol stays maybe regardless of initializer effect", () => {
+    const [f] = classify({
+      nodes: [node("a", false)],
+      reachability: [reach("a", "dead", true)],
+      initializerEffect: () => "effectful",
+    });
+    expect(f?.tier).toBe("maybe");
+    expect(f?.autoFixEligible).toBe(false);
+  });
+
+  test("an exported symbol is already likely — effectful initializer doesn't change that", () => {
+    const [f] = classify({
+      nodes: [node("a", true)],
+      reachability: [reach("a", "dead")],
+      initializerEffect: () => "effectful",
+    });
+    expect(f?.tier).toBe("likely");
+    expect(f?.autoFixEligible).toBe(false);
+  });
+});

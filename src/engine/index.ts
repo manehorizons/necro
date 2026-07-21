@@ -3,6 +3,7 @@ import type { LcovReport } from "../analyze/coverage/lcov.js";
 import { loadCoverage } from "../analyze/coverage/load.js";
 import { coverageFor } from "../analyze/coverage/lookup.js";
 import type { HotspotEntry } from "../analyze/hotspots.js";
+import { createInitializerEffectResolver } from "../analyze/initializer-effect.js";
 import type { NecroConfig } from "../config.js";
 import type { SymbolNode } from "../graph/types.js";
 import { sortWorstFirst } from "../report/sort.js";
@@ -68,12 +69,14 @@ export async function scan(
   const coverage = coverageReport
     ? (node: SymbolNode) => coverageFor(coverageReport, node)
     : undefined;
+  const initializerEffect = createInitializerEffectResolver();
 
   const findings = sortWorstFirst(
     classify({
       nodes: graph.nodes,
       reachability,
       coverage,
+      initializerEffect,
       entryCollapse: model.entryResolution.collapsed,
       publicApiIds: model.publicApiIds,
     }),
