@@ -4,6 +4,28 @@ All notable changes to `@manehorizons/necro` are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] — 2026-07-21
+
+### Added
+- **Import-resolved initializer side-effect screen.** A `certain`-tier dead
+  symbol whose initializer calls a known `node:fs`/`node:child_process` I/O
+  export (resolved via real import bindings, not name matching — so a local
+  function that happens to share a name like `readFileSync` is never
+  flagged) is now demoted to `likely` instead of being auto-fix eligible,
+  since removing it would change program behavior. Detects the call one
+  level inside an immediately-invoked wrapper argument; constructors and
+  factory calls are never flagged. Measured at precision 1.0 / recall 3-of-3
+  against a 19-case hand-labeled real-world corpus (up from 19% precision
+  for a naive "any call-shaped initializer" screen).
+
+### Changed
+- **Refactor verify skips npm-only default checks on Python edits.** A
+  `god-function`/extract-duplicate proposal touching a `.py` file used to
+  fall back to `DEFAULT_CHECKS` (`npm run typecheck` + `vitest`), guaranteeing
+  a misleading red verdict. It's now reported `skipped` with a named reason
+  instead. An explicit `--checks` override still runs as given, even against
+  Python.
+
 ## [1.5.0] — 2026-07-20
 
 ### Added
