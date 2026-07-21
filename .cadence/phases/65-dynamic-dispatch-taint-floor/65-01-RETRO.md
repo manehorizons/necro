@@ -1,0 +1,5 @@
+# Retro
+
+## Rough tasks
+
+- T1: BLOCKED — Implemented exactly as specified (reachability.ts: tainted = same-file taint OR (any tainted file exists in repo AND node.exported)). Empirically confirmed against the real corpus: precision on python-realrepo-accuracy-gate.test.ts crashed from a passing baseline to 0.000 (PRECISION_FLOOR is 0.85), and scan-python-reachability.test.ts's dead_exported fixture flipped likely->maybe. Root cause: real-world repos routinely have at least one file with unresolvable dynamic dispatch (getattr/importlib/star-import/eval) somewhere, so the repo-wide 'any taint anywhere caps every exported symbol' rule is far too blunt in practice, not just in theory. Confirmed by reverting (git stash) — both tests pass cleanly at baseline. Blocking on user decision: scope down (per-package/per-directory taint radius instead of whole-repo?), or abandon (b) for the narrower (a)/(c) options from rec-20260719-004.

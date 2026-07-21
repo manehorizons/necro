@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "draftId": "65-01",
+  "completedAt": "2026-07-21T02:41:24.447Z",
+  "acResults": [
+    {
+      "id": "AC-1",
+      "pass": false,
+      "note": "reverted — repo-wide+directory scoping both failed real-corpus accuracy floors, see DRAFT parked note",
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-2",
+      "pass": false,
+      "note": "reverted — same reason as AC-1",
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-3",
+      "pass": false,
+      "note": "reverted — same reason as AC-1",
+      "evidence": "assertion"
+    },
+    {
+      "id": "AC-4",
+      "pass": false,
+      "note": "reverted — same reason as AC-1",
+      "evidence": "assertion"
+    }
+  ],
+  "gates": [
+    {
+      "gate": "draft-read",
+      "status": "ran"
+    },
+    {
+      "gate": "structural-verifier",
+      "status": "ran"
+    },
+    {
+      "gate": "boundary-scan",
+      "status": "skipped",
+      "skipReason": "boundaryEnforcement is not \"block\""
+    },
+    {
+      "gate": "build-test-must-pass",
+      "status": "skipped",
+      "skipReason": "no test command configured — build-test-must-pass cannot verify your tests ran; this settle will NOT confirm the suite passes. Set verification.testCommand in .cadence/config.json to enable real enforcement."
+    },
+    {
+      "gate": "test-coverage",
+      "status": "ran"
+    },
+    {
+      "gate": "interactive-verdict",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "deep-verify",
+      "status": "skipped",
+      "skipReason": "not requested (no --deep / --interactive, not in gate set)"
+    },
+    {
+      "gate": "code-review",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    },
+    {
+      "gate": "security-audit",
+      "status": "skipped",
+      "skipReason": "not in the active tier × profile gate set"
+    }
+  ],
+  "taskResults": [
+    {
+      "id": "T1",
+      "status": "BLOCKED",
+      "notes": "Implemented exactly as specified (reachability.ts: tainted = same-file taint OR (any tainted file exists in repo AND node.exported)). Empirically confirmed against the real corpus: precision on python-realrepo-accuracy-gate.test.ts crashed from a passing baseline to 0.000 (PRECISION_FLOOR is 0.85), and scan-python-reachability.test.ts's dead_exported fixture flipped likely->maybe. Root cause: real-world repos routinely have at least one file with unresolvable dynamic dispatch (getattr/importlib/star-import/eval) somewhere, so the repo-wide 'any taint anywhere caps every exported symbol' rule is far too blunt in practice, not just in theory. Confirmed by reverting (git stash) — both tests pass cleanly at baseline. Blocking on user decision: scope down (per-package/per-directory taint radius instead of whole-repo?), or abandon (b) for the narrower (a)/(c) options from rec-20260719-004."
+    }
+  ],
+  "decisions": [],
+  "deferred": [],
+  "skillAudit": {
+    "required": [],
+    "invoked": [
+      "superpowers:test-driven-development",
+      "handoff",
+      "superpowers:brainstorming",
+      "superpowers:writing-plans",
+      "cadence-scout"
+    ]
+  }
+}
